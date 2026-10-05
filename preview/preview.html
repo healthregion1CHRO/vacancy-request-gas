@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ระบบคำขอใช้ตำแหน่งว่าง · เขตสุขภาพที่ 1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=Sarabun:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f2f7fb; --surface:#ffffff; --surface-alt:#eef5fb; --border:#d6e3ee; --border-strong:#b9cddd;
+  --ink:#0f2233; --ink-2:#3d5366; --muted:#6b8193;
+  --accent:#0a6ab4; --accent-strong:#08538e; --accent-soft:#deedf9; --on-accent:#ffffff;
+  --brand:#1d7a45; --brand-strong:#145e34; --brand-soft:#e3f2e8;
+  --ok:#1d7a45; --ok-soft:#e3f2e8; --warn:#b45309; --warn-soft:#fdf0dc; --bad:#c0262d; --bad-soft:#fde7e8;
+  --wait:#0a6ab4; --wait-soft:#deedf9; --hold:#6d3fc0; --hold-soft:#efe7fb; --mute:#64748b; --mute-soft:#eef1f5;
+  --shadow:0 1px 2px rgba(15,34,51,.06),0 4px 16px rgba(15,34,51,.06);
+  --shadow-lg:0 12px 40px rgba(15,34,51,.18);
+  --radius:14px; --radius-sm:10px; --btn-border:4px;
+  /* โทน น้ำเงิน · เขียว · ดำ: แถบเมนูและการ์ดเด่นใช้พื้นดำ */
+  --black:#0b1118; --side-bg:#0b1118; --side-ink:#eef3f7; --side-muted:#93a3b1; --side-hover:rgba(255,255,255,.07);
+  --side-on-bg:rgba(47,164,99,.18); --side-on:#6fe0a0; --brand-bright:#2fa463;
+  --font:'Noto Sans Thai',system-ui,-apple-system,'Segoe UI',sans-serif; --font-head:'Sarabun','Noto Sans Thai',sans-serif;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#0d1620; --surface:#13202c; --surface-alt:#182837; --border:#273b4e; --border-strong:#36506a;
+  --ink:#e6eef5; --ink-2:#b4c4d2; --muted:#8aa0b3;
+  --accent:#5ab3f2; --accent-strong:#8bcaf6; --accent-soft:#122d44; --on-accent:#07141f;
+  --brand:#5ccf88; --brand-strong:#86e0a8; --brand-soft:#153322;
+  --ok:#5ccf88; --ok-soft:#153322; --warn:#f2b45a; --warn-soft:#3a2a12; --bad:#f2787d; --bad-soft:#3d1a1d;
+  --wait:#5ab3f2; --wait-soft:#122d44; --hold:#b79af0; --hold-soft:#2a2045; --mute:#94a3b8; --mute-soft:#1e2a36;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25); --shadow-lg:0 12px 40px rgba(0,0,0,.5);
+  color-scheme:dark; --black:#05080c; --side-bg:#070b10; --side-ink:#e6eef5; --side-muted:#8aa0b3; --side-hover:rgba(255,255,255,.06);
+}}
+:root[data-theme="dark"]{
+  --bg:#0d1620; --surface:#13202c; --surface-alt:#182837; --border:#273b4e; --border-strong:#36506a;
+  --ink:#e6eef5; --ink-2:#b4c4d2; --muted:#8aa0b3;
+  --accent:#5ab3f2; --accent-strong:#8bcaf6; --accent-soft:#122d44; --on-accent:#07141f;
+  --brand:#5ccf88; --brand-strong:#86e0a8; --brand-soft:#153322;
+  --ok:#5ccf88; --ok-soft:#153322; --warn:#f2b45a; --warn-soft:#3a2a12; --bad:#f2787d; --bad-soft:#3d1a1d;
+  --wait:#5ab3f2; --wait-soft:#122d44; --hold:#b79af0; --hold-soft:#2a2045; --mute:#94a3b8; --mute-soft:#1e2a36;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25); --shadow-lg:0 12px 40px rgba(0,0,0,.5);
+  color-scheme:dark; --black:#05080c; --side-bg:#070b10; --side-ink:#e6eef5; --side-muted:#8aa0b3; --side-hover:rgba(255,255,255,.06);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+h1,h2,h3{font-family:var(--font-head);margin:0;line-height:1.25}
+.ico{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.muted{color:var(--muted)} .mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+[hidden]{display:none!important}
+.mobile-only{display:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ── progress bar ── */
+#busy{position:fixed;top:0;left:0;right:0;height:3px;z-index:100;pointer-events:none;opacity:0;transition:opacity .2s}
+#busy.on{opacity:1}
+#busy::after{content:"";position:absolute;inset:0;width:40%;background:linear-gradient(90deg,var(--brand),var(--accent));animation:slide 1.1s ease-in-out infinite}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+
+/* ── buttons ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:6px 14px;border-radius:10px;border:var(--btn-border) solid var(--muted);background:var(--surface);color:var(--ink);font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,transform .05s,box-shadow .15s;white-space:nowrap;text-decoration:none}
+.btn:hover{border-color:var(--ink-2);background:var(--surface-alt)}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible,.input:focus-visible,.nav a:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 40%,transparent);outline-offset:2px}
+.btn.primary{background:var(--accent);border-color:var(--accent-strong);color:var(--on-accent)}
+.btn.primary:hover{background:var(--accent-strong);border-color:var(--ink)}
+.btn.brand{background:var(--brand);border-color:var(--brand-strong);color:#fff}
+.btn.brand:hover{background:var(--brand-strong)}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.ghost:hover{background:var(--surface-alt)}
+.btn.danger{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 35%,var(--border))}
+.btn.danger:hover{background:var(--bad-soft)}
+.btn.sm{min-height:32px;padding:2px 10px;font-size:14px;border-radius:8px}
+.btn.icon{padding:0;width:40px}
+.btn.sm.icon{width:32px}
+.btn[disabled]{opacity:.55;pointer-events:none}
+.btn .spin{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ── form ── */
+.input,select.input,textarea.input{width:100%;min-height:42px;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);transition:border-color .15s,box-shadow .15s}
+textarea.input{min-height:84px;resize:vertical}
+.input:hover{border-color:var(--border-strong)}
+.input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.input.err{border-color:var(--bad);box-shadow:0 0 0 3px color-mix(in srgb,var(--bad) 18%,transparent)}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field>label{font-weight:600;font-size:14px;color:var(--ink-2)}
+.field>label .req{color:var(--bad);margin-left:2px}
+.field .hint{font-size:13px;color:var(--muted)}
+.field .msg{font-size:13px;color:var(--bad)}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))} .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.span2{grid-column:span 2} .spanall{grid-column:1/-1}
+.input-wrap{position:relative}
+.input-wrap .ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.input-wrap .input{padding-left:38px}
+.toggle{display:inline-flex;align-items:center;gap:10px;cursor:pointer;font-weight:600}
+.toggle input{appearance:none;width:42px;height:24px;border-radius:99px;background:var(--border-strong);position:relative;cursor:pointer;transition:background .2s;margin:0}
+.toggle input::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle input:checked{background:var(--brand)} .toggle input:checked::after{transform:translateX(18px)}
+
+/* ── login ── */
+.login{min-height:100vh;display:grid;grid-template-columns:1.1fr 1fr}
+.login-art{position:relative;overflow:hidden;color:#fff;padding:48px;display:flex;flex-direction:column;justify-content:space-between;
+  background:radial-gradient(1200px 600px at 10% -10%,#2fa463 0,transparent 55%),radial-gradient(900px 700px at 110% 110%,#0a6ab4 0,transparent 55%),linear-gradient(135deg,#145e34,#08538e)}
+.login-art::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.12) 1px,transparent 1px);background-size:22px 22px;mask-image:linear-gradient(180deg,#000,transparent 85%)}
+.login-art>*{position:relative}
+.login-art h1{font-size:40px;font-weight:700;margin:12px 0 10px}
+.login-art p{opacity:.88;max-width:440px;margin:0}
+.feat{display:grid;gap:14px;margin-top:36px;max-width:440px}
+.feat div{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(6px);padding:12px 14px;border-radius:12px}
+.feat .ico{width:20px;height:20px;margin-top:2px}
+.login-form{display:flex;align-items:center;justify-content:center;padding:32px 16px}
+.login-card{width:100%;max-width:400px}
+.login-card h2{font-size:28px;margin-bottom:6px}
+.logo{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3)}
+.logo .ico{width:26px;height:26px}
+.pw-wrap{position:relative} .pw-wrap .btn{position:absolute;right:4px;top:50%;transform:translateY(-50%)}
+.alert{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:10px;background:var(--bad-soft);color:var(--bad);font-size:14px}
+.alert.info{background:var(--accent-soft);color:var(--accent-strong)}
+.alert.warn{background:var(--warn-soft);color:var(--warn)}
+.alert .ico{margin-top:2px}
+
+/* ── shell ── */
+.shell{display:grid;grid-template-columns:256px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px;padding:18px 14px;background:var(--surface);border-right:1px solid var(--border)}
+.brandbox{display:flex;gap:12px;align-items:center;padding:4px 8px 18px}
+.brandbox .mark{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--brand),var(--accent));box-shadow:0 6px 16px color-mix(in srgb,var(--brand) 35%,transparent)}
+.brandbox .mark .ico{width:22px;height:22px}
+.brandbox b{display:block;font-family:var(--font-head);font-size:16px;line-height:1.2}
+.brandbox small{color:var(--muted);font-size:13px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:var(--ink-2);text-decoration:none;font-weight:600;cursor:pointer;position:relative}
+.nav a:hover{background:var(--surface-alt);color:var(--ink)}
+.nav a.on{background:var(--accent-soft);color:var(--accent-strong)}
+.nav a.on::before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:4px;border-radius:0 4px 4px 0;background:var(--accent)}
+.nav .badge{margin-left:auto}
+.badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 7px;border-radius:99px;background:var(--bad);color:#fff;font-size:12px;font-weight:700}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+.me{display:flex;gap:10px;align-items:center;padding:10px;border-radius:12px;background:var(--surface-alt)}
+.avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--accent),var(--brand));flex:none}
+.me b{display:block;font-size:14px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.me small{color:var(--muted);font-size:12px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.me>div:not(.avatar){min-width:0;flex:1}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:12px;padding:14px 28px;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid transparent}
+.top.scrolled{border-bottom-color:var(--border)}
+.top h1{font-size:22px;flex:1;min-width:0}
+.round-pick{display:flex;align-items:center;gap:8px}
+.round-pick select{min-width:220px}
+.content{padding:8px 28px 40px;max-width:1280px;width:100%}
+.bottomnav{display:none}
+
+/* ── cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-h{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.card-h h3{font-size:17px;flex:1}
+.card-b{padding:20px}
+.stack{display:flex;flex-direction:column;gap:20px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.spacer{flex:1}
+
+.hero{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px}
+.welcome{padding:26px;color:#fff;border:none;position:relative;overflow:hidden;background:linear-gradient(120deg,var(--brand-strong),var(--brand) 45%,var(--accent))}
+.welcome::after{content:"";position:absolute;right:-60px;top:-60px;width:240px;height:240px;border-radius:50%;background:rgba(255,255,255,.08)}
+.welcome h2{font-size:26px;margin-bottom:6px}
+.welcome p{margin:0 0 18px;opacity:.9}
+.welcome .btn{background:#fff;color:var(--brand-strong);border-color:#fff}
+.welcome .btn.glass{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.3)}
+.roundcard{padding:22px;display:flex;flex-direction:column;gap:12px}
+.roundcard .big{font-family:var(--font-head);font-size:22px;font-weight:700}
+.countdown{display:flex;align-items:baseline;gap:6px}
+.countdown b{font-size:34px;font-family:var(--font-head);color:var(--accent);line-height:1}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-weight:600}
+
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.kpi{padding:18px 20px;display:flex;gap:14px;align-items:center;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.kpi .ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;flex:none}
+.kpi .ic .ico{width:22px;height:22px}
+.kpi b{display:block;font-size:28px;font-family:var(--font-head);line-height:1.1}
+.kpi small{color:var(--muted);font-size:13px}
+
+.bars{display:flex;flex-direction:column;gap:12px}
+.bar{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr) 44px;gap:12px;align-items:center;font-size:14px;cursor:pointer;border-radius:8px;padding:2px 4px;margin:0 -4px}
+.bar:hover{background:var(--surface-alt)}
+.bar span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .track{height:10px;border-radius:99px;background:var(--surface-alt);overflow:hidden}
+.bar .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--brand),var(--accent));transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.bar b{text-align:right;font-variant-numeric:tabular-nums}
+
+.feed{display:flex;flex-direction:column}
+.feed-i{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.feed-i:last-child{border-bottom:none}
+.feed-i:hover b{color:var(--accent)}
+.feed-i .t{flex:1;min-width:0}
+.feed-i b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.feed-i small{color:var(--muted);font-size:13px}
+
+/* ── chips ── */
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;font-size:13px;font-weight:600;white-space:nowrap;background:var(--mute-soft);color:var(--mute)}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.chip.nodot::before{display:none}
+.t-wait{background:var(--wait-soft);color:var(--wait)} .t-warn{background:var(--warn-soft);color:var(--warn)}
+.t-ok{background:var(--ok-soft);color:var(--ok)} .t-bad{background:var(--bad-soft);color:var(--bad)}
+.t-hold{background:var(--hold-soft);color:var(--hold)} .t-mute{background:var(--mute-soft);color:var(--mute)}
+.cattag{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.cattag i{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;flex:none}
+.cattag i .ico{width:13px;height:13px}
+
+/* ── category picker ── */
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.catcard{text-align:left;display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:var(--radius);border:4px solid color-mix(in srgb,var(--c) 40%,var(--border));background:var(--surface);cursor:pointer;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s,border-color .15s}
+.catcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:var(--c)}
+.catcard .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.catcard .ic .ico{width:22px;height:22px}
+.catcard b{font-size:16px;font-family:var(--font-head)}
+.catcard p{margin:0;font-size:14px;color:var(--muted)}
+.catcard .staff{font-size:12px;font-weight:700;color:var(--c);letter-spacing:.02em}
+
+/* ── request form ── */
+.formhead{display:flex;align-items:center;gap:14px;padding:18px 20px;border-bottom:1px solid var(--border)}
+.formhead .ic{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);flex:none}
+.formhead .ic .ico{width:24px;height:24px}
+.formhead h2{font-size:20px}
+.sec{padding:20px;border-bottom:1px solid var(--border)}
+.sec:last-of-type{border-bottom:none}
+.sec h4{margin:0 0 14px;font-size:14px;letter-spacing:.03em;color:var(--brand);display:flex;align-items:center;gap:8px}
+.sec h4 .n{width:22px;height:22px;border-radius:50%;background:var(--brand-soft);display:grid;place-items:center;font-size:12px}
+.shortbox{display:flex;flex-direction:column;justify-content:center;align-items:center;border-radius:12px;background:var(--surface-alt);padding:8px;min-height:68px}
+.shortbox b{font-size:26px;font-family:var(--font-head);line-height:1}
+.shortbox small{color:var(--muted);font-size:12px}
+.shortbox.pos b{color:var(--bad)} .shortbox.over b{color:var(--warn)} .shortbox.zero b{color:var(--ok)}
+.formfoot{position:sticky;bottom:0;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;padding:14px 20px;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(8px);border-top:1px solid var(--border);border-radius:0 0 var(--radius) var(--radius)}
+
+/* ── list ── */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)}
+.toolbar .input-wrap{flex:1 1 260px}
+.toolbar select.input{width:auto;min-width:150px;flex:0 1 auto}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;padding:12px 20px 0}
+.tab{display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border-radius:99px;border:var(--btn-border) solid var(--muted);background:var(--surface);cursor:pointer;font-weight:600;font-size:14px;color:var(--ink-2)}
+.tab:hover{border-color:var(--border-strong)}
+.tab.on{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.tab .n{font-size:12px;padding:0 7px;border-radius:99px;background:var(--surface-alt);color:var(--ink-2)}
+.tab.on .n{background:color-mix(in srgb,var(--surface) 22%,transparent);color:var(--surface)}
+.tbl-wrap{overflow:auto}
+table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+.tbl th{position:sticky;top:0;text-align:left;font-size:13px;font-weight:600;color:var(--muted);background:var(--surface);padding:12px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.tbl tbody tr{cursor:pointer;transition:background .12s}
+.tbl tbody tr:hover{background:var(--surface-alt)}
+.tbl tbody tr.sel{background:var(--accent-soft)}
+.tbl .id{font-weight:700;color:var(--accent);white-space:nowrap}
+.tbl .sub{display:block;color:var(--muted);font-size:13px}
+.tbl .pos b{display:block}
+.tbl .arrow{display:flex;gap:6px;align-items:flex-start;color:var(--ink-2);font-size:13px;margin-top:2px}
+.tbl .arrow .ico{width:14px;height:14px;margin-top:3px;color:var(--brand)}
+.tbl .fr{white-space:nowrap;font-variant-numeric:tabular-nums}
+.tbl .fr .s{color:var(--bad);font-weight:700} .tbl .fr .s.over{color:var(--warn)} .tbl .fr .s.zero{color:var(--ok)}
+.tbl.imp td,.tbl.imp th{padding:8px 12px} .tbl.imp tbody tr{cursor:default} .tbl.imp tbody tr:hover{background:none}
+.cb{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
+.bulk{position:sticky;bottom:16px;z-index:15;margin:16px auto 0;width:max-content;max-width:calc(100% - 32px);display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px 10px 18px;border-radius:16px;background:var(--ink);color:var(--surface);box-shadow:var(--shadow-lg);animation:pop .2s ease-out}
+.bulk .btn{border-color:transparent}
+@keyframes pop{from{transform:translateY(12px);opacity:0}}
+.empty{padding:56px 20px;text-align:center;color:var(--muted)}
+.empty .ill{width:72px;height:72px;margin:0 auto 14px;border-radius:20px;display:grid;place-items:center;background:var(--surface-alt);color:var(--accent)}
+.empty .ill .ico{width:32px;height:32px}
+.empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}
+.foot-note{padding:12px 20px;color:var(--muted);font-size:13px}
+
+/* ── drawer / modal ── */
+.scrim{position:fixed;inset:0;z-index:50;background:rgba(8,20,32,.45);backdrop-filter:blur(2px);animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.drawer{position:fixed;top:0;right:0;bottom:0;z-index:51;width:min(560px,100%);background:var(--surface);box-shadow:var(--shadow-lg);display:flex;flex-direction:column;animation:slidein .25s cubic-bezier(.2,.8,.2,1)}
+@keyframes slidein{from{transform:translateX(40px);opacity:0}}
+.drawer-h{display:flex;gap:12px;align-items:flex-start;padding:20px;border-bottom:1px solid var(--border)}
+.drawer-h h2{font-size:20px;margin:4px 0}
+.drawer-b{flex:1;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:20px}
+.drawer-f{display:flex;gap:8px;flex-wrap:wrap;padding:14px 20px;border-top:1px solid var(--border)}
+.dl{display:grid;grid-template-columns:150px 1fr;gap:10px 16px;margin:0;font-size:14px}
+.dl dt{color:var(--muted)} .dl dd{margin:0;white-space:pre-wrap;word-break:break-word;font-weight:500}
+.panel{border:1px solid var(--border);border-radius:12px;padding:16px;background:var(--surface-alt)}
+.panel h4{margin:0 0 12px;font-size:15px;display:flex;gap:8px;align-items:center}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:var(--btn-border) solid var(--muted);background:var(--surface);border-radius:99px;padding:6px 12px;font-size:14px;font-weight:600;cursor:pointer;color:var(--ink-2)}
+.seg button.on{border-color:currentColor}
+.seg button.on.t-ok{background:var(--ok-soft);color:var(--ok)} .seg button.on.t-warn{background:var(--warn-soft);color:var(--warn)}
+.seg button.on.t-bad{background:var(--bad-soft);color:var(--bad)} .seg button.on.t-hold{background:var(--hold-soft);color:var(--hold)}
+.seg button.on.t-wait{background:var(--wait-soft);color:var(--wait)} .seg button.on.t-mute{background:var(--mute-soft);color:var(--mute)}
+.timeline{display:flex;flex-direction:column;gap:0;margin:0;padding:0;list-style:none}
+.timeline li{position:relative;padding:0 0 14px 22px;font-size:14px}
+.timeline li::before{content:"";position:absolute;left:4px;top:7px;width:9px;height:9px;border-radius:50%;background:var(--accent)}
+.timeline li::after{content:"";position:absolute;left:8px;top:18px;bottom:0;width:1px;background:var(--border)}
+.timeline li:last-child::after{display:none}
+.timeline small{display:block;color:var(--muted)}
+.modal-wrap{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:rgba(8,20,32,.45);backdrop-filter:blur(2px);animation:fade .15s}
+.modal{width:min(520px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;background:var(--surface);border-radius:18px;box-shadow:var(--shadow-lg);animation:pop .2s ease-out}
+.modal.wide{width:min(720px,100%)}
+.modal-h{display:flex;align-items:center;gap:10px;padding:18px 20px 6px}
+.modal-h h3{flex:1;font-size:19px}
+.modal-b{padding:12px 20px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.modal-f{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px 18px}
+.secret{display:flex;align-items:center;gap:10px;padding:14px;border-radius:12px;background:var(--surface-alt);border:1px dashed var(--border-strong);font-size:15px}
+.secret code{font-size:20px;font-weight:700;letter-spacing:.06em;flex:1}
+
+/* ── settings ── */
+.subtabs{display:flex;gap:4px;padding:6px;background:var(--surface-alt);border-radius:12px;width:max-content;max-width:100%;overflow:auto}
+.subtabs button{border:0;background:transparent;padding:8px 16px;border-radius:9px;font-weight:600;cursor:pointer;color:var(--ink-2);display:flex;gap:8px;align-items:center}
+.subtabs button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.rounds{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.orgrow{display:grid;grid-template-columns:minmax(0,1fr) 180px 40px;gap:8px;align-items:center}
+
+/* ── toast ── */
+#toasts{position:fixed;z-index:80;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.toast{display:flex;gap:10px;align-items:center;max-width:380px;padding:12px 16px;border-radius:12px;background:var(--ink);color:var(--surface);box-shadow:var(--shadow-lg);font-size:14px;animation:pop .2s ease-out}
+.toast.ok .ico{color:#5ccf88} .toast.err .ico{color:#f2787d}
+.toast.out{opacity:0;transform:translateY(8px);transition:all .25s}
+
+/* ── skeleton ── */
+.sk{border-radius:8px;background:linear-gradient(90deg,var(--surface-alt),color-mix(in srgb,var(--surface-alt) 50%,var(--surface)),var(--surface-alt));background-size:200% 100%;animation:sh 1.2s infinite}
+@keyframes sh{to{background-position:-200% 0}}
+
+/* ── responsive ── */
+@media (max-width:1100px){ .kpis{grid-template-columns:repeat(2,minmax(0,1fr))} .hero{grid-template-columns:1fr} }
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}
+  .side{display:none}
+  .top{padding:12px 16px;flex-wrap:wrap}
+  .top h1{font-size:19px}
+  .round-pick{width:100%;order:3} .round-pick select{flex:1;min-width:0}
+  .content{padding:4px 16px 96px}
+  .mobile-only{display:inline-flex}
+  .bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--border);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+  .bottomnav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;font-size:11px;font-weight:600;color:var(--muted);text-decoration:none;border-radius:10px;position:relative;cursor:pointer}
+  .bottomnav a.on{color:var(--accent);background:var(--accent-soft)}
+  .bottomnav .ico{width:22px;height:22px}
+  .bottomnav .badge{position:absolute;top:0;right:calc(50% - 22px);min-width:18px;height:18px;font-size:11px;padding:0 5px}
+  .login{grid-template-columns:1fr}
+  .login-art{padding:28px 20px}
+  .login-art h1{font-size:28px}
+  .feat{display:none}
+  .g2,.g3{grid-template-columns:1fr} .span2{grid-column:auto}
+  .bar{grid-template-columns:minmax(0,120px) minmax(0,1fr) 36px}
+  .dl{grid-template-columns:1fr;gap:2px} .dl dd{margin-bottom:10px}
+  /* ตารางเป็นการ์ดบนมือถือ */
+  .tbl thead{display:none}
+  .tbl,.tbl tbody,.tbl tr,.tbl td{display:block;width:100%}
+  .tbl tr{padding:12px 16px;border-bottom:1px solid var(--border);position:relative}
+  .tbl td{padding:2px 0;border:0}
+  .tbl td.cbcell{position:absolute;right:16px;top:14px;width:auto}
+  .tbl td.st{margin-top:6px}
+  .toolbar select.input{flex:1 1 140px}
+  .toast{max-width:calc(100vw - 40px)}
+  #toasts{right:16px;left:16px;bottom:84px;align-items:stretch}
+  .orgrow{grid-template-columns:minmax(0,1fr) 120px 40px}
+}
+
+/* ── โทน น้ำเงิน · เขียว · ดำ ── */
+.side{background:var(--side-bg);border-right-color:var(--side-bg);color:var(--side-ink)}
+.brandbox b{color:var(--side-ink)} .brandbox small{color:var(--side-muted)}
+.nav a{color:var(--side-muted)}
+.nav a:hover{background:var(--side-hover);color:var(--side-ink)}
+.nav a.on{background:var(--side-on-bg);color:var(--side-on)}
+.nav a.on::before{background:var(--brand-bright)}
+.side .btn.ghost{color:var(--side-muted)}
+.side .btn.ghost:hover{background:var(--side-hover);color:var(--side-ink)}
+.me{background:var(--side-hover)}
+.me b{color:var(--side-ink)} .me small{color:var(--side-muted)}
+.welcome{background:radial-gradient(520px 260px at 0% 0%,rgba(47,164,99,.55),transparent 65%),radial-gradient(520px 300px at 100% 100%,rgba(10,106,180,.65),transparent 65%),var(--black)}
+.welcome .btn{color:var(--black)}
+.login-art{background:radial-gradient(900px 520px at 0% 0%,rgba(47,164,99,.6),transparent 60%),radial-gradient(800px 600px at 100% 100%,rgba(10,106,180,.7),transparent 60%),var(--black)}
+.formhead{border-top:4px solid var(--black);border-radius:var(--radius) var(--radius) 0 0}
+.card-h h3,.sec h4{color:var(--ink)}
+.sec h4 .n{background:var(--black);color:#fff}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+  <div id="busy"></div>
+  <div id="root"></div>
+  <div id="toasts" aria-live="polite"></div>
+<script>
+// ==CONFIG-START==
+const APP = {
+  name: 'ระบบคำขอใช้ตำแหน่งว่าง',
+  region: 'เขตสุขภาพที่ 1',
+  subtitle: 'ข้าราชการ พนักงานราชการ พนักงานกระทรวงสาธารณสุข และลูกจ้างชั่วคราว'
+};
+
+const PROVINCES = ['เชียงใหม่', 'ลำพูน', 'ลำปาง', 'แพร่', 'น่าน', 'พะเยา', 'เชียงราย', 'แม่ฮ่องสอน'];
+
+const STATUSES = [
+  { key: 'รอพิจารณา', tone: 'wait' },
+  { key: 'ส่งกลับแก้ไข', tone: 'warn' },
+  { key: 'เห็นชอบ', tone: 'ok' },
+  { key: 'อนุมัติ', tone: 'ok' },
+  { key: 'ไม่เห็นชอบ', tone: 'bad' },
+  { key: 'ชะลอ', tone: 'hold' },
+  { key: 'ถอนเรื่อง', tone: 'mute' }
+];
+/** สถานะที่หน่วยงานยังแก้ไข/ถอนเรื่องเองได้ */
+const EDITABLE = ['รอพิจารณา', 'ส่งกลับแก้ไข'];
+
+const ROLES = { admin: 'ผู้ดูแลระดับเขต', prov: 'ผู้ประสานระดับจังหวัด', unit: 'หน่วยงาน' };
+const ROUND_STATUSES = ['เปิดรับ', 'ปิดรับ', 'ประชุมแล้ว'];
+
+const LISTS = {
+  CONDS: ['บรรจุผู้สอบแข่งขัน', 'บรรจุผู้ได้รับคัดเลือก', 'รับย้าย', 'รับโอน', 'รับย้าย/รับโอน', 'เลื่อน',
+    'บรรจุกลับ', 'รับย้ายเปลี่ยนสายงาน', 'ตัดโอนตำแหน่งและอัตราเงินเดือน', 'ยุบกำหนดตำแหน่งสูงขึ้น'],
+  LEVELS: ['ปฏิบัติการ', 'ชำนาญการ', 'ชำนาญการพิเศษ', 'เชี่ยวชาญ', 'ทรงคุณวุฒิ', 'ปฏิบัติงาน', 'ชำนาญงาน',
+    'อาวุโส', 'ทักษะพิเศษ', 'อำนวยการต้น', 'อำนวยการสูง', 'ปก./ชก.', 'ปง./ชง.'],
+  EMP_TYPES: ['ลูกจ้างชั่วคราว', 'พนักงานกระทรวงสาธารณสุข'],
+  ASST_POS: ['ผู้ช่วยพยาบาล', 'ผู้ช่วยทันตแพทย์']
+};
+
+/** ช่องข้อมูล — type: text | textarea | number | select | combo | url | org
+ *  ประเภทคำขอเปลี่ยนช่องเป็นตัวเลือกได้ด้วย selects: { ช่อง: 'ชื่อรายการใน LISTS' } */
+const FIELDS = {
+  org:     { label: 'สังกัด', type: 'org' },
+  unit:    { label: 'ส่วนราชการ / หน่วยบริการ', type: 'text', ph: 'เช่น รพ.สต.บ้านหัวฝาย สสอ.แม่แตง' },
+  dept:    { label: 'กลุ่มงาน / งาน', type: 'text', ph: 'เช่น กลุ่มงานการพยาบาล (ถ้ามี)' },
+  posno:   { label: 'ตำแหน่งเลขที่', type: 'text', ph: 'เช่น 183868', mono: true },
+  pos:     { label: 'ชื่อสายงาน / ตำแหน่ง', type: 'text', ph: 'เช่น พยาบาลวิชาชีพ' },
+  level:   { label: 'ระดับ', type: 'select', list: 'LEVELS' },
+  exec:    { label: 'ชื่อตำแหน่งทางการบริหาร', type: 'text', ph: 'ถ้ามี' },
+  newpos:  { label: 'ตำแหน่งใหม่ / ตัดโอนตำแหน่ง', type: 'textarea' },
+  newunit: { label: 'ส่วนราชการใหม่', type: 'textarea', ph: 'หน่วยงานปลายทางที่จะตัดโอนไป' },
+  cond:    { label: 'เงื่อนไขในการดำรงตำแหน่ง', type: 'combo', list: 'CONDS' },
+  person:  { label: 'ผู้ที่จะมาดำรงตำแหน่ง', type: 'text', ph: 'ชื่อ-สกุล' },
+  typeold: { label: 'ประเภทการจ้างเดิม', type: 'select', list: 'EMP_TYPES' },
+  typenew: { label: 'ประเภทการจ้างที่ขอ', type: 'select', list: 'EMP_TYPES' },
+  frame:   { label: 'กรอบ (ภาพรวมของสายงาน)', type: 'number' },
+  actual:  { label: 'ปฏิบัติงานจริง', type: 'number' },
+  reason:  { label: 'เหตุผลประกอบ', type: 'textarea' },
+  note:    { label: 'หมายเหตุ', type: 'textarea' }
+};
+const HEAD_FIELDS = ['org', 'unit', 'dept'];
+const TAIL_FIELDS = ['note'];
+
+/** 11 ประเภทคำขอ ตามชีตในบัญชีการขอใช้ตำแหน่งว่างประจำเดือน */
+const CATS = [
+  { key: 'improve', name: 'ปรับปรุงตำแหน่ง ขรก.', staff: 'ข้าราชการ', icon: 'wrench',
+    desc: 'ปรับปรุงตำแหน่งว่างไปเป็นสายงานอื่น', sheet: 'ปรับปรุง (ขรก)',
+    title: 'ผลการพิจารณา การปรับปรุงตำแหน่งข้าราชการ', grp: 'ข้อมูลตำแหน่งเดิม',
+    fields: ['posno', 'pos', 'newpos', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos'],
+    labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ขอปรับปรุงตำแหน่งเป็น' } },
+  { key: 'transfer', name: 'เกลี่ยอัตรา ขรก. (มีคนครอง)', staff: 'ข้าราชการ', icon: 'swap',
+    desc: 'ตัดโอนตำแหน่งและอัตราเงินเดือน ตำแหน่งที่มีคนครอง', sheet: 'เกลี่ยอัตราตัดโอน (ขรก)',
+    title: 'ผลการพิจารณา การเกลี่ยอัตราตำแหน่งข้าราชการ (ตัดโอนตำแหน่งและอัตราเงินเดือน)', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
+    fields: ['posno', 'pos', 'newunit', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newunit'] },
+  { key: 'resident', name: 'เกลี่ยอัตรา แพทย์ประจำบ้าน', staff: 'ข้าราชการ', icon: 'stetho',
+    desc: 'ตัดโอนแพทย์/ทันตแพทย์ประจำบ้าน กรณีขึ้นชั้นปีที่ 2', sheet: 'เกลี่ยอัตราตัดโอนแพทย์ประจำบ้าน',
+    title: 'การเกลี่ยอัตราตำแหน่งข้าราชการ นายแพทย์ ทันตแพทย์ (ตัดโอนแพทย์ประจำบ้าน และอัตราเงินเดือน) กรณีขึ้นชั้นปีที่ 2 ภายในเขตสุขภาพที่ 1',
+    grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
+    fields: ['posno', 'pos', 'newunit', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newunit', 'person'] },
+  { key: 'transferVacant', name: 'เกลี่ยอัตรา ขรก. (ตำแหน่งว่าง)', staff: 'ข้าราชการ', icon: 'move',
+    desc: 'ตัดโอนตำแหน่งว่างและอัตราเงินเดือน', sheet: 'เกลี่ยอัตราตัดโอน (ขรก) ต.ว่าง',
+    title: 'ผลการพิจารณา การเกลี่ยอัตราตำแหน่งว่าง (ตัดโอนตำแหน่งและอัตราเงินเดือน)', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
+    fields: ['posno', 'pos', 'newunit', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newunit'] },
+  { key: 'civil', name: 'ขอใช้ตำแหน่ง ขรก.', staff: 'ข้าราชการ', icon: 'badge',
+    desc: 'ขอใช้ตำแหน่งว่างข้าราชการ เพื่อบรรจุ/ย้าย/โอน/เลื่อน', sheet: 'ขอใช้ ขรก.',
+    title: 'ผลการพิจารณา การขอใช้ตำแหน่งข้าราชการ', grp: 'ข้อมูลตำแหน่ง',
+    fields: ['posno', 'pos', 'level', 'exec', 'cond', 'frame', 'actual'], required: ['posno', 'pos', 'cond'],
+    labels: { pos: 'ชื่อตำแหน่ง', cond: 'เงื่อนไขในการขอใช้' } },
+  { key: 'gov', name: 'ขอใช้ตำแหน่ง พนักงานราชการ', staff: 'พนักงานราชการ', icon: 'briefcase',
+    desc: 'ขอใช้ตำแหน่งพนักงานราชการ', sheet: ' พรก',
+    title: 'ผลการพิจารณา การขอใช้ตำแหน่งพนักงานราชการ', grp: 'ข้อมูลตำแหน่ง',
+    fields: ['posno', 'pos', 'cond', 'newpos', 'person', 'frame', 'actual'], required: ['posno', 'pos'],
+    labels: { cond: 'เงื่อนไข' } },
+  { key: 'phks', name: 'จ้าง/เปลี่ยนตำแหน่ง พกส.', staff: 'พกส.', icon: 'users',
+    desc: 'ขออนุมัติจ้างและเปลี่ยนตำแหน่ง พนักงานกระทรวงสาธารณสุข', sheet: ' จ้าง (พกส) ', alias: ['พกส.'],
+    title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่ง พกส.', grp: 'ข้อมูลตำแหน่ง',
+    fields: ['posno', 'pos', 'newpos', 'frame', 'actual', 'reason'], required: ['pos', 'reason'] },
+  { key: 'phksAsst', name: 'พกส. เข้าสู่สายงานผู้ช่วย', staff: 'พกส.', icon: 'userplus',
+    desc: 'เปลี่ยนตำแหน่ง พกส. เข้าสู่สายงานผู้ช่วย', sheet: 'พกส(ผู้ช่วย)',
+    title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่ง พกส. (สายงานผู้ช่วย)', grp: 'ข้อมูลตำแหน่ง',
+    fields: ['posno', 'pos', 'newpos', 'person', 'frame', 'actual', 'reason'], required: ['pos', 'newpos', 'person'],
+    labels: { newpos: 'ขอเปลี่ยนเป็นตำแหน่ง (สายงานผู้ช่วย)' }, selects: { newpos: 'ASST_POS' } },
+  { key: 'phksMove', name: 'ย้าย พกส.', staff: 'พกส.', icon: 'usermove',
+    desc: 'ขอย้ายพนักงานกระทรวงสาธารณสุข ไปหน่วยงานอื่น', sheet: 'ย้าย (พกส)',
+    title: 'ผลการพิจารณา การขอย้ายพนักงานกระทรวงสาธารณสุข', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
+    fields: ['posno', 'pos', 'newunit', 'person', 'frame', 'actual', 'reason'], required: ['pos', 'newunit', 'person'],
+    labels: { pos: 'ชื่อตำแหน่ง', newunit: 'หน่วยงานปลายทาง', person: 'ผู้ขอย้าย (ชื่อ-สกุล)' } },
+  { key: 'changeType', name: 'เปลี่ยนประเภทการจ้าง', staff: 'ลจช. → พกส. หรือ พกส. → ลจช.', icon: 'repeat',
+    desc: 'เปลี่ยนประเภทการจ้าง เช่น ลูกจ้างชั่วคราว → พกส. หรือ พกส. → ลูกจ้างชั่วคราว', sheet: 'เปลี่ยนประเภทการจ้าง',
+    title: 'ผลการพิจารณาการขอเปลี่ยนประเภทการจ้าง', grp: 'ข้อมูลตำแหน่ง',
+    fields: ['posno', 'pos', 'typeold', 'newpos', 'typenew', 'frame', 'actual', 'reason'],
+    required: ['pos', 'typeold', 'newpos', 'typenew'],
+    labels: { newpos: 'ตำแหน่งที่ขออนุมัติกำหนด' },
+    defaults: { typeold: 'ลูกจ้างชั่วคราว', typenew: 'พนักงานกระทรวงสาธารณสุข' } },
+  { key: 'temp', name: 'จ้าง/เปลี่ยนตำแหน่ง ลจช.', staff: 'ลูกจ้างชั่วคราว', icon: 'clock',
+    desc: 'ขออนุมัติจ้างและเปลี่ยนตำแหน่งลูกจ้างชั่วคราว', sheet: 'จ้าง (ลจช)',
+    title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่งลูกจ้างชั่วคราว', grp: 'ข้อมูลตำแหน่ง',
+    fields: ['posno', 'pos', 'newpos', 'frame', 'actual'], required: ['pos'] }
+];
+
+/** หน่วยงานเริ่มต้น (แก้ไขได้ในชีต "หน่วยงาน" หรือหน้า ตั้งค่า) */
+const SEED_ORGS = [
+  ['สสจ.เชียงใหม่', 'เชียงใหม่'], ['รพศ.นครพิงค์', 'เชียงใหม่'], ['รพท.สันทราย', 'เชียงใหม่'], ['รพท.ฝาง', 'เชียงใหม่'],
+  ['รพท.สันป่าตอง', 'เชียงใหม่'], ['รพท.จอมทอง', 'เชียงใหม่'],
+  ['สสจ.ลำพูน', 'ลำพูน'], ['รพศ.ลำพูน', 'ลำพูน'],
+  ['สสจ.ลำปาง', 'ลำปาง'], ['รพศ.ลำปาง', 'ลำปาง'], ['รพท.เกาะคา', 'ลำปาง'],
+  ['สสจ.แพร่', 'แพร่'], ['รพท.แพร่', 'แพร่'],
+  ['สสจ.น่าน', 'น่าน'], ['รพท.น่าน', 'น่าน'],
+  ['สสจ.พะเยา', 'พะเยา'], ['รพท.พะเยา', 'พะเยา'], ['รพท.เชียงคำ', 'พะเยา'],
+  ['สสจ.เชียงราย', 'เชียงราย'], ['รพศ.เชียงรายประชานุเคราะห์', 'เชียงราย'], ['รพท.แม่สาย', 'เชียงราย'],
+  ['สสจ.แม่ฮ่องสอน', 'แม่ฮ่องสอน'], ['รพท.ศรีสังวาลย์', 'แม่ฮ่องสอน']
+];
+/** ชื่อผู้ใช้เริ่มต้นของแต่ละหน่วยงาน (ใช้ใน setupAll) */
+const SEED_USERNAMES = {
+  'สสจ.เชียงใหม่': 'ssj.cmi', 'รพศ.นครพิงค์': 'nakornping', 'รพท.สันทราย': 'sansai', 'รพท.ฝาง': 'fang',
+  'รพท.สันป่าตอง': 'sanpatong', 'รพท.จอมทอง': 'chomthong',
+  'สสจ.ลำพูน': 'ssj.lpn', 'รพศ.ลำพูน': 'lamphun.hosp',
+  'สสจ.ลำปาง': 'ssj.lpg', 'รพศ.ลำปาง': 'lampang.hosp', 'รพท.เกาะคา': 'kokha',
+  'สสจ.แพร่': 'ssj.pre', 'รพท.แพร่': 'phrae.hosp',
+  'สสจ.น่าน': 'ssj.nan', 'รพท.น่าน': 'nan.hosp',
+  'สสจ.พะเยา': 'ssj.pyo', 'รพท.พะเยา': 'phayao.hosp', 'รพท.เชียงคำ': 'chiangkham',
+  'สสจ.เชียงราย': 'ssj.cri', 'รพศ.เชียงรายประชานุเคราะห์': 'crph', 'รพท.แม่สาย': 'maesai',
+  'สสจ.แม่ฮ่องสอน': 'ssj.msn', 'รพท.ศรีสังวาลย์': 'srisangwan'
+};
+// ==CONFIG-END==
+/* จำลองเซิร์ฟเวอร์สำหรับหน้าตัวอย่าง (ไม่ต้องคัดลอกไฟล์นี้ไปที่ Apps Script) — ข้อมูลทั้งหมดเป็นข้อมูลสมมติ */
+(function () {
+  const iso = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
+  const day = n => { const d = new Date(); d.setDate(d.getDate() + n); return d; };
+  const ORGS = SEED_ORGS.map(([org, prov]) => ({ org, prov }));
+  const USERS = [
+    { username: 'admin', name: 'สุภัทร ผู้ดูแลเขต', role: 'admin', prov: '', org: '', email: '', phone: '', active: true, mustChange: false, lastLogin: iso(day(0)) },
+    { username: 'cm.prov', name: 'ผู้ประสาน จังหวัดเชียงใหม่', role: 'prov', prov: 'เชียงใหม่', org: '', email: '', phone: '', active: true, mustChange: false, lastLogin: iso(day(-2)) },
+    { username: 'nkp.hr', name: 'งานบุคคล นครพิงค์', role: 'unit', prov: 'เชียงใหม่', org: 'รพศ.นครพิงค์', email: '', phone: '', active: true, mustChange: true, lastLogin: '' }
+  ];
+  let ROUNDS = [
+    { id: 'R1', name: 'ครั้งที่ 9/2569', month: 'กันยายน 2569', meetDate: iso(day(-24)).slice(0, 10) + 'T00:00:00', closeDate: iso(day(-35)).slice(0, 10) + 'T00:00:00', status: 'ประชุมแล้ว' },
+    { id: 'R2', name: 'ครั้งที่ 10/2569', month: 'ตุลาคม 2569', meetDate: iso(day(30)).slice(0, 10) + 'T00:00:00', closeDate: iso(day(12)).slice(0, 10) + 'T00:00:00', status: 'เปิดรับ' }
+  ];
+  let seq = 0;
+  const REQS = []; // เริ่มจากไม่มีคำขอ — ลองส่งคำขอเองได้
+  const sessions = {};
+  const who = tok => { const u = USERS.find(x => x.username === sessions[tok]); if (!u) throw new Error('SESSION_EXPIRED'); return u; };
+  const roleName = u => Object.assign({}, u, { roleName: ROLES[u.role] });
+  const vis = (u, r) => u.role === 'admin' || (u.role === 'prov' ? r.prov === u.prov : r.org === u.org);
+  const boot = u => ({ app: APP, user: roleName(u), cats: CATS, fields: FIELDS, headFields: HEAD_FIELDS, tailFields: TAIL_FIELDS, lists: LISTS,
+    statuses: STATUSES, editable: EDITABLE, roles: ROLES, roundStatuses: ROUND_STATUSES, provinces: PROVINCES, url: location.href,
+    orgs: u.role === 'admin' ? ORGS : ORGS.filter(o => u.role === 'prov' ? o.prov === u.prov : o.org === u.org), rounds: ROUNDS });
+
+  const H = {
+    apiLogin(_, un, pw) {
+      const u = USERS.find(x => x.username === String(un).trim().toLowerCase());
+      if (!u || !pw) throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (ตัวอย่าง: admin / รหัสอะไรก็ได้)');
+      const tok = 'T' + Math.random(); sessions[tok] = u.username; return { token: tok, boot: boot(u) };
+    },
+    apiLogout(tok) { delete sessions[tok]; return true; },
+    apiBootstrap(tok) { return boot(who(tok)); },
+    apiChangePassword(tok) { who(tok).mustChange = false; return true; },
+    apiListRequests(tok) { const u = who(tok); return REQS.filter(r => vis(u, r)).map(r => Object.assign({}, r)); },
+    apiSaveRequest(tok, d, force) {
+      const u = who(tok), cat = CATS.find(c => c.key === d.catKey);
+      let rec = d.id ? REQS.find(r => r.id === d.id) : null;
+      const round = (u.role === 'admin' && d.round) || (rec && rec.round) || (ROUNDS.find(r => r.status === 'เปิดรับ') || {}).id;
+      if (d.posno && !force) {
+        const dup = REQS.filter(r => r.id !== d.id && r.round === round && r.posno === d.posno && r.status !== 'ถอนเรื่อง');
+        if (dup.length) return { dup: dup.map(r => ({ id: r.id, cat: r.cat, org: r.org, status: r.status })) };
+      }
+      const now = iso(new Date());
+      if (!rec) { rec = { id: '2569-' + String(++seq).padStart(4, '0'), createdBy: u.username, createdAt: now, status: 'รอพิจารณา', result: '', reviewNote: '' }; REQS.unshift(rec); }
+      else if (rec.status === 'ส่งกลับแก้ไข' && u.role !== 'admin') rec.status = 'รอพิจารณา';
+      const keys = HEAD_FIELDS.concat(cat.fields, TAIL_FIELDS);
+      Object.keys(FIELDS).forEach(k => { rec[k] = keys.indexOf(k) >= 0 ? (FIELDS[k].type === 'number' && d[k] !== '' && d[k] != null ? Number(d[k]) : (d[k] || '')) : ''; });
+      if (u.role === 'unit') rec.org = u.org;
+      Object.assign(rec, { round, cat: cat.name, catKey: cat.key, staff: cat.staff, prov: (ORGS.find(o => o.org === rec.org) || {}).prov || '',
+        short: rec.frame !== '' && rec.actual !== '' ? rec.frame - rec.actual : '', updatedBy: u.username, updatedAt: now });
+      return { ok: true, item: Object.assign({}, rec) };
+    },
+    apiImportRequests(tok, rid, rows, status) {
+      const u = who(tok), now = iso(new Date()), sp = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+      const key = r => [r.cat, r.org, sp(r.posno), sp(r.pos), sp(r.person)].join('|');
+      const have = {}; REQS.forEach(r => { if (r.round === rid && r.status !== 'ถอนเรื่อง') have[key(r)] = 1; });
+      const added = [], skipped = [], errors = [];
+      rows.forEach(d => {
+        const cat = CATS.find(c => c.key === d.catKey), o = ORGS.find(x => x.org === sp(d.org));
+        if (!o) { errors.push(d.ref + ': ไม่พบหน่วยงาน "' + d.org + '"'); return; }
+        const keys = HEAD_FIELDS.concat(cat.fields, TAIL_FIELDS), rec = {};
+        Object.keys(FIELDS).forEach(k => { rec[k] = keys.indexOf(k) >= 0 && d[k] != null ? d[k] : ''; });
+        Object.assign(rec, { round: rid, cat: cat.name, catKey: cat.key, staff: cat.staff, prov: o.prov, status: status || 'รอพิจารณา', result: d.result || '', reviewNote: '',
+          short: rec.frame !== '' && rec.actual !== '' ? rec.frame - rec.actual : '', createdBy: u.username, createdAt: now, updatedBy: u.username, updatedAt: now });
+        if (have[key(rec)]) { skipped.push(d.ref); return; }
+        have[key(rec)] = 1;
+        rec.id = '2569-' + String(++seq).padStart(4, '0');
+        REQS.unshift(rec); added.push(Object.assign({}, rec));
+      });
+      return { added, skipped, errors };
+    },
+    apiWithdraw(tok, id) { const u = who(tok), r = REQS.find(x => x.id === id); r.status = 'ถอนเรื่อง'; r.updatedBy = u.username; r.updatedAt = iso(new Date()); return Object.assign({}, r); },
+    apiReview(tok, ids, status, result, note) {
+      const u = who(tok);
+      return ids.map(id => { const r = REQS.find(x => x.id === id); r.status = status; if (result != null) r.result = result; if (note != null) r.reviewNote = note;
+        r.reviewedBy = u.username; r.reviewedAt = iso(new Date()); return Object.assign({}, r); });
+    },
+    apiDeleteRequest(tok, id) { who(tok); REQS.splice(REQS.findIndex(r => r.id === id), 1); return true; },
+    apiListUsers(tok) { who(tok); return USERS.map(roleName); },
+    apiSaveUser(tok, d, isNew) {
+      who(tok);
+      if (!/^[a-z0-9._-]{3,30}$/.test(d.username)) throw new Error('ชื่อผู้ใช้ใช้ได้เฉพาะ a-z 0-9 . _ - ยาว 3–30 ตัว');
+      let u = USERS.find(x => x.username === d.username);
+      if (isNew && u) throw new Error('มีชื่อผู้ใช้นี้แล้ว');
+      if (!u) { u = { username: d.username, mustChange: true, lastLogin: '' }; USERS.push(u); }
+      const o = ORGS.find(x => x.org === d.org);
+      Object.assign(u, { name: d.name, role: d.role, prov: d.role === 'prov' ? d.prov : d.role === 'unit' && o ? o.prov : '', org: d.role === 'unit' ? d.org : '', email: d.email, phone: d.phone, active: d.active });
+      return { user: roleName(u), password: isNew ? 'Demo' + Math.floor(Math.random() * 90000 + 10000) : null };
+    },
+    apiResetPassword() { return 'Reset' + Math.floor(Math.random() * 90000 + 10000); },
+    apiDeleteUser(tok, un) {
+      if (who(tok).username === un) throw new Error('ไม่สามารถลบบัญชีของตัวเองได้');
+      USERS.splice(USERS.findIndex(x => x.username === un), 1); return true;
+    },
+    apiDeleteRound(tok, id) {
+      who(tok);
+      const n = REQS.filter(x => x.round === id).length;
+      if (n) throw new Error('รอบนี้มีคำขอ ' + n + ' รายการ — ลบหรือย้ายคำขอออกก่อนจึงจะลบรอบได้');
+      ROUNDS = ROUNDS.filter(x => x.id !== id);
+      return ROUNDS.map(x => Object.assign({}, x));
+    },
+    apiSaveRound(tok, d) {
+      who(tok);
+      let r = ROUNDS.find(x => x.id === d.id);
+      if (!r) { r = { id: 'R' + (ROUNDS.reduce((m, x) => Math.max(m, Number(x.id.slice(1)) || 0), 0) + 1) }; ROUNDS.push(r); }
+      Object.assign(r, { name: d.name, month: d.month, status: d.status, closeDate: d.closeDate ? d.closeDate + 'T00:00:00' : '', meetDate: d.meetDate ? d.meetDate + 'T00:00:00' : '' });
+      if (r.status === 'เปิดรับ') ROUNDS.forEach(x => { if (x !== r && x.status === 'เปิดรับ') x.status = 'ปิดรับ'; });
+      return ROUNDS.map(x => Object.assign({}, x));
+    },
+    apiSaveOrgs(tok, list) { who(tok); ORGS.length = 0; list.forEach(o => ORGS.push(o)); return ORGS.slice(); },
+    apiExportRound(tok, rid) { who(tok); const r = ROUNDS.find(x => x.id === rid); return { url: '#', xlsx: '#', title: 'บัญชีการขอใช้ตำแหน่งว่าง ประจำเดือน ' + r.month + ' (ตัวอย่าง)', count: REQS.filter(x => x.round === rid && x.status !== 'ถอนเรื่อง').length }; },
+    apiExportJson(tok, rid) { who(tok); return REQS.filter(r => (!rid || r.round === rid) && r.status !== 'ถอนเรื่อง').map(r => ({ cat: r.cat, staff: r.staff, prov: r.prov, org: r.org, posno: r.posno, pos: r.pos, result: r.result })); }
+  };
+  window.MockServer = {
+    call(fn, args) {
+      return new Promise((res, rej) => setTimeout(() => { try { res(JSON.parse(JSON.stringify(H[fn].apply(null, args)))); } catch (e) { rej(e); } }, 250));
+    }
+  };
+})();
+/* คำแนะนำบนหน้า login ของหน้าตัวอย่าง */
+new MutationObserver(() => {
+  const f = document.getElementById('loginForm');
+  if (f && !document.getElementById('demoHint')) {
+    const d = document.createElement('div');
+    d.id = 'demoHint'; d.className = 'alert info';
+    d.innerHTML = '<span><b>หน้าตัวอย่าง (ข้อมูลสมมติ)</b><br>ลองเข้าด้วย <b>admin</b> (เขต), <b>cm.prov</b> (จังหวัด) หรือ <b>nkp.hr</b> (หน่วยงาน) — รหัสผ่านอะไรก็ได้</span>';
+    f.insertBefore(d, f.children[1]);
+  }
+}).observe(document.documentElement, { childList: true, subtree: true });
+</script>
+<script>
+(function () {
+'use strict';
+
+/* ───────────── utils ───────────── */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const trunc = (s, n) => { s = String(s || '').replace(/\s+/g, ' '); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
+const store = {
+  get(k, area) { try { return (area || sessionStorage).getItem(k); } catch (e) { return null; } },
+  set(k, v, area) { try { const a = area || sessionStorage; v == null ? a.removeItem(k) : a.setItem(k, v); } catch (e) { /* storage ปิดอยู่ */ } }
+};
+let debT; const debounce = (fn, ms) => () => { clearTimeout(debT); debT = setTimeout(fn, ms); };
+
+const ICONS = {
+  home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  clipboard: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+  sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+  trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
+  calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  key: '<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  sheet: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8M10 9H8"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  building: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/>',
+  arrowRight: '<path d="M5 12h14M12 5l7 7-7 7"/>',
+  arrowLeft: '<path d="M19 12H5M12 19l-7-7 7-7"/>',
+  alert: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  inbox: '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/>',
+  send: '<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
+  more: '<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',
+  copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>',
+  swap: '<path d="m16 3 4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16"/>',
+  stetho: '<path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6 6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/>',
+  move: '<path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/>',
+  badge: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2M15 12h2M7 16h10"/>',
+  briefcase: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+  userplus: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>',
+  repeat: '<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
+  usermove: '<path d="M14 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="8" cy="7" r="4"/><path d="M16 11h6M19 8l3 3-3 3"/>'
+};
+const icon = (n, cls) => `<svg class="ico ${cls || ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+const CAT_COLORS = ['#1d7a45', '#0a6ab4', '#7c3aed', '#0e7490', '#b45309', '#be185d', '#4d7c0f', '#c2410c', '#4338ca', '#0f766e', '#a21caf'];
+
+/* ───────────── state ───────────── */
+const blankFilters = () => ({ q: '', cat: '', status: '', prov: '', org: '' });
+const S = {
+  token: null, boot: null, reqs: [], loaded: false,
+  view: 'home', navKey: 'home', round: null, filters: blankFilters(), sel: new Set(), limit: 100,
+  form: null, users: null, settingsTab: 'users', orgDraft: null
+};
+
+/* ───────────── server ───────────── */
+let busyN = 0;
+function busy(d) { busyN = Math.max(0, busyN + d); const b = $('#busy'); b && b.classList.toggle('on', busyN > 0); }
+
+function api(fn, ...args) {
+  busy(1);
+  return new Promise((resolve, reject) => {
+    const gs = window.google && google.script && google.script.run;
+    if (gs) gs.withSuccessHandler(resolve).withFailureHandler(reject)[fn](S.token, ...args);
+    else if (window.MockServer) window.MockServer.call(fn, [S.token, ...args]).then(resolve, reject);
+    else reject(new Error('เปิดหน้านี้ผ่านลิงก์เว็บแอปของ Google Apps Script'));
+  }).then(v => { busy(-1); return v; }, err => {
+    busy(-1);
+    const msg = String((err && err.message) || err).replace(/^(Exception|Error):\s*/, '');
+    if (msg.indexOf('SESSION_EXPIRED') >= 0) {
+      endSession('หมดเวลาการใช้งาน กรุณาเข้าสู่ระบบอีกครั้ง');
+      const e = new Error(msg); e.silent = true; throw e;
+    }
+    throw new Error(msg);
+  });
+}
+function fail(err) { if (!err || !err.silent) toast((err && err.message) || String(err), 'err'); }
+
+/* ───────────── helpers ───────────── */
+const catOf = key => S.boot.cats.find(c => c.key === key);
+const catColor = key => CAT_COLORS[Math.max(0, S.boot.cats.findIndex(c => c.key === key)) % CAT_COLORS.length];
+const toneOf = st => (S.boot.statuses.find(s => s.key === st) || {}).tone || 'mute';
+const chip = st => `<span class="chip t-${toneOf(st)}">${esc(st)}</span>`;
+const roundOf = id => S.boot.rounds.find(r => String(r.id) === String(id));
+const openRound = () => S.boot.rounds.find(r => r.status === 'เปิดรับ');
+const isAdmin = () => S.boot.user.role === 'admin';
+const labelOf = (cat, k) => (cat.labels && cat.labels[k]) || S.boot.fields[k].label;
+const has = v => v !== '' && v != null;
+
+function parseD(s) { if (!s) return null; const d = new Date(String(s).length === 10 ? s + 'T00:00:00' : s); return isNaN(d) ? null : d; }
+function fmtDate(s, long) {
+  const d = parseD(s); if (!d) return '–';
+  return d.toLocaleDateString('th-TH', long ? { day: 'numeric', month: 'long', year: 'numeric' } : { day: 'numeric', month: 'short', year: '2-digit' });
+}
+function fmtDT(s) { const d = parseD(s); return d ? fmtDate(s) + ' ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.' : '–'; }
+function ago(s) {
+  const d = parseD(s); if (!d) return '';
+  const m = Math.round((Date.now() - d) / 60000);
+  if (m < 1) return 'เมื่อสักครู่'; if (m < 60) return m + ' นาทีที่แล้ว';
+  const h = Math.round(m / 60); if (h < 24) return h + ' ชม.ที่แล้ว';
+  const dd = Math.round(h / 24); return dd < 30 ? dd + ' วันที่แล้ว' : fmtDate(s);
+}
+function daysLeft(s) { const d = parseD(s); if (!d) return null; const t = new Date(); t.setHours(0, 0, 0, 0); return Math.round((d - t) / 86400000); }
+const initials = n => (String(n || '?').trim().replace(/^(นางสาว|นาย|นาง|น\.ส\.|ดร\.)\s*/, '')[0] || '?').toUpperCase();
+function canEdit(r) {
+  if (r.status === 'ถอนเรื่อง') return false;
+  if (isAdmin()) return true;
+  const rd = roundOf(r.round);
+  return S.boot.editable.indexOf(r.status) >= 0 && !!rd && rd.status === 'เปิดรับ';
+}
+function upsert(item) {
+  const i = S.reqs.findIndex(r => r.id === item.id);
+  if (i >= 0) S.reqs[i] = item; else S.reqs.unshift(item);
+}
+const catTag = r => {
+  const c = catOf(r.catKey) || { icon: 'inbox', name: r.cat }, col = catColor(r.catKey);
+  return `<span class="cattag"><i style="background:color-mix(in srgb,${col} 15%,transparent);color:${col}">${icon(c.icon)}</i>${esc(c.name)}</span>`;
+};
+const emptyHtml = (ic, title, text, btn) =>
+  `<div class="empty"><div class="ill">${icon(ic)}</div><b>${esc(title)}</b><div>${esc(text)}</div>${btn ? `<div style="margin-top:16px">${btn}</div>` : ''}</div>`;
+
+/* ───────────── toast / modal / drawer ───────────── */
+function toast(msg, type) {
+  type = type || 'ok';
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = icon(type === 'err' ? 'alert' : 'check') + '<span>' + esc(msg) + '</span>';
+  $('#toasts').appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, type === 'err' ? 5500 : 3000);
+}
+
+function modal(o) {
+  closeModal();
+  const w = document.createElement('div');
+  w.className = 'modal-wrap'; w.id = 'modal';
+  if (o.locked) w.dataset.locked = '1';
+  w.innerHTML = `<div class="modal ${o.wide ? 'wide' : ''}" role="dialog" aria-modal="true" aria-label="${esc(o.title)}">
+    <div class="modal-h"><h3>${esc(o.title)}</h3>${o.locked ? '' : `<button class="btn ghost icon sm" data-act="modal-close" aria-label="ปิด">${icon('x')}</button>`}</div>
+    <div class="modal-b">${o.body}</div>${o.foot ? `<div class="modal-f">${o.foot}</div>` : ''}</div>`;
+  if (!o.locked) w.addEventListener('mousedown', e => { if (e.target === w) closeModal(); });
+  document.body.appendChild(w);
+  if (o.onMount) o.onMount(w);
+  const f = w.querySelector('.modal-b input:not([readonly]),.modal-b select,.modal-b textarea:not([readonly])');
+  if (f) f.focus();
+  return w;
+}
+function closeModal() { const m = $('#modal'); if (m) m.remove(); }
+function confirmBox(html, o) {
+  o = o || {};
+  return new Promise(res => {
+    const w = modal({ title: o.title || 'ยืนยัน', body: `<div>${html}</div>`,
+      foot: `<button class="btn" data-x="no">ยกเลิก</button><button class="btn ${o.danger ? 'danger' : 'primary'}" data-x="yes">${esc(o.ok || 'ยืนยัน')}</button>` });
+    w.addEventListener('click', e => { const b = e.target.closest('[data-x]'); if (b) { closeModal(); res(b.dataset.x === 'yes'); } });
+  });
+}
+async function withBtn(btn, fn) {
+  if (!btn) return fn();
+  const html = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>' + html.replace(/<svg[\s\S]*?<\/svg>/, '');
+  try { return await fn(); } finally { if (btn.isConnected) { btn.disabled = false; btn.innerHTML = html; } }
+}
+function copyText(text) {
+  const done = () => toast('คัดลอกแล้ว');
+  const fallback = () => {
+    const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); done(); } catch (e) { toast('คัดลอกไม่ได้ กรุณาเลือกข้อความแล้วกด Ctrl+C', 'err'); }
+    t.remove();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+}
+function download(name, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+/* ───────────── theme ───────────── */
+function applyTheme() {
+  const t = store.get('vr_theme', localStorage);
+  if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+  const l = $('#themeLbl'); if (l) l.textContent = isDark() ? 'โหมดสว่าง' : 'โหมดมืด';
+}
+const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
+function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', localStorage); applyTheme(); }
+
+/* ───────────── login ───────────── */
+function renderLogin(msg) {
+  S.boot = null;
+  $('#root').innerHTML = `
+  <div class="login">
+    <section class="login-art">
+      <div>
+        <span class="logo">${icon('clipboard')}</span>
+        <h1>ระบบคำขอใช้ตำแหน่งว่าง</h1>
+        <p>เขตสุขภาพที่ 1 · ส่งคำขอ ติดตามสถานะ และพิจารณาผลในที่เดียว แทนการรวบรวมไฟล์ Excel ทุกเดือน</p>
+        <div class="feat">
+          <div>${icon('send')}<span><b>ส่งคำขอออนไลน์ครบ 11 ประเภท</b><br>ฟอร์มปรับช่องตามประเภทคำขอให้อัตโนมัติ</span></div>
+          <div>${icon('eye')}<span><b>ติดตามสถานะได้ทันที</b><br>รู้เมื่อเขตเห็นชอบ อนุมัติ หรือส่งกลับให้แก้ไข</span></div>
+          <div>${icon('sheet')}<span><b>ออกบัญชีประจำเดือนในคลิกเดียว</b><br>รูปแบบเดียวกับบัญชีเดิม ดาวน์โหลดเป็น Excel ได้</span></div>
+        </div>
+      </div>
+      <small style="opacity:.75">ข้าราชการ · พนักงานราชการ · พนักงานกระทรวงสาธารณสุข · ลูกจ้างชั่วคราว</small>
+    </section>
+    <section class="login-form">
+      <form class="login-card stack" id="loginForm" autocomplete="on">
+        <div><h2>เข้าสู่ระบบ</h2><p class="muted" style="margin:0">ใช้ชื่อผู้ใช้และรหัสผ่านที่ได้รับจากเขต</p></div>
+        ${msg ? `<div class="alert info">${icon('alert')}<span>${esc(msg)}</span></div>` : ''}
+        <div class="alert" id="loginErr" hidden></div>
+        <div class="field"><label for="lu">ชื่อผู้ใช้</label>
+          <div class="input-wrap">${icon('user')}<input class="input" id="lu" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></div></div>
+        <div class="field"><label for="lp">รหัสผ่าน</label>
+          <div class="input-wrap pw-wrap">${icon('key')}<input class="input" id="lp" type="password" name="password" autocomplete="current-password" required>
+          <button type="button" class="btn ghost sm icon" data-act="pw-toggle" data-for="lp" aria-label="แสดงรหัสผ่าน">${icon('eye')}</button></div></div>
+        <button class="btn primary" type="submit" style="min-height:46px">เข้าสู่ระบบ ${icon('arrowRight')}</button>
+        <p class="muted" style="font-size:13px;margin:0">ลืมรหัสผ่าน? ติดต่อผู้ดูแลระบบของเขตเพื่อรีเซ็ต</p>
+      </form>
+    </section>
+  </div>`;
+  const form = $('#loginForm');
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = $('#loginErr'); err.hidden = true;
+    if (!$('#lu').value.trim() || !$('#lp').value) { err.innerHTML = icon('alert') + '<span>กรุณากรอกชื่อผู้ใช้และรหัสผ่าน</span>'; err.hidden = false; return; }
+    await withBtn(form.querySelector('[type=submit]'), async () => {
+      try {
+        const res = await api('apiLogin', $('#lu').value, $('#lp').value);
+        S.token = res.token; store.set('vr_token', res.token); S.boot = res.boot;
+        startApp();
+      } catch (ex) { err.innerHTML = icon('alert') + '<span>' + esc(ex.message) + '</span>'; err.hidden = false; }
+    });
+  });
+  $('#lu').focus();
+}
+
+function endSession(msg) {
+  S.token = null; store.set('vr_token', null);
+  Object.assign(S, { reqs: [], loaded: false, users: null, form: null, round: null, filters: blankFilters(), view: 'home', navKey: 'home' });
+  S.sel.clear(); closeModal(); closeDrawer();
+  renderLogin(msg);
+}
+
+/* ───────────── shell ───────────── */
+function startApp() {
+  if (S.round === null) S.round = String((openRound() || S.boot.rounds[S.boot.rounds.length - 1] || { id: '' }).id);
+  renderShell();
+  loadReqs();
+  if (S.boot.user.mustChange) changePwModal(true);
+}
+async function loadReqs() {
+  S.loaded = false; renderView();
+  try { S.reqs = await api('apiListRequests', ''); S.loaded = true; renderNav(); renderView(); } catch (e) { fail(e); }
+}
+
+const NAV = () => [
+  { v: 'home', t: 'ภาพรวม', s: 'ภาพรวม', i: 'home' },
+  { v: 'new', t: 'ส่งคำขอ', s: 'ส่งคำขอ', i: 'plus' },
+  { v: 'list', t: 'รายการคำขอ', s: 'รายการ', i: 'list', badge: isAdmin() ? null : 'ส่งกลับแก้ไข' }
+].concat(isAdmin() ? [
+  { v: 'review', t: 'รอพิจารณา', s: 'พิจารณา', i: 'clipboard', badge: 'รอพิจารณา' },
+  { v: 'settings', t: 'ตั้งค่า', s: 'ตั้งค่า', i: 'sliders' }
+] : []);
+
+function renderShell() {
+  const u = S.boot.user;
+  const who = esc(u.roleName) + (u.org ? ' · ' + esc(u.org) : u.prov ? ' · ' + esc(u.prov) : '');
+  $('#root').innerHTML = `<div class="shell">
+    <aside class="side">
+      <div class="brandbox"><div class="mark">${icon('clipboard')}</div><div><b>คำขอใช้ตำแหน่งว่าง</b><small>${esc(S.boot.app.region)}</small></div></div>
+      <nav class="nav" id="nav" aria-label="เมนูหลัก"></nav>
+      <div class="side-foot">
+        <button class="btn ghost" data-act="theme" style="justify-content:flex-start">${icon('moon')}<span id="themeLbl"></span></button>
+        <div class="me"><div class="avatar">${esc(initials(u.name || u.username))}</div>
+          <div><b>${esc(u.name || u.username)}</b><small>${who}</small></div>
+          <button class="btn ghost sm icon" data-act="account" aria-label="บัญชีของฉัน">${icon('more')}</button></div>
+      </div>
+    </aside>
+    <div class="main">
+      <header class="top" id="top">
+        <h1 id="pageTitle"></h1>
+        <div class="round-pick" id="roundPick"></div>
+        <button class="btn ghost icon mobile-only" data-act="account" aria-label="บัญชีของฉัน"><span class="avatar" style="width:32px;height:32px;font-size:13px">${esc(initials(u.name || u.username))}</span></button>
+      </header>
+      <main class="content" id="view"></main>
+    </div>
+    <nav class="bottomnav" id="bnav" aria-label="เมนูหลัก"></nav>
+  </div>`;
+  renderNav(); renderRoundPick(); applyTheme();
+}
+
+function renderNav() {
+  if (!$('#nav')) return;
+  const sc = scoped();
+  const items = NAV().map(n => {
+    const cnt = n.badge ? sc.filter(r => r.status === n.badge).length : 0;
+    return { n: n, on: S.navKey === n.v, b: cnt ? `<span class="badge">${cnt}</span>` : '' };
+  });
+  $('#nav').innerHTML = items.map(x => `<a data-act="go" data-v="${x.n.v}" class="${x.on ? 'on' : ''}" ${x.on ? 'aria-current="page"' : ''} tabindex="0">${icon(x.n.i)}<span>${x.n.t}</span>${x.b}</a>`).join('');
+  $('#bnav').innerHTML = items.map(x => `<a data-act="go" data-v="${x.n.v}" class="${x.on ? 'on' : ''}">${icon(x.n.i)}<span>${x.n.s}</span>${x.b}</a>`).join('');
+}
+
+function renderRoundPick() {
+  const opts = S.boot.rounds.slice().reverse().map(r => `<option value="${esc(r.id)}" ${String(S.round) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''}${r.status === 'เปิดรับ' ? ' (เปิดรับ)' : ''}</option>`).join('');
+  $('#roundPick').innerHTML = `${icon('calendar', 'muted')}<select class="input" data-change="round" aria-label="เลือกรอบการประชุม"><option value="">ทุกรอบการประชุม</option>${opts}</select>`;
+}
+
+function go(v, opt) {
+  opt = opt || {};
+  S.navKey = v;
+  if (v === 'review') { S.view = 'list'; if (!opt.keepFilters) { S.filters = blankFilters(); S.filters.status = 'รอพิจารณา'; } }
+  else { S.view = v; if (v === 'list' && !opt.keepFilters) S.filters = blankFilters(); }
+  if (v === 'new' && !opt.keepForm) S.form = null;
+  if (v === 'settings') S.orgDraft = null;
+  S.sel.clear(); S.limit = 100;
+  renderNav(); renderView(); window.scrollTo(0, 0);
+}
+
+const TITLES = { home: 'ภาพรวม', new: 'ส่งคำขอใช้ตำแหน่ง', list: 'รายการคำขอ', settings: 'ตั้งค่าระบบ' };
+function renderView() {
+  if (!$('#view')) return;
+  const v = S.view;
+  $('#pageTitle').textContent = v === 'new' && S.form && S.form.id ? 'แก้ไขคำขอ ' + S.form.id : S.navKey === 'review' ? 'รอพิจารณา' : TITLES[v];
+  $('#roundPick').style.display = (v === 'settings' || v === 'new') ? 'none' : '';
+  const el = $('#view');
+  if (v === 'home') el.innerHTML = viewHome();
+  else if (v === 'new') el.innerHTML = viewNew();
+  else if (v === 'list') el.innerHTML = viewList();
+  else if (v === 'settings') { el.innerHTML = viewSettings(); if (!S.users) loadUsers(); }
+}
+
+/* ───────────── home ───────────── */
+function scoped() { return S.reqs.filter(r => !S.round || String(r.round) === String(S.round)); }
+
+function barsHtml(rows, key) {
+  if (!rows.length) return emptyHtml('inbox', 'ยังไม่มีคำขอ', 'เมื่อมีคำขอในรอบนี้ จะแสดงสรุปที่นี่');
+  const max = Math.max.apply(null, rows.map(r => r.n));
+  return `<div class="bars">${rows.map(r => `<div class="bar" data-act="bar" data-k="${key}" data-val="${esc(r.k)}" title="ดูรายการ ${esc(r.t)}">
+    <span>${esc(r.t)}</span><div class="track"><div class="fill" style="width:${Math.max(3, r.n / max * 100)}%"></div></div><b>${r.n}</b></div>`).join('')}</div>`;
+}
+
+function viewHome() {
+  if (!S.loaded) return `<div class="stack"><div class="hero"><div class="sk" style="height:190px"></div><div class="sk" style="height:190px"></div></div>
+    <div class="kpis">${'<div class="sk" style="height:84px"></div>'.repeat(4)}</div><div class="sk" style="height:300px"></div></div>`;
+  const u = S.boot.user, live = scoped().filter(r => r.status !== 'ถอนเรื่อง');
+  const cnt = sts => live.filter(r => sts.indexOf(r.status) >= 0).length;
+  const or = openRound(), rd = roundOf(S.round) || or;
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? 'สวัสดีตอนเช้า' : hour < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น';
+  const scopeTxt = u.role === 'admin' ? 'ทุกหน่วยงานในเขตสุขภาพที่ 1' : u.role === 'prov' ? 'หน่วยงานในจังหวัด' + u.prov : u.org;
+  const returned = cnt(['ส่งกลับแก้ไข']);
+
+  let roundHtml;
+  if (rd) {
+    const dl = rd.status === 'เปิดรับ' ? daysLeft(rd.closeDate) : null;
+    const tone = rd.status === 'เปิดรับ' ? 't-ok' : rd.status === 'ปิดรับ' ? 't-warn' : 't-mute';
+    roundHtml = `<div class="card roundcard">
+      <div class="row"><span class="muted">รอบการประชุม</span><span class="spacer"></span><span class="chip ${tone}">${esc(rd.status)}</span></div>
+      <div class="big">${esc(rd.name)}</div>
+      ${dl !== null && dl >= 0 ? `<div class="countdown"><b>${dl}</b><span>${dl === 0 ? 'ปิดรับคำขอวันนี้' : 'วัน ก่อนปิดรับคำขอ'}</span></div>` : ''}
+      ${dl !== null && dl < 0 ? `<div class="alert warn">${icon('alert')}<span>เลยกำหนดปิดรับมาแล้ว ${-dl} วัน</span></div>` : ''}
+      <dl class="kv"><dt>บัญชีประจำเดือน</dt><dd>${esc(rd.month || '–')}</dd><dt>ปิดรับคำขอ</dt><dd>${fmtDate(rd.closeDate, 1)}</dd><dt>วันที่ประชุม</dt><dd>${fmtDate(rd.meetDate, 1)}</dd></dl>
+    </div>`;
+  } else {
+    roundHtml = `<div class="card roundcard">${emptyHtml('calendar', 'ยังไม่มีรอบการประชุม', isAdmin() ? 'สร้างรอบได้ที่ ตั้งค่า → รอบการประชุม' : 'รอเขตเปิดรับคำขอ')}</div>`;
+  }
+
+  const kpis = [
+    ['คำขอทั้งหมด', live.length, 'inbox', 'wait', ''],
+    ['รอพิจารณา', cnt(['รอพิจารณา']), 'clock', 'hold', 'รอพิจารณา'],
+    ['ส่งกลับแก้ไข', returned, 'undo', 'warn', 'ส่งกลับแก้ไข'],
+    ['เห็นชอบ / อนุมัติ', cnt(['เห็นชอบ', 'อนุมัติ']), 'check', 'ok', 'ผ่าน']
+  ].map(k => `<div class="card kpi" data-act="kpi" data-st="${k[4]}" role="button" tabindex="0"><div class="ic t-${k[3]}">${icon(k[2])}</div><div><b class="mono">${k[1]}</b><small>${k[0]}</small></div></div>`).join('');
+
+  const byCat = S.boot.cats.map(c => ({ k: c.key, t: c.name, n: live.filter(r => r.catKey === c.key).length })).filter(x => x.n).sort((a, b) => b.n - a.n);
+  let second = '';
+  if (u.role === 'admin') {
+    const byProv = S.boot.provinces.map(p => ({ k: p, t: p, n: live.filter(r => r.prov === p).length })).filter(x => x.n).sort((a, b) => b.n - a.n);
+    second = `<div class="card"><div class="card-h"><h3>แยกตามจังหวัด</h3></div><div class="card-b">${barsHtml(byProv, 'prov')}</div></div>`;
+  } else if (u.role === 'prov') {
+    const byOrg = S.boot.orgs.map(o => ({ k: o.org, t: o.org, n: live.filter(r => r.org === o.org).length })).filter(x => x.n).sort((a, b) => b.n - a.n);
+    second = `<div class="card"><div class="card-h"><h3>แยกตามหน่วยงาน</h3></div><div class="card-b">${barsHtml(byOrg, 'org')}</div></div>`;
+  }
+  const recent = scoped().slice().sort((a, b) => String(b.reviewedAt || b.updatedAt || '').localeCompare(String(a.reviewedAt || a.updatedAt || ''))).slice(0, 6);
+  const feed = `<div class="card"><div class="card-h"><h3>ความเคลื่อนไหวล่าสุด</h3><button class="btn sm ghost" data-act="go" data-v="list">ดูทั้งหมด ${icon('arrowRight')}</button></div>
+    <div class="card-b" style="padding-top:4px;padding-bottom:4px">${recent.length ? `<div class="feed">${recent.map(r => `<div class="feed-i" data-act="open" data-id="${esc(r.id)}">
+      <div class="t"><b>${r.posno ? esc(r.posno) + ' · ' : ''}${esc(r.pos)}</b><small>${esc(r.id)} · ${esc(r.org)} · ${ago(r.reviewedAt || r.updatedAt)}</small></div>${chip(r.status)}</div>`).join('')}</div>`
+      : emptyHtml('inbox', 'ยังไม่มีความเคลื่อนไหว', 'คำขอที่ส่งหรือพิจารณาแล้วจะแสดงที่นี่')}</div></div>`;
+
+  return `<div class="stack">
+    <div class="hero">
+      <div class="card welcome">
+        <h2>${greet}, ${esc((u.name || u.username).split(' ')[0])}</h2>
+        <p>${esc(scopeTxt)}${returned ? ` · มี <b>${returned}</b> คำขอที่เขตส่งกลับให้แก้ไข` : ''}</p>
+        <div class="row">
+          ${(or || isAdmin()) ? `<button class="btn" data-act="go" data-v="new">${icon('plus')} ส่งคำขอใหม่</button>` : ''}
+          ${isAdmin() && cnt(['รอพิจารณา']) ? `<button class="btn glass" data-act="go" data-v="review">${icon('clipboard')} พิจารณา ${cnt(['รอพิจารณา'])} รายการ</button>` : ''}
+          ${!isAdmin() && returned ? `<button class="btn glass" data-act="kpi" data-st="ส่งกลับแก้ไข">${icon('undo')} ดูรายการที่ต้องแก้ไข</button>` : ''}
+        </div>
+      </div>
+      ${roundHtml}
+    </div>
+    <div class="kpis">${kpis}</div>
+    <div class="grid ${second ? 'g2' : ''}">
+      <div class="card"><div class="card-h"><h3>แยกตามประเภทคำขอ</h3></div><div class="card-b">${barsHtml(byCat, 'cat')}</div></div>
+      ${second || ''}
+    </div>
+    ${feed}
+  </div>`;
+}
+
+/* ───────────── new / edit request ───────────── */
+function viewNew() {
+  const or = openRound();
+  if (!S.form && !isAdmin() && !or) {
+    return `<div class="card">${emptyHtml('calendar', 'ยังไม่เปิดรับคำขอ', 'ขณะนี้ไม่มีรอบการประชุมที่เปิดรับคำขอ กรุณาติดตามประกาศจากเขต')}</div>`;
+  }
+  if (!S.form) {
+    return `<div class="stack">
+      ${or ? `<div class="alert info">${icon('calendar')}<span>คำขอจะเข้าสู่ <b>${esc(or.name)}</b>${or.month ? ' (บัญชีเดือน' + esc(or.month) + ')' : ''}${or.closeDate ? ' · ปิดรับ ' + fmtDate(or.closeDate, 1) : ''}</span></div>` : ''}
+      <div><h2 style="font-size:20px">เลือกประเภทคำขอ</h2><p class="muted" style="margin:4px 0 0">ฟอร์มจะแสดงเฉพาะช่องที่ประเภทนั้นต้องใช้</p></div>
+      <div class="cats">${S.boot.cats.map(c => `<button class="catcard" style="--c:${catColor(c.key)}" data-act="pick-cat" data-k="${c.key}">
+        <div class="ic">${icon(c.icon)}</div><span class="staff">${esc(c.staff)}</span><b>${esc(c.name)}</b><p>${esc(c.desc)}</p></button>`).join('')}</div>
+    </div>`;
+  }
+  return formHtml();
+}
+
+function shortOf(d) {
+  const f = d.frame, a = d.actual;
+  return (f === '' || f == null || a === '' || a == null || isNaN(f) || isNaN(a)) ? '' : Number(f) - Number(a);
+}
+
+/** กรอบ − ปฏิบัติงานจริง → ขาด (กรอบมากกว่า) / เกิน (กรอบน้อยกว่า) / พอดีกรอบ */
+function gapOf(sh) {
+  if (sh === '' || sh == null || isNaN(sh)) return { t: '–', c: '' };
+  sh = Number(sh);
+  return sh > 0 ? { t: 'ขาด ' + sh, c: 'pos' } : sh < 0 ? { t: 'เกิน ' + -sh, c: 'over' } : { t: 'พอดีกรอบ', c: 'zero' };
+}
+
+function fieldHtml(cat, k, val, required, cls) {
+  const F = cat.selects && cat.selects[k] ? Object.assign({}, S.boot.fields[k], { type: 'select', list: cat.selects[k] }) : S.boot.fields[k], id = 'f_' + k, lbl = labelOf(cat, k), v = val == null ? '' : String(val);
+  let ctl;
+  if (F.type === 'org') {
+    if (S.boot.user.role === 'unit') ctl = `<input class="input" id="${id}" name="org" value="${esc(S.boot.user.org)}" readonly>`;
+    else {
+      const groups = S.boot.provinces.map(p => {
+        const os = S.boot.orgs.filter(o => o.prov === p);
+        return os.length ? `<optgroup label="${esc(p)}">${os.map(o => `<option ${o.org === v ? 'selected' : ''}>${esc(o.org)}</option>`).join('')}</optgroup>` : '';
+      }).join('');
+      ctl = `<select class="input" id="${id}" name="org"><option value="">— เลือกหน่วยงาน —</option>${groups}</select>`;
+    }
+  } else if (F.type === 'select') {
+    const list = S.boot.lists[F.list];
+    ctl = `<select class="input" id="${id}" name="${k}"><option value="">— เลือก —</option>${list.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}${v && list.indexOf(v) < 0 ? `<option selected>${esc(v)}</option>` : ''}</select>`;
+  } else if (F.type === 'combo') {
+    ctl = `<input class="input" id="${id}" name="${k}" list="dl_${k}" value="${esc(v)}" placeholder="เลือกจากรายการ หรือพิมพ์เอง"><datalist id="dl_${k}">${S.boot.lists[F.list].map(o => `<option value="${esc(o)}">`).join('')}</datalist>`;
+  } else if (F.type === 'textarea') {
+    ctl = `<textarea class="input" id="${id}" name="${k}" rows="3" placeholder="${esc(F.ph || '')}">${esc(v)}</textarea>`;
+  } else if (F.type === 'number') {
+    ctl = `<input class="input mono" id="${id}" name="${k}" type="number" min="0" step="1" inputmode="numeric" value="${esc(v)}" placeholder="0">`;
+  } else {
+    ctl = `<input class="input ${F.mono ? 'mono' : ''}" id="${id}" name="${k}" type="${F.type === 'url' ? 'url' : 'text'}" value="${esc(v)}" placeholder="${esc(F.ph || '')}" ${k === 'posno' ? 'inputmode="numeric" autocomplete="off"' : ''}>`;
+  }
+  const hint = k === 'posno' ? `<span class="hint" id="posnoHint">${posnoHint(v)}</span>` : '';
+  return `<div class="field ${cls || ''}" data-f="${k}"><label for="${id}">${esc(lbl)}${required ? '<span class="req">*</span>' : ''}</label>${ctl}${hint}<span class="msg" hidden></span></div>`;
+}
+
+/** แจ้งเตือนทันทีเมื่อเลขตำแหน่งนี้เคยมีคำขอแล้ว */
+function posnoHint(v) {
+  v = String(v || '').trim();
+  if (!v) return '';
+  const id = S.form && S.form.id;
+  const hits = S.reqs.filter(r => r.posno === v && r.id !== id && r.status !== 'ถอนเรื่อง');
+  if (!hits.length) return '';
+  return `<span style="color:var(--warn)">${icon('alert')} เลขนี้มีคำขอแล้ว ${hits.length} รายการ: ${hits.slice(0, 2).map(r => esc(r.id) + ' (' + esc(r.status) + (roundOf(r.round) ? ', ' + esc(roundOf(r.round).name) : '') + ')').join(', ')}</span>`;
+}
+
+function formHtml() {
+  const f = S.form, cat = catOf(f.catKey), d = f.data, B = S.boot;
+  const req = ['org', 'unit'].concat(cat.required || []);
+  const fld = (k, cls) => fieldHtml(cat, k, d[k], req.indexOf(k) >= 0, cls);
+  const posFields = cat.fields.filter(k => ['frame', 'actual', 'reason'].indexOf(k) < 0);
+  const hasFrame = cat.fields.indexOf('frame') >= 0;
+  const more = (cat.fields.indexOf('reason') >= 0 ? ['reason'] : []).concat(B.tailFields);
+  const sh = shortOf(d);
+  const curRound = d.round || (openRound() || {}).id;
+  let n = 0;
+  return `<form class="card" id="reqForm" novalidate style="--c:${catColor(cat.key)}" onsubmit="return false">
+    <div class="formhead"><div class="ic">${icon(cat.icon)}</div>
+      <div style="flex:1;min-width:0"><span class="muted" style="font-size:13px">${esc(cat.staff)}${f.id ? ' · ' + esc(f.id) : ''}</span><h2>${esc(cat.name)}</h2></div>
+      ${f.id ? '' : `<button type="button" class="btn sm" data-act="change-cat">${icon('swap')} เปลี่ยนประเภท</button>`}</div>
+    ${f.id && d.status === 'ส่งกลับแก้ไข' && d.reviewNote ? `<div class="sec"><div class="alert warn">${icon('alert')}<span><b>ข้อเสนอแนะจากเขต:</b> ${esc(d.reviewNote)}</span></div></div>` : ''}
+    ${isAdmin() ? `<div class="sec"><h4><span class="n">${++n}</span>รอบการประชุม</h4><div class="grid g2"><div class="field"><label for="f_round">รอบ</label>
+      <select class="input" id="f_round" name="round">${B.rounds.slice().reverse().map(r => `<option value="${esc(r.id)}" ${String(curRound) === String(r.id) ? 'selected' : ''}>${esc(r.name)} · ${esc(r.status)}</option>`).join('')}</select></div></div></div>` : ''}
+    <div class="sec"><h4><span class="n">${++n}</span>หน่วยงาน</h4><div class="grid g3">${fld('org')}${fld('unit')}${fld('dept')}</div></div>
+    <div class="sec"><h4><span class="n">${++n}</span>ข้อมูลตำแหน่ง</h4><div class="grid g2">${posFields.map(k => fld(k, ['newpos', 'newunit'].indexOf(k) >= 0 ? 'spanall' : '')).join('')}</div></div>
+    ${hasFrame ? `<div class="sec"><h4><span class="n">${++n}</span>อัตรากำลัง</h4><div class="grid g3">${fld('frame')}${fld('actual')}
+      <div class="field"><label>ขาด / เกิน (กรอบ-ปฏิบัติงานจริง)</label><div class="shortbox ${gapOf(sh).c}" id="shortBox"><b class="mono">${gapOf(sh).t}</b></div></div></div></div>` : ''}
+    <div class="sec"><h4><span class="n">${++n}</span>รายละเอียดเพิ่มเติม</h4><div class="grid">${more.map(k => fld(k)).join('')}</div></div>
+    <div class="formfoot">
+      <button type="button" class="btn ghost" data-act="cancel-form">ยกเลิก</button>
+      ${f.id ? '' : `<button type="button" class="btn" data-act="save-req" data-more="1">${icon('plus')} บันทึกและเพิ่มต่อ</button>`}
+      <button type="button" class="btn primary" data-act="save-req">${icon(f.id ? 'check' : 'send')} ${f.id ? 'บันทึกการแก้ไข' : 'ส่งคำขอ'}</button>
+    </div>
+  </form>`;
+}
+
+function formInput(el) {
+  if (!S.form || !el.name) return;
+  S.form.data[el.name] = el.value;
+  const fe = el.closest('.field');
+  if (fe) { el.classList.remove('err'); const m = fe.querySelector('.msg'); if (m) m.hidden = true; }
+  if (el.name === 'frame' || el.name === 'actual') {
+    const sh = shortOf(S.form.data), box = $('#shortBox');
+    if (box) { const g = gapOf(sh); box.className = 'shortbox ' + g.c; box.querySelector('b').textContent = g.t; }
+  }
+  if (el.name === 'posno') { const h = $('#posnoHint'); if (h) h.innerHTML = posnoHint(el.value); }
+}
+
+async function saveReq(btn, addMore) {
+  const f = S.form, cat = catOf(f.catKey);
+  $$('#reqForm [name]').forEach(el => { f.data[el.name] = el.value; });
+  $$('#reqForm .field').forEach(x => { const i = x.querySelector('.input'); if (i) i.classList.remove('err'); const m = x.querySelector('.msg'); if (m) m.hidden = true; });
+  let first = null;
+  const mark = (k, msg) => {
+    const fe = $(`#reqForm [data-f="${k}"]`); if (!fe) return;
+    fe.querySelector('.input').classList.add('err');
+    const m = fe.querySelector('.msg'); m.textContent = msg; m.hidden = false;
+    first = first || fe;
+  };
+  ['org', 'unit'].concat(cat.required || []).forEach(k => { if (!String(f.data[k] == null ? '' : f.data[k]).trim()) mark(k, 'จำเป็นต้องกรอก'); });
+  ['frame', 'actual'].forEach(k => { if (has(f.data[k]) && (isNaN(f.data[k]) || Number(f.data[k]) < 0)) mark(k, 'ต้องเป็นตัวเลข 0 ขึ้นไป'); });
+  if (first) {
+    first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    first.querySelector('.input').focus({ preventScroll: true });
+    toast('กรุณาตรวจสอบช่องที่มีเครื่องหมาย', 'err');
+    return;
+  }
+  const payload = Object.assign({}, f.data, { catKey: f.catKey, id: f.id || '' });
+  await withBtn(btn, async () => {
+    try {
+      let force = false, res;
+      for (;;) {
+        res = await api('apiSaveRequest', payload, force);
+        if (!res.dup) break;
+        const list = res.dup.map(x => `<li><b>${esc(x.id)}</b> · ${esc(x.cat)} · ${esc(x.org)} · ${esc(x.status)}</li>`).join('');
+        const ok = await confirmBox(`เลขตำแหน่ง <b>${esc(payload.posno)}</b> มีคำขออยู่แล้วในรอบนี้<ul>${list}</ul>ต้องการบันทึกต่อหรือไม่?`, { title: 'พบเลขตำแหน่งซ้ำ', ok: 'บันทึกต่อ' });
+        if (!ok) return;
+        force = true;
+      }
+      upsert(res.item); renderNav();
+      toast(f.id ? 'บันทึกการแก้ไข ' + res.item.id + ' แล้ว' : 'ส่งคำขอ ' + res.item.id + ' เรียบร้อย');
+      if (addMore) {
+        const keep = { org: f.data.org, unit: f.data.unit, dept: f.data.dept, round: f.data.round };
+        S.form = { catKey: f.catKey, data: Object.assign({}, cat.defaults || {}, keep) };
+        renderView(); window.scrollTo({ top: 0, behavior: 'smooth' });
+        const p = $('#f_posno') || $('#f_pos'); if (p) p.focus({ preventScroll: true });
+      } else {
+        S.form = null; go('list'); openDrawer(res.item.id);
+      }
+    } catch (e) { fail(e); }
+  });
+}
+
+/* ───────────── list ───────────── */
+const STAB = [['', 'ทั้งหมด'], ['รอพิจารณา', 'รอพิจารณา'], ['ส่งกลับแก้ไข', 'ส่งกลับแก้ไข'], ['ผ่าน', 'เห็นชอบ/อนุมัติ'], ['อื่น', 'ไม่เห็นชอบ/ชะลอ'], ['ถอนเรื่อง', 'ถอนเรื่อง']];
+function matchSt(r, s) {
+  if (!s) return r.status !== 'ถอนเรื่อง';
+  if (s === 'ผ่าน') return r.status === 'เห็นชอบ' || r.status === 'อนุมัติ';
+  if (s === 'อื่น') return r.status === 'ไม่เห็นชอบ' || r.status === 'ชะลอ';
+  return r.status === s;
+}
+function filtered(ignoreStatus) {
+  const F = S.filters, q = F.q.trim().toLowerCase();
+  return scoped().filter(r => (!F.cat || r.catKey === F.cat) && (!F.prov || r.prov === F.prov) && (!F.org || r.org === F.org) &&
+    (ignoreStatus || matchSt(r, F.status)) &&
+    (!q || [r.id, r.posno, r.pos, r.newpos, r.newunit, r.org, r.unit, r.dept, r.person, r.cond, r.cat].join(' ').toLowerCase().indexOf(q) >= 0));
+}
+
+function viewList() {
+  if (!S.loaded) return `<div class="card"><div class="card-b stack">${'<div class="sk" style="height:44px"></div>'.repeat(6)}</div></div>`;
+  const B = S.boot, u = B.user, F = S.filters;
+  const provSel = u.role === 'admin' ? `<select class="input" data-change="f-prov" aria-label="จังหวัด"><option value="">ทุกจังหวัด</option>${B.provinces.map(p => `<option ${F.prov === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select>` : '';
+  const orgSel = u.role !== 'unit' ? `<select class="input" data-change="f-org" aria-label="หน่วยงาน"><option value="">ทุกหน่วยงาน</option>${B.orgs.filter(o => !F.prov || o.prov === F.prov).map(o => `<option ${F.org === o.org ? 'selected' : ''}>${esc(o.org)}</option>`).join('')}</select>` : '';
+  const exp = isAdmin() ? `<button class="btn icon" data-act="import" title="นำเข้าจากไฟล์บัญชี (.xlsx)" aria-label="นำเข้าจากไฟล์บัญชี (.xlsx)">${icon('upload')}</button><button class="btn" data-act="export">${icon('sheet')} ออกบัญชีประจำเดือน</button><button class="btn icon" data-act="export-json" title="ส่งออก JSON สำหรับ Dashboard" aria-label="ส่งออก JSON สำหรับ Dashboard">${icon('download')}</button>` : '';
+  return `<div class="card">
+    <div class="toolbar">
+      <div class="input-wrap">${icon('search')}<input class="input" type="search" id="q" placeholder="ค้นหาเลขตำแหน่ง ชื่อตำแหน่ง หน่วยงาน รหัสคำขอ…" value="${esc(F.q)}" aria-label="ค้นหา"></div>
+      <select class="input" data-change="f-cat" aria-label="ประเภทคำขอ"><option value="">ทุกประเภท</option>${B.cats.map(c => `<option value="${c.key}" ${F.cat === c.key ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select>
+      ${provSel}${orgSel}<span class="spacer"></span>${exp}
+      <button class="btn primary" data-act="go" data-v="new">${icon('plus')} ส่งคำขอ</button>
+    </div>
+    <div id="listArea">${listArea()}</div>
+  </div>`;
+}
+
+function listArea() {
+  const base = filtered(true);
+  const rows = filtered(false).sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+  const tabs = STAB.map(t => `<button class="tab ${S.filters.status === t[0] ? 'on' : ''}" data-act="f-status" data-st="${t[0]}">${t[1]}<span class="n">${base.filter(r => matchSt(r, t[0])).length}</span></button>`).join('');
+  const adm = isAdmin(), allSel = rows.length > 0 && rows.slice(0, S.limit).every(r => S.sel.has(r.id));
+  let body;
+  if (!rows.length) {
+    const anyFilter = S.filters.q || S.filters.cat || S.filters.prov || S.filters.org;
+    body = anyFilter ? emptyHtml('search', 'ไม่พบคำขอที่ตรงเงื่อนไข', 'ลองเปลี่ยนคำค้นหรือตัวกรอง', `<button class="btn" data-act="clear-filters">ล้างตัวกรอง</button>`)
+      : emptyHtml('inbox', 'ยังไม่มีคำขอ', S.round ? 'ยังไม่มีคำขอในรอบการประชุมนี้' : 'เริ่มส่งคำขอแรกได้เลย', `<button class="btn primary" data-act="go" data-v="new">${icon('plus')} ส่งคำขอ</button>`);
+  } else {
+    body = `<div class="tbl-wrap"><table class="tbl"><thead><tr>
+      ${adm ? `<th style="width:40px"><input type="checkbox" class="cb" data-act="sel-all" ${allSel ? 'checked' : ''} aria-label="เลือกทั้งหมด"></th>` : ''}
+      <th>รหัส</th><th>ประเภท</th><th>หน่วยงาน</th><th>ตำแหน่ง</th><th>กรอบ/จริง · ขาด/เกิน</th><th>สถานะ</th><th>อัปเดต</th></tr></thead>
+      <tbody>${rows.slice(0, S.limit).map(rowHtml).join('')}</tbody></table></div>
+      ${rows.length > S.limit ? `<div class="foot-note row"><span>แสดง ${S.limit} จาก ${rows.length} รายการ</span><button class="btn sm" data-act="more">แสดงเพิ่ม</button></div>` : `<div class="foot-note">${rows.length} รายการ</div>`}`;
+  }
+  const bulk = adm && S.sel.size ? `<div class="bulk"><b>เลือก ${S.sel.size} รายการ</b><span class="spacer"></span>
+    ${['เห็นชอบ', 'อนุมัติ', 'ส่งกลับแก้ไข', 'ไม่เห็นชอบ', 'ชะลอ'].map(s => `<button class="btn sm t-${toneOf(s)}" data-act="bulk" data-st="${s}">${esc(s)}</button>`).join('')}
+    <button class="btn sm ghost icon" style="color:inherit" data-act="sel-clear" aria-label="ยกเลิกการเลือก">${icon('x')}</button></div>` : '';
+  return `<div class="tabs">${tabs}</div>${body}${bulk}`;
+}
+function refreshList() { const a = $('#listArea'); if (a) a.innerHTML = listArea(); }
+
+function rowHtml(r) {
+  const to = r.newpos || r.newunit;
+  const fr = has(r.frame) ? `${esc(r.frame)}/${has(r.actual) ? esc(r.actual) : '–'}${has(r.short) ? ` · <span class="s ${gapOf(r.short).c}">${gapOf(r.short).t}</span>` : ''}` : '<span class="muted">–</span>';
+  const sel = S.sel.has(r.id);
+  return `<tr data-act="open" data-id="${esc(r.id)}" class="${sel ? 'sel' : ''}">
+    ${isAdmin() ? `<td class="cbcell"><input type="checkbox" class="cb" data-act="sel" data-id="${esc(r.id)}" ${sel ? 'checked' : ''} aria-label="เลือก ${esc(r.id)}"></td>` : ''}
+    <td class="id mono">${esc(r.id)}</td>
+    <td>${catTag(r)}</td>
+    <td><b>${esc(r.org)}</b><span class="sub">${esc(trunc(r.unit, 60))}</span></td>
+    <td class="pos"><b>${r.posno ? `<span class="mono">${esc(r.posno)}</span> · ` : ''}${esc(r.pos)}</b>${to ? `<span class="arrow">${icon('arrowRight')}<span>${esc(trunc(to, 80))}</span></span>` : ''}</td>
+    <td class="fr">${fr}</td>
+    <td class="st">${chip(r.status)}</td>
+    <td class="sub" style="white-space:nowrap">${ago(r.updatedAt || r.createdAt)}</td>
+  </tr>`;
+}
+
+function reviewModal(ids, status) {
+  const res0 = ['ส่งกลับแก้ไข'].indexOf(status) >= 0 ? '' : status;
+  modal({
+    title: `บันทึกผล "${status}" · ${ids.length} รายการ`,
+    body: `<div class="field"><label for="rvRes">ผลการพิจารณาเขต (ข้อความที่จะลงในบัญชี)</label><input class="input" id="rvRes" value="${esc(res0)}"></div>
+      <div class="field"><label for="rvNote">ข้อเสนอแนะถึงหน่วยงาน</label><textarea class="input" id="rvNote" placeholder="${status === 'ส่งกลับแก้ไข' ? 'ระบุสิ่งที่หน่วยงานต้องแก้ไข' : 'ไม่บังคับ — เว้นว่างเพื่อคงข้อความเดิม'}"></textarea></div>`,
+    foot: `<button class="btn" data-act="modal-close">ยกเลิก</button><button class="btn primary" id="rvOk">${icon('check')} บันทึกผล</button>`,
+    onMount: w => {
+      $('#rvOk', w).onclick = e => withBtn(e.currentTarget, async () => {
+        const note = $('#rvNote', w).value.trim();
+        if (status === 'ส่งกลับแก้ไข' && !note) { toast('กรุณาระบุสิ่งที่ต้องแก้ไข', 'err'); return; }
+        try {
+          const out = await api('apiReview', ids, status, $('#rvRes', w).value, note || null);
+          out.forEach(upsert); S.sel.clear(); closeModal(); refreshList(); renderNav();
+          toast(`บันทึกผล ${out.length} รายการแล้ว`);
+        } catch (err) { fail(err); }
+      });
+    }
+  });
+}
+
+async function doExport(btn) {
+  if (!S.round) { toast('เลือกรอบการประชุมด้านบนก่อนออกบัญชี', 'err'); return; }
+  const rd = roundOf(S.round);
+  const ok = await confirmBox(`สร้าง <b>บัญชีการขอใช้ตำแหน่งว่าง ประจำเดือน ${esc(rd.month || rd.name)}</b> เป็น Google Sheet ใหม่ แยกชีตตามประเภท พร้อมชีตสรุป<br><span class="muted">ไม่รวมคำขอที่ถอนเรื่อง · ไฟล์จะอยู่ใน Google Drive ของเจ้าของระบบ</span>`, { title: 'ออกบัญชีประจำเดือน', ok: 'สร้างไฟล์' });
+  if (!ok) return;
+  await withBtn(btn, async () => {
+    try {
+      const r = await api('apiExportRound', S.round);
+      modal({ title: 'สร้างบัญชีเรียบร้อย',
+        body: `<div class="alert info">${icon('check')}<span>${esc(r.title)} · ${r.count} รายการ</span></div>`,
+        foot: `<a class="btn" href="${esc(r.xlsx)}" target="_blank" rel="noopener">${icon('download')} ดาวน์โหลด .xlsx</a><a class="btn primary" href="${esc(r.url)}" target="_blank" rel="noopener">${icon('sheet')} เปิด Google Sheet</a>` });
+    } catch (e) { fail(e); }
+  });
+}
+
+async function doExportJson(btn) {
+  await withBtn(btn, async () => {
+    try {
+      const data = await api('apiExportJson', S.round || '');
+      const txt = JSON.stringify(data, null, 1);
+      const fname = 'vacancy-requests-' + (S.round || 'all') + '.json';
+      modal({ title: 'ข้อมูลสำหรับ Dashboard', wide: true,
+        body: `<p class="muted" style="margin:0">${data.length} รายการ · รูปแบบเดียวกับ data-2569.json (ไม่มีชื่อบุคคล)</p><textarea class="input mono" id="jsonOut" rows="12" readonly style="font-size:12px">${esc(txt)}</textarea>`,
+        foot: `<button class="btn" id="jsonCp">${icon('copy')} คัดลอก</button><button class="btn primary" id="jsonDl">${icon('download')} ดาวน์โหลด</button>`,
+        onMount: w => { $('#jsonCp', w).onclick = () => copyText(txt); $('#jsonDl', w).onclick = () => download(fname, txt); } });
+    } catch (e) { fail(e); }
+  });
+}
+
+/* ───────────── import (.xlsx) ───────────── */
+let xlsxLib = null;
+function loadXlsx() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  return xlsxLib || (xlsxLib = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = () => res(window.XLSX);
+    s.onerror = () => { xlsxLib = null; rej(new Error('โหลดตัวอ่านไฟล์ Excel ไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่')); };
+    document.head.appendChild(s);
+  }));
+}
+
+/** หัวคอลัมน์ในบัญชีเดิม → ช่องข้อมูล (ตรวจตามลำดับ — กฎที่เจาะจงกว่าอยู่ก่อน) */
+const IMPORT_HEADS = [
+  ['#', /^ลำดับ/], ['org', /สังกัด/], ['newunit', /ส่วนราชการใหม่|หน่วยงานใหม่|ปลายทาง|ย้ายไป/], ['unit', /ส่วนราชการ/], ['posno', /เลขที่/],
+  ['newpos', /ตำแหน่งใหม่|ขอปรับปรุง|ที่ขออนุมัติกำหนด/], ['pos', /ชื่อสายงาน|ชื่อตำแหน่ง/], ['level', /^ระดับ/],
+  ['exec', /บริหาร/], ['cond', /เงื่อนไข/], ['person', /ผู้ที่จะมา|ผู้ขอย้าย|ชื่อ-?สกุล/], ['type', /ประเภทการจ้าง/], ['frame', /กรอบ/],
+  ['actual', /ปฏิบัติ/], ['short', /^ขาด/], ['reason', /เหตุผล/], ['result', /ผลการพิจารณา/], ['note', /หมายเหตุ/]
+];
+const normSheet = s => String(s || '').replace(/[\s.()]/g, '');
+const cellTxt = v => String(v == null ? '' : v).replace(/\r/g, '').split('\n').map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean).join('\n');
+
+/** อ่านสมุดงาน → { sheets:[{name, cat, rows, skip}], rows:[...], roundHint } */
+function parseBook(XLSX, wb) {
+  const B = S.boot, hints = {}, out = { sheets: [], rows: [] };
+  const conds = B.lists.CONDS.map(normSheet);
+  wb.SheetNames.forEach((name, si) => {
+    const meta = wb.Workbook && wb.Workbook.Sheets && wb.Workbook.Sheets[si];
+    if (meta && meta.Hidden) return;
+    const n = normSheet(name);
+    const cat = B.cats.find(c => normSheet(c.sheet) === n || (c.alias || []).some(a => normSheet(a) === n));
+    const grid = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: '', raw: true, blankrows: true });
+    const title = grid.slice(0, 3).map(r => r.join(' ')).join(' ');
+    const m = title.match(/ครั้งที่\s*(\d+\s*\/\s*\d{4})/);
+    if (m) { const k = m[1].replace(/\s/g, ''); hints[k] = (hints[k] || 0) + 1; }
+    const h = grid.findIndex(r => r.some(c => /^ลำดับ/.test(normSheet(c))));
+    const info = { name: name.trim(), cat: cat || null, rows: 0 };
+    out.sheets.push(info);
+    if (h < 0) return;
+    // หัวตาราง 2 แถว: แถวบน + แถวล่าง (ถ้าแถวล่างไม่ใช่ข้อมูล)
+    const top = grid[h], sub = grid[h + 1] || [];
+    const iNo = top.findIndex(c => /^ลำดับ/.test(normSheet(c)));
+    const subIsHead = !/^\d+$/.test(String(sub[iNo]).trim());
+    const col = {};
+    let typeSeen = 0;
+    top.forEach((_, i) => {
+      if (i === iNo) return;
+      const lab = normSheet(top[i]) + (subIsHead ? normSheet(sub[i]) : '');
+      const rule = IMPORT_HEADS.find(r => r[1].test(lab) || r[1].test(normSheet(subIsHead ? sub[i] : '')));
+      if (!rule) return;
+      let k = rule[0];
+      if (k === 'type') k = typeSeen++ ? 'typenew' : 'typeold';
+      if (!(k in col)) col[k] = i;
+    });
+    if (!('org' in col) && Object.values(col).indexOf(iNo + 1) < 0) col.org = iNo + 1; // บางชีตหัว "สังกัด" หาย
+    const start = h + (subIsHead ? 2 : 1);
+    for (let r = start; r < grid.length; r++) {
+      const row = grid[r], get = k => (k in col ? cellTxt(row[col[k]]) : '');
+      if (!cat) { if (/^\d+$/.test(cellTxt(row[iNo]))) info.rows++; continue; }
+      const d = { org: get('org'), posno: get('posno'), pos: get('pos') };
+      if (!d.pos && !d.posno) continue;
+      info.rows++;
+      ['unit', 'level', 'exec', 'newpos', 'newunit', 'cond', 'person', 'typeold', 'typenew', 'reason', 'note', 'result']
+        .forEach(k => { d[k] = get(k); });
+      ['frame', 'actual'].forEach(k => { const v = String(row[col[k]] == null ? '' : row[col[k]]).replace(/[^\d.]/g, ''); d[k] = k in col && v !== '' ? Math.round(Number(v)) : ''; });
+      d.org = d.org.replace(/\s+/g, ' ');
+      // พรก: ช่อง "ตำแหน่งใหม่" มักเป็นเงื่อนไข เช่น บรรจุผู้ได้รับคัดเลือก
+      if (cat.fields.indexOf('cond') >= 0 && !d.cond && conds.indexOf(normSheet(d.newpos)) >= 0) { d.cond = d.newpos; d.newpos = ''; }
+      d.catKey = cat.key;
+      d.ref = info.name + ' ลำดับ ' + (cellTxt(row[iNo]) || (r + 1));
+      d.orgOk = B.orgs.some(o => o.org === d.org);
+      out.rows.push(d);
+    }
+  });
+  const best = Object.keys(hints).sort((a, b) => hints[b] - hints[a])[0];
+  out.roundHint = best || '';
+  return out;
+}
+
+function importModal() {
+  const B = S.boot;
+  const def = (B.rounds.find(r => String(r.id) === String(S.round)) || openRound() || B.rounds[B.rounds.length - 1] || {}).id;
+  let parsed = null;
+  modal({ title: 'นำเข้าจากไฟล์บัญชีการขอใช้ตำแหน่งว่าง', wide: true,
+    body: `<p class="muted" style="margin:0">เลือกไฟล์ .xlsx รูปแบบเดียวกับบัญชีประจำเดือน — ระบบจับคู่ชื่อชีตกับประเภทคำขอ และหัวคอลัมน์กับช่องข้อมูลให้อัตโนมัติ ตรวจสรุปก่อนกดนำเข้า</p>
+      <div class="field"><label for="impFile">ไฟล์บัญชี (.xlsx)</label><input class="input" id="impFile" type="file" accept=".xlsx,.xls"></div>
+      <div class="grid g2">
+        <div class="field"><label for="impRound">นำเข้าเป็นคำขอของรอบ</label><select class="input" id="impRound">${B.rounds.map(r => `<option value="${esc(r.id)}" ${String(r.id) === String(def) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''}</option>`).join('')}</select></div>
+        <div class="field"><label for="impSt">สถานะเริ่มต้น</label><select class="input" id="impSt">${B.statuses.filter(s => s.key !== 'ถอนเรื่อง').map(s => `<option>${esc(s.key)}</option>`).join('')}</select></div>
+      </div>
+      <div id="impSum"></div>`,
+    foot: `<button class="btn" data-act="modal-close">ยกเลิก</button><button class="btn primary" id="impOk" disabled>${icon('upload')} นำเข้า</button>`,
+    onMount: w => {
+      const sum = $('#impSum', w), ok = $('#impOk', w);
+      $('#impFile', w).onchange = async e => {
+        const f = e.target.files[0]; parsed = null; ok.disabled = true;
+        if (!f) { sum.innerHTML = ''; return; }
+        sum.innerHTML = `<div class="row muted"><span class="spin"></span> กำลังอ่านไฟล์…</div>`;
+        busy(1);
+        try {
+          const XLSX = await loadXlsx();
+          parsed = parseBook(XLSX, XLSX.read(await f.arrayBuffer(), { type: 'array' }));
+        } catch (err) { sum.innerHTML = `<div class="alert">${icon('alert')}<span>อ่านไฟล์ไม่ได้: ${esc(err.message || err)}</span></div>`; return; } finally { busy(-1); }
+        if (parsed.roundHint) {
+          const rd = B.rounds.find(r => normSheet(r.name).indexOf(parsed.roundHint.replace(/\s/g, '')) >= 0);
+          if (rd) $('#impRound', w).value = rd.id;
+        }
+        renderImportSummary(sum, parsed);
+        ok.disabled = !parsed.rows.some(r => r.orgOk);
+      };
+      ok.onclick = () => withBtn(ok, async () => {
+        const good = parsed.rows.filter(r => r.orgOk).map(r => { const o = Object.assign({}, r); delete o.orgOk; return o; });
+        const rid = $('#impRound', w).value, rd = roundOf(rid);
+        try {
+          const res = await api('apiImportRequests', rid, good, $('#impSt', w).value);
+          res.added.forEach(upsert);
+          S.round = String(rid); renderRoundPick(); renderNav(); renderView();
+          const bad = parsed.rows.filter(r => !r.orgOk).map(r => r.ref + ': ไม่พบหน่วยงาน "' + r.org + '"').concat(res.errors);
+          modal({ title: 'นำเข้าเรียบร้อย',
+            body: `<div class="alert info">${icon('check')}<span>เพิ่ม <b>${res.added.length}</b> คำขอ เข้ารอบ ${esc(rd ? rd.name : rid)}</span></div>
+              ${res.skipped.length ? `<div class="alert warn">${icon('alert')}<span>ข้าม ${res.skipped.length} รายการที่มีอยู่แล้วในรอบนี้ (ซ้ำ)<br><span style="font-size:13px">${res.skipped.map(esc).join(' · ')}</span></span></div>` : ''}
+              ${bad.length ? `<div class="alert">${icon('alert')}<span>ไม่ได้นำเข้า ${bad.length} รายการ<br><span style="font-size:13px">${bad.map(esc).join('<br>')}</span></span></div>` : ''}`,
+            foot: `<button class="btn primary" data-act="modal-close">ตกลง</button>` });
+        } catch (err) { fail(err); }
+      });
+    } });
+}
+
+function renderImportSummary(el, p) {
+  const lines = p.sheets.filter(s => s.rows || s.cat).map(s =>
+    `<tr><td>${esc(s.name)}</td><td>${s.cat ? catTag({ catKey: s.cat.key, cat: s.cat.name }) : `<span class="chip t-warn nodot">ไม่มีประเภทคำขอที่ตรงกัน — ข้าม</span>`}</td><td class="mono" style="text-align:right">${s.rows}</td></tr>`).join('');
+  const bad = p.rows.filter(r => !r.orgOk);
+  const badOrgs = Array.from(new Set(bad.map(r => r.org || '(ว่าง)')));
+  const total = p.rows.length - bad.length;
+  el.innerHTML = `${p.roundHint ? `<div class="alert info">${icon('calendar')}<span>ไฟล์นี้ระบุ <b>ครั้งที่ ${esc(p.roundHint)}</b></span></div>` : ''}
+    <div class="tbl-wrap" style="border:1px solid var(--border);border-radius:10px"><table class="tbl imp"><thead><tr><th>ชีตในไฟล์</th><th>นำเข้าเป็น</th><th style="text-align:right">รายการ</th></tr></thead><tbody>${lines}</tbody></table></div>
+    ${bad.length ? `<div class="alert warn">${icon('alert')}<span>${bad.length} รายการจะไม่ถูกนำเข้า เพราะไม่พบสังกัดในรายชื่อหน่วยงาน: <b>${badOrgs.map(esc).join(', ')}</b><br><span style="font-size:13px">เพิ่มหน่วยงานที่ ตั้งค่า → หน่วยงาน แล้วเลือกไฟล์ใหม่</span></span></div>` : ''}
+    <div class="row"><b>พร้อมนำเข้า ${total} รายการ</b><span class="muted" style="font-size:13px">· รายการที่มีอยู่แล้วในรอบ (ซ้ำ) จะถูกข้าม</span></div>`;
+}
+
+/* ───────────── drawer ───────────── */
+function closeDrawer() { $$('.drawer,.scrim').forEach(e => e.remove()); }
+
+function openDrawer(id) {
+  const r = S.reqs.find(x => x.id === id); if (!r) return;
+  closeDrawer();
+  const c = catOf(r.catKey) || { fields: [], name: r.cat, icon: 'inbox', labels: {} };
+  const B = S.boot, rd = roundOf(r.round);
+  const keys = B.headFields.concat(c.fields, B.tailFields);
+  let dl = '';
+  keys.forEach(k => {
+    if (has(r[k])) {
+      const v = esc(r[k]);
+      dl += `<dt>${esc(labelOf(c, k))}</dt><dd>${v}</dd>`;
+    }
+    if (k === 'actual' && has(r.short)) { const g = gapOf(r.short); dl += `<dt>ขาด / เกิน (กรอบ-ปฏิบัติงานจริง)</dt><dd><b style="color:${g.c === 'pos' ? 'var(--bad)' : g.c === 'over' ? 'var(--warn)' : 'var(--ok)'}">${g.t}</b></dd>`; }
+  });
+  const tl = [`<li><b>ส่งคำขอ</b><small>${fmtDT(r.createdAt)} · ${esc(r.createdBy)}</small></li>`];
+  if (r.updatedAt && r.updatedAt !== r.createdAt) tl.push(`<li><b>แก้ไขล่าสุด</b><small>${fmtDT(r.updatedAt)} · ${esc(r.updatedBy)}</small></li>`);
+  if (r.reviewedAt) tl.push(`<li><b>เขตพิจารณา: ${esc(r.status)}</b><small>${fmtDT(r.reviewedAt)} · ${esc(r.reviewedBy)}</small></li>`);
+
+  const acts = [];
+  if (canEdit(r)) acts.push(`<button class="btn primary" data-act="edit-req" data-id="${esc(r.id)}">${icon('edit')} แก้ไข</button>`);
+  if (canEdit(r) && !isAdmin()) acts.push(`<button class="btn" data-act="withdraw-req" data-id="${esc(r.id)}">${icon('undo')} ถอนเรื่อง</button>`);
+  if (isAdmin()) acts.push(`<span class="spacer"></span><button class="btn danger" data-act="delete-req" data-id="${esc(r.id)}">${icon('trash')} ลบ</button>`);
+  if (!acts.length) acts.push(`<span class="muted" style="font-size:14px">${r.status === 'ถอนเรื่อง' ? 'ถอนเรื่องแล้ว' : 'เขตพิจารณาแล้ว หรือรอบนี้ปิดรับ — แก้ไขไม่ได้'}</span>`);
+
+  const html = `<div class="scrim" data-act="drawer-close"></div>
+  <aside class="drawer" role="dialog" aria-modal="true" aria-label="รายละเอียดคำขอ ${esc(r.id)}">
+    <div class="drawer-h"><div style="flex:1;min-width:0">${catTag(r)}
+      <h2>${r.posno ? esc(r.posno) + ' · ' : ''}${esc(r.pos)}</h2>
+      <div class="row">${chip(r.status)}<span class="muted mono">${esc(r.id)}</span>${rd ? `<span class="muted">· ${esc(rd.name)}</span>` : ''}</div></div>
+      <button class="btn ghost icon" data-act="drawer-close" aria-label="ปิด">${icon('x')}</button></div>
+    <div class="drawer-b">
+      ${r.reviewNote ? `<div class="alert ${r.status === 'ส่งกลับแก้ไข' ? 'warn' : 'info'}">${icon('alert')}<span><b>ข้อเสนอแนะจากเขต:</b> ${esc(r.reviewNote)}</span></div>` : ''}
+      ${r.result && !isAdmin() ? `<div class="panel"><h4>${icon('check')} ผลการพิจารณาเขต</h4><div>${esc(r.result)}</div></div>` : ''}
+      <dl class="dl">${dl}</dl>
+      ${isAdmin() ? reviewPanel(r) : ''}
+      <div><h4 style="margin:0 0 12px">ประวัติ</h4><ul class="timeline">${tl.join('')}</ul></div>
+    </div>
+    <div class="drawer-f">${acts.join('')}</div>
+  </aside>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  const btn = $('.drawer .drawer-h .btn'); if (btn) btn.focus();
+}
+
+function reviewPanel(r) {
+  const sts = S.boot.statuses.map(s => s.key).filter(s => s !== 'ถอนเรื่อง');
+  return `<div class="panel" id="rvPanel"><h4>${icon('clipboard')} บันทึกผลการพิจารณา</h4>
+    <div class="stack" style="gap:12px">
+      <div class="seg" role="radiogroup" aria-label="สถานะ">${sts.map(s => `<button type="button" role="radio" aria-checked="${r.status === s}" class="t-${toneOf(s)} ${r.status === s ? 'on' : ''}" data-act="rv-pick" data-st="${esc(s)}">${esc(s)}</button>`).join('')}</div>
+      <div class="field"><label for="rvResult">ผลการพิจารณาเขต (ลงในบัญชี)</label><input class="input" id="rvResult" value="${esc(r.result || '')}" placeholder="เช่น เห็นชอบ"></div>
+      <div class="field"><label for="rvNote2">ข้อเสนอแนะถึงหน่วยงาน</label><textarea class="input" id="rvNote2" rows="2">${esc(r.reviewNote || '')}</textarea></div>
+      <div class="row"><span class="spacer"></span><button class="btn primary" data-act="rv-save" data-id="${esc(r.id)}">${icon('check')} บันทึกผล</button></div>
+    </div></div>`;
+}
+
+/* ───────────── settings ───────────── */
+function viewSettings() {
+  const t = S.settingsTab;
+  const tabs = [['users', 'ผู้ใช้งาน', 'users'], ['rounds', 'รอบการประชุม', 'calendar'], ['orgs', 'หน่วยงาน', 'building']];
+  return `<div class="stack"><div class="subtabs" role="tablist">${tabs.map(x => `<button role="tab" aria-selected="${t === x[0]}" class="${t === x[0] ? 'on' : ''}" data-act="stab" data-k="${x[0]}">${icon(x[2])} ${x[1]}</button>`).join('')}</div>
+    <div id="setArea">${t === 'users' ? usersHtml() : t === 'rounds' ? roundsHtml() : orgsHtml()}</div></div>`;
+}
+function refreshSettings() { const a = $('#setArea'); if (a) a.innerHTML = S.settingsTab === 'users' ? usersHtml() : S.settingsTab === 'rounds' ? roundsHtml() : orgsHtml(); }
+
+async function loadUsers() {
+  try { S.users = await api('apiListUsers'); if (S.view === 'settings') refreshSettings(); } catch (e) { fail(e); }
+}
+
+function usersHtml() {
+  if (!S.users) return `<div class="card"><div class="card-b stack">${'<div class="sk" style="height:44px"></div>'.repeat(4)}</div></div>`;
+  const tone = { admin: 't-hold', prov: 't-wait', unit: 't-ok' };
+  return `<div class="card"><div class="card-h"><h3>ผู้ใช้งาน <span class="muted" style="font-weight:400">(${S.users.length})</span></h3>
+    <button class="btn primary sm" data-act="user-add">${icon('plus')} เพิ่มผู้ใช้</button></div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>ผู้ใช้</th><th>บทบาท</th><th>สังกัด</th><th>สถานะ</th><th>เข้าใช้ล่าสุด</th><th></th></tr></thead><tbody>
+    ${S.users.map(u => `<tr data-act="user-edit" data-u="${esc(u.username)}">
+      <td><div class="row" style="flex-wrap:nowrap"><span class="avatar" style="width:34px;height:34px;font-size:13px">${esc(initials(u.name || u.username))}</span><div><b>${esc(u.name || '–')}</b><span class="sub mono">${esc(u.username)}</span></div></div></td>
+      <td><span class="chip nodot ${tone[u.role] || ''}">${esc(u.roleName)}</span></td>
+      <td>${esc(u.org || u.prov || 'ทั้งเขต')}</td>
+      <td>${u.active ? '<span class="chip t-ok">ใช้งาน</span>' : '<span class="chip t-mute">ปิดใช้งาน</span>'}${u.mustChange ? ' <span class="chip nodot t-warn">รอเปลี่ยนรหัส</span>' : ''}</td>
+      <td class="sub">${u.lastLogin ? ago(u.lastLogin) : 'ยังไม่เคย'}</td>
+      <td style="white-space:nowrap"><button class="btn sm ghost icon" data-act="user-reset" data-u="${esc(u.username)}" title="รีเซ็ตรหัสผ่าน" aria-label="รีเซ็ตรหัสผ่าน ${esc(u.username)}">${icon('key')}</button>${u.username === S.boot.user.username ? '' : `<button class="btn sm ghost icon" style="color:var(--bad)" data-act="user-del" data-u="${esc(u.username)}" title="ลบผู้ใช้" aria-label="ลบผู้ใช้ ${esc(u.username)}">${icon('trash')}</button>`}</td>
+    </tr>`).join('')}</tbody></table></div></div>`;
+}
+
+function orgOptions(sel) {
+  return S.boot.provinces.map(p => {
+    const os = S.boot.orgs.filter(o => o.prov === p);
+    return os.length ? `<optgroup label="${esc(p)}">${os.map(o => `<option ${o.org === sel ? 'selected' : ''}>${esc(o.org)}</option>`).join('')}</optgroup>` : '';
+  }).join('');
+}
+
+function userModal(u) {
+  const isNew = !u; u = u || { role: 'unit', active: true };
+  modal({
+    title: isNew ? 'เพิ่มผู้ใช้' : 'แก้ไขผู้ใช้ ' + u.username, wide: true,
+    body: `<div class="grid g2">
+      <div class="field"><label for="uU">ชื่อผู้ใช้ <span class="req">*</span></label><input class="input mono" id="uU" value="${esc(u.username || '')}" ${isNew ? '' : 'readonly'} placeholder="เช่น nkp.hr" autocapitalize="none" spellcheck="false"><span class="hint">ภาษาอังกฤษพิมพ์เล็ก ตัวเลข . _ - ยาว 3–30 ตัว</span></div>
+      <div class="field"><label for="uN">ชื่อ-สกุล</label><input class="input" id="uN" value="${esc(u.name || '')}"></div>
+      <div class="field"><label for="uR">บทบาท</label><select class="input" id="uR">${Object.keys(S.boot.roles).map(k => `<option value="${k}" ${u.role === k ? 'selected' : ''}>${esc(S.boot.roles[k])}</option>`).join('')}</select>
+        <span class="hint" id="uRh"></span></div>
+      <div class="field" id="uPF"><label for="uP">จังหวัด</label><select class="input" id="uP"><option value="">— เลือก —</option>${S.boot.provinces.map(p => `<option ${u.prov === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select></div>
+      <div class="field" id="uOF"><label for="uO">หน่วยงาน</label><select class="input" id="uO"><option value="">— เลือก —</option>${orgOptions(u.org)}</select></div>
+      <div class="field"><label for="uE">อีเมล</label><input class="input" id="uE" type="email" value="${esc(u.email || '')}"></div>
+      <div class="field"><label for="uT">โทรศัพท์</label><input class="input" id="uT" value="${esc(u.phone || '')}"></div>
+      <div class="field" style="justify-content:flex-end"><label class="toggle"><input type="checkbox" id="uA" ${u.active ? 'checked' : ''}> เปิดใช้งาน</label></div>
+    </div>`,
+    foot: `<button class="btn" data-act="modal-close">ยกเลิก</button><button class="btn primary" id="uOk">${icon('check')} ${isNew ? 'สร้างผู้ใช้' : 'บันทึก'}</button>`,
+    onMount: w => {
+      const hints = { admin: 'เห็นและพิจารณาคำขอทุกหน่วยงาน จัดการผู้ใช้ รอบ และหน่วยงาน', prov: 'เห็นและส่งคำขอแทนทุกหน่วยงานในจังหวัด', unit: 'เห็นและส่งคำขอเฉพาะหน่วยงานของตนเอง' };
+      const sync = () => { const r = $('#uR', w).value; $('#uPF', w).hidden = r !== 'prov'; $('#uOF', w).hidden = r !== 'unit'; $('#uRh', w).textContent = hints[r]; };
+      $('#uR', w).onchange = sync; sync();
+      $('#uOk', w).onclick = e => withBtn(e.currentTarget, async () => {
+        const data = { username: $('#uU', w).value.trim().toLowerCase(), name: $('#uN', w).value, role: $('#uR', w).value, prov: $('#uP', w).value,
+          org: $('#uO', w).value, email: $('#uE', w).value, phone: $('#uT', w).value, active: $('#uA', w).checked };
+        try {
+          const res = await api('apiSaveUser', data, isNew);
+          const i = S.users.findIndex(x => x.username === res.user.username);
+          if (i >= 0) S.users[i] = res.user; else S.users.push(res.user);
+          refreshSettings();
+          if (res.password) secretModal('สร้างผู้ใช้เรียบร้อย', res.user.username, res.password); else { closeModal(); toast('บันทึกผู้ใช้แล้ว'); }
+        } catch (err) { fail(err); }
+      });
+    }
+  });
+}
+
+function secretModal(title, username, pw) {
+  const text = `ระบบคำขอใช้ตำแหน่งว่าง เขตสุขภาพที่ 1\n${S.boot.url ? 'ลิงก์: ' + S.boot.url + '\n' : ''}ชื่อผู้ใช้: ${username}\nรหัสผ่านชั่วคราว: ${pw}\n(ระบบจะให้ตั้งรหัสผ่านใหม่เมื่อเข้าใช้ครั้งแรก)`;
+  modal({ title: title,
+    body: `<p style="margin:0">ส่งข้อมูลนี้ให้ผู้ใช้ <b>${esc(username)}</b> — รหัสผ่านจะแสดงเพียงครั้งเดียว</p>
+      <div class="secret">${icon('key')}<code class="mono">${esc(pw)}</code></div>`,
+    foot: `<button class="btn" data-act="modal-close">ปิด</button><button class="btn primary" id="cpSecret">${icon('copy')} คัดลอกข้อความสำหรับส่งต่อ</button>`,
+    onMount: w => { $('#cpSecret', w).onclick = () => copyText(text); } });
+}
+
+function roundsHtml() {
+  const rs = S.boot.rounds.slice().reverse();
+  const tone = { 'เปิดรับ': 't-ok', 'ปิดรับ': 't-warn', 'ประชุมแล้ว': 't-mute' };
+  return `<div class="stack"><div class="row"><p class="muted" style="margin:0;flex:1">เปิดรับได้ครั้งละ 1 รอบ — หน่วยงานส่ง/แก้ไขคำขอได้เฉพาะรอบที่ "เปิดรับ"</p>
+    <button class="btn primary" data-act="round-add">${icon('plus')} เพิ่มรอบ</button></div>
+    ${rs.length ? `<div class="rounds">${rs.map(r => {
+      const n = S.reqs.filter(x => String(x.round) === String(r.id) && x.status !== 'ถอนเรื่อง').length;
+      return `<div class="card roundcard"><div class="row"><span class="chip ${tone[r.status] || ''}">${esc(r.status)}</span><span class="spacer"></span>
+        <button class="btn sm ghost icon" data-act="round-edit" data-id="${esc(r.id)}" aria-label="แก้ไขรอบ">${icon('edit')}</button>
+        <button class="btn sm ghost icon" style="color:var(--bad)" data-act="round-del" data-id="${esc(r.id)}" title="ลบรอบ" aria-label="ลบรอบ ${esc(r.name)}">${icon('trash')}</button></div>
+        <div class="big" style="font-size:18px">${esc(r.name)}</div>
+        <dl class="kv"><dt>บัญชีเดือน</dt><dd>${esc(r.month || '–')}</dd><dt>ปิดรับ</dt><dd>${fmtDate(r.closeDate, 1)}</dd><dt>ประชุม</dt><dd>${fmtDate(r.meetDate, 1)}</dd><dt>คำขอ</dt><dd>${n} รายการ</dd></dl></div>`;
+    }).join('')}</div>` : `<div class="card">${emptyHtml('calendar', 'ยังไม่มีรอบการประชุม', 'เพิ่มรอบแรกเพื่อเปิดรับคำขอ')}</div>`}</div>`;
+}
+
+function roundModal(r) {
+  const isNew = !r; r = r || { status: 'เปิดรับ' };
+  const d10 = s => (s ? String(s).slice(0, 10) : '');
+  modal({ title: isNew ? 'เพิ่มรอบการประชุม' : 'แก้ไขรอบการประชุม',
+    body: `<div class="grid g2">
+      <div class="field spanall"><label for="rN">ชื่อรอบ <span class="req">*</span></label><input class="input" id="rN" value="${esc(r.name || '')}" placeholder="เช่น ครั้งที่ 10/2569"></div>
+      <div class="field"><label for="rM">บัญชีประจำเดือน</label><input class="input" id="rM" value="${esc(r.month || '')}" placeholder="เช่น พฤศจิกายน 2569"></div>
+      <div class="field"><label for="rS">สถานะ</label><select class="input" id="rS">${S.boot.roundStatuses.map(s => `<option ${r.status === s ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></div>
+      <div class="field"><label for="rC">ปิดรับคำขอ</label><input class="input" id="rC" type="date" value="${d10(r.closeDate)}"></div>
+      <div class="field"><label for="rD">วันที่ประชุม</label><input class="input" id="rD" type="date" value="${d10(r.meetDate)}"></div>
+    </div>`,
+    foot: `<button class="btn" data-act="modal-close">ยกเลิก</button><button class="btn primary" id="rOk">${icon('check')} บันทึก</button>`,
+    onMount: w => {
+      $('#rOk', w).onclick = e => withBtn(e.currentTarget, async () => {
+        try {
+          S.boot.rounds = await api('apiSaveRound', { id: r.id || '', name: $('#rN', w).value, month: $('#rM', w).value, status: $('#rS', w).value, closeDate: $('#rC', w).value, meetDate: $('#rD', w).value });
+          closeModal(); refreshSettings(); renderRoundPick(); toast('บันทึกรอบการประชุมแล้ว');
+        } catch (err) { fail(err); }
+      });
+    } });
+}
+
+function orgsHtml() {
+  if (!S.orgDraft) S.orgDraft = S.boot.orgs.map(o => ({ org: o.org, prov: o.prov }));
+  return `<div class="card"><div class="card-h"><h3>รายชื่อหน่วยงาน (สังกัด)</h3><button class="btn sm" data-act="org-add">${icon('plus')} เพิ่ม</button></div>
+    <div class="card-b stack" style="gap:8px">
+      <p class="muted" style="margin:0 0 6px">ใช้เป็นตัวเลือก "สังกัด" ในฟอร์ม และผูกกับบัญชีผู้ใช้ระดับหน่วยงาน — ตั้งชื่อให้ตรงกันทุกที่ เช่น รพท.สันทราย</p>
+      ${S.orgDraft.map((o, i) => `<div class="orgrow"><input class="input" data-org="${i}" data-k="org" value="${esc(o.org)}" aria-label="ชื่อหน่วยงาน">
+        <select class="input" data-org="${i}" data-k="prov" aria-label="จังหวัด">${S.boot.provinces.map(p => `<option ${o.prov === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select>
+        <button class="btn ghost icon" data-act="org-del" data-i="${i}" aria-label="ลบ">${icon('trash')}</button></div>`).join('')}
+    </div>
+    <div class="formfoot"><button class="btn" data-act="org-reset">ยกเลิกการแก้ไข</button><button class="btn primary" data-act="org-save">${icon('check')} บันทึกรายชื่อหน่วยงาน</button></div></div>`;
+}
+
+/* ───────────── account ───────────── */
+function accountModal() {
+  const u = S.boot.user;
+  modal({ title: 'บัญชีของฉัน',
+    body: `<div class="row" style="flex-wrap:nowrap"><span class="avatar" style="width:52px;height:52px;font-size:20px">${esc(initials(u.name || u.username))}</span>
+      <div><b style="font-size:17px">${esc(u.name || u.username)}</b><div class="muted mono">${esc(u.username)}</div><div class="muted">${esc(u.roleName)}${u.org ? ' · ' + esc(u.org) : u.prov ? ' · ' + esc(u.prov) : ''}</div></div></div>`,
+    foot: `<button class="btn" data-act="theme">${icon(isDark() ? 'sun' : 'moon')} ${isDark() ? 'โหมดสว่าง' : 'โหมดมืด'}</button><button class="btn" data-act="chpw">${icon('key')} เปลี่ยนรหัสผ่าน</button><button class="btn danger" data-act="logout">${icon('logout')} ออกจากระบบ</button>` });
+}
+
+function changePwModal(forced) {
+  modal({ title: forced ? 'ตั้งรหัสผ่านใหม่ก่อนใช้งาน' : 'เปลี่ยนรหัสผ่าน', locked: forced,
+    body: `${forced ? `<div class="alert info">${icon('key')}<span>คุณกำลังใช้รหัสผ่านชั่วคราว กรุณาตั้งรหัสผ่านใหม่ของคุณเอง</span></div>` : ''}
+      <div class="field"><label for="pO">รหัสผ่านปัจจุบัน${forced ? ' (รหัสชั่วคราว)' : ''}</label><input class="input" id="pO" type="password" autocomplete="current-password"></div>
+      <div class="field"><label for="pN">รหัสผ่านใหม่</label><input class="input" id="pN" type="password" autocomplete="new-password"><span class="hint">อย่างน้อย 8 ตัว มีทั้งตัวอักษรและตัวเลข</span></div>
+      <div class="field"><label for="pC">ยืนยันรหัสผ่านใหม่</label><input class="input" id="pC" type="password" autocomplete="new-password"></div>`,
+    foot: `${forced ? `<button class="btn ghost" data-act="logout">ออกจากระบบ</button>` : '<button class="btn" data-act="modal-close">ยกเลิก</button>'}<button class="btn primary" id="pOk">${icon('check')} บันทึกรหัสผ่าน</button>`,
+    onMount: w => {
+      $('#pOk', w).onclick = e => withBtn(e.currentTarget, async () => {
+        const n = $('#pN', w).value;
+        if (n !== $('#pC', w).value) { toast('รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน', 'err'); return; }
+        if (n.length < 8 || !/[A-Za-z]/.test(n) || !/\d/.test(n)) { toast('รหัสผ่านต้องยาว 8 ตัวขึ้นไป มีทั้งตัวอักษรและตัวเลข', 'err'); return; }
+        try { await api('apiChangePassword', $('#pO', w).value, n); S.boot.user.mustChange = false; closeModal(); toast('เปลี่ยนรหัสผ่านเรียบร้อย'); }
+        catch (err) { fail(err); }
+      });
+    } });
+}
+
+async function logout() {
+  try { await api('apiLogout'); } catch (e) { /* ออกจากระบบฝั่งหน้าเว็บต่อได้ */ }
+  endSession('ออกจากระบบแล้ว');
+}
+
+/* ───────────── events ───────────── */
+const ACT = {
+  go: el => go(el.dataset.v),
+  kpi: el => { S.filters = blankFilters(); S.filters.status = el.dataset.st; go(isAdmin() && el.dataset.st === 'รอพิจารณา' ? 'review' : 'list', { keepFilters: true }); },
+  bar: el => { S.filters = blankFilters(); S.filters[el.dataset.k] = el.dataset.val; go('list', { keepFilters: true }); },
+  open: el => openDrawer(el.dataset.id),
+  'drawer-close': closeDrawer,
+  'modal-close': closeModal,
+  sel: el => { const id = el.dataset.id; S.sel.has(id) ? S.sel.delete(id) : S.sel.add(id); refreshList(); },
+  'sel-all': el => { const rows = filtered(false).slice(0, S.limit); if (el.checked) rows.forEach(r => S.sel.add(r.id)); else rows.forEach(r => S.sel.delete(r.id)); refreshList(); },
+  'sel-clear': () => { S.sel.clear(); refreshList(); },
+  bulk: el => reviewModal(Array.from(S.sel), el.dataset.st),
+  'f-status': el => { S.filters.status = el.dataset.st; S.navKey = isAdmin() && el.dataset.st === 'รอพิจารณา' ? 'review' : 'list'; S.sel.clear(); renderNav(); $('#pageTitle').textContent = S.navKey === 'review' ? 'รอพิจารณา' : TITLES.list; refreshList(); },
+  'clear-filters': () => { S.filters = blankFilters(); renderView(); },
+  more: () => { S.limit += 100; refreshList(); },
+  export: el => doExport(el),
+  'export-json': el => doExportJson(el),
+  import: () => importModal(),
+  'pick-cat': el => {
+    const cat = catOf(el.dataset.k);
+    S.form = { catKey: cat.key, data: Object.assign({}, cat.defaults || {}, S.boot.user.role === 'unit' ? { org: S.boot.user.org } : {}) };
+    renderView(); window.scrollTo(0, 0);
+  },
+  'change-cat': () => { S.form = null; renderView(); },
+  'cancel-form': () => { const editing = S.form && S.form.id; S.form = null; if (editing) go('list'); else renderView(); },
+  'save-req': el => saveReq(el, !!el.dataset.more),
+  'edit-req': el => {
+    const r = S.reqs.find(x => x.id === el.dataset.id);
+    S.form = { id: r.id, catKey: r.catKey, data: Object.assign({}, r) };
+    closeDrawer(); go('new', { keepForm: true });
+  },
+  'withdraw-req': async el => {
+    const id = el.dataset.id;
+    if (!await confirmBox(`ถอนเรื่องคำขอ <b>${esc(id)}</b>? คำขอจะไม่ถูกนำเข้าที่ประชุม`, { title: 'ถอนเรื่อง', ok: 'ถอนเรื่อง', danger: true })) return;
+    try { upsert(await api('apiWithdraw', id)); closeDrawer(); refreshList(); renderNav(); toast('ถอนเรื่อง ' + id + ' แล้ว'); } catch (e) { fail(e); }
+  },
+  'delete-req': async el => {
+    const id = el.dataset.id;
+    if (!await confirmBox(`ลบคำขอ <b>${esc(id)}</b> ออกจากระบบถาวร? (ย้อนกลับไม่ได้ — ถ้าหน่วยงานยกเลิกเอง ใช้สถานะ "ถอนเรื่อง" แทน)`, { title: 'ลบคำขอ', ok: 'ลบถาวร', danger: true })) return;
+    try { await api('apiDeleteRequest', id); S.reqs = S.reqs.filter(r => r.id !== id); closeDrawer(); refreshList(); renderNav(); toast('ลบ ' + id + ' แล้ว'); } catch (e) { fail(e); }
+  },
+  'rv-pick': el => {
+    $$('#rvPanel .seg button').forEach(b => { b.classList.toggle('on', b === el); b.setAttribute('aria-checked', b === el); });
+    const res = $('#rvResult'), st = el.dataset.st, prev = S.boot.statuses.map(s => s.key);
+    if (!res.value || prev.indexOf(res.value) >= 0) res.value = ['เห็นชอบ', 'อนุมัติ', 'ไม่เห็นชอบ', 'ชะลอ'].indexOf(st) >= 0 ? st : '';
+    if (st === 'ส่งกลับแก้ไข') $('#rvNote2').focus();
+  },
+  'rv-save': el => withBtn(el, async () => {
+    const on = $('#rvPanel .seg .on'), note = $('#rvNote2').value.trim();
+    if (!on) { toast('เลือกสถานะก่อน', 'err'); return; }
+    if (on.dataset.st === 'ส่งกลับแก้ไข' && !note) { toast('กรุณาระบุข้อเสนอแนะว่าต้องแก้ไขอะไร', 'err'); $('#rvNote2').focus(); return; }
+    try {
+      const out = await api('apiReview', [el.dataset.id], on.dataset.st, $('#rvResult').value, note);
+      out.forEach(upsert); refreshList(); renderNav(); openDrawer(el.dataset.id); toast('บันทึกผลการพิจารณาแล้ว');
+    } catch (e) { fail(e); }
+  }),
+  theme: () => { toggleTheme(); if ($('#modal')) accountModal(); },
+  account: accountModal,
+  chpw: () => changePwModal(false),
+  logout: logout,
+  'pw-toggle': el => { const i = $('#' + el.dataset.for); i.type = i.type === 'password' ? 'text' : 'password'; },
+  stab: el => { S.settingsTab = el.dataset.k; renderView(); },
+  'user-add': () => userModal(null),
+  'user-edit': el => userModal(S.users.find(u => u.username === el.dataset.u)),
+  'user-reset': async (el, e) => {
+    e.stopPropagation();
+    const un = el.dataset.u;
+    if (!await confirmBox(`รีเซ็ตรหัสผ่านของ <b>${esc(un)}</b>? รหัสเดิมจะใช้ไม่ได้ทันที`, { title: 'รีเซ็ตรหัสผ่าน', ok: 'รีเซ็ต' })) return;
+    try { const pw = await api('apiResetPassword', un); const u = S.users.find(x => x.username === un); if (u) u.mustChange = true; refreshSettings(); secretModal('รีเซ็ตรหัสผ่านแล้ว', un, pw); } catch (err) { fail(err); }
+  },
+  'round-add': () => roundModal(null),
+  'user-del': async (el, e) => {
+    e.stopPropagation();
+    const un = el.dataset.u;
+    if (!await confirmBox(`ลบผู้ใช้ <b>${esc(un)}</b> ออกจากระบบถาวร? (ย้อนกลับไม่ได้ — คำขอที่ผู้ใช้นี้เคยส่งยังอยู่ครบ · ถ้าแค่ต้องการระงับชั่วคราว ให้ปิดใช้งานแทน)`, { title: 'ลบผู้ใช้', ok: 'ลบถาวร', danger: true })) return;
+    try { await api('apiDeleteUser', un); S.users = S.users.filter(u => u.username !== un); refreshSettings(); toast('ลบผู้ใช้ ' + un + ' แล้ว'); } catch (err) { fail(err); }
+  },
+  'round-edit': el => roundModal(roundOf(el.dataset.id)),
+  'round-del': async el => {
+    const r = roundOf(el.dataset.id), n = S.reqs.filter(x => String(x.round) === String(r.id)).length;
+    if (n) { toast(`รอบ "${r.name}" มีคำขอ ${n} รายการ — ลบหรือย้ายคำขอออกก่อนจึงจะลบรอบได้`, 'err'); return; }
+    if (!await confirmBox(`ลบรอบ <b>${esc(r.name)}</b> ออกจากระบบถาวร? (ย้อนกลับไม่ได้)`, { title: 'ลบรอบการประชุม', ok: 'ลบถาวร', danger: true })) return;
+    try {
+      S.boot.rounds = await api('apiDeleteRound', r.id);
+      if (String(S.round) === String(r.id)) S.round = String((openRound() || S.boot.rounds[S.boot.rounds.length - 1] || { id: '' }).id);
+      refreshSettings(); renderRoundPick(); toast('ลบรอบ ' + r.name + ' แล้ว');
+    } catch (err) { fail(err); }
+  },
+  'org-add': () => { S.orgDraft.push({ org: '', prov: S.boot.provinces[0] }); refreshSettings(); const ins = $$('[data-org][data-k="org"]'); ins[ins.length - 1].focus(); },
+  'org-del': el => { S.orgDraft.splice(Number(el.dataset.i), 1); refreshSettings(); },
+  'org-reset': () => { S.orgDraft = null; refreshSettings(); },
+  'org-save': el => withBtn(el, async () => {
+    try { S.boot.orgs = await api('apiSaveOrgs', S.orgDraft.filter(o => o.org.trim())); S.orgDraft = null; refreshSettings(); toast('บันทึกรายชื่อหน่วยงานแล้ว'); } catch (e) { fail(e); }
+  })
+};
+
+const CHG = {
+  round: el => { S.round = el.value; S.sel.clear(); renderNav(); renderView(); },
+  'f-cat': el => { S.filters.cat = el.value; S.sel.clear(); refreshList(); },
+  'f-prov': el => { S.filters.prov = el.value; S.filters.org = ''; S.sel.clear(); renderView(); },
+  'f-org': el => { S.filters.org = el.value; S.sel.clear(); refreshList(); }
+};
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.disabled) return;
+  const fn = ACT[el.dataset.act];
+  if (!fn) return;
+  if (el.tagName === 'A' && !el.getAttribute('href')) e.preventDefault();
+  fn(el, e);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const m = $('#modal');
+    if (m) { if (!m.dataset.locked) closeModal(); } else if ($('.drawer')) closeDrawer();
+  }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-act][tabindex], .nav a')) { e.preventDefault(); e.target.click(); }
+});
+document.addEventListener('change', e => {
+  const el = e.target.closest('[data-change]');
+  if (el && CHG[el.dataset.change]) CHG[el.dataset.change](el);
+  if (e.target.closest('#reqForm')) formInput(e.target);
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'q') { S.filters.q = t.value; debounce(refreshList, 150)(); }
+  if (t.closest('#reqForm')) formInput(t);
+  if (t.dataset.org !== undefined && S.orgDraft) S.orgDraft[Number(t.dataset.org)][t.dataset.k] = t.value;
+});
+window.addEventListener('scroll', () => { const t = $('#top'); if (t) t.classList.toggle('scrolled', window.scrollY > 4); }, { passive: true });
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme); } catch (e) { /* เบราว์เซอร์เก่า */ }
+
+/* ───────────── start ───────────── */
+applyTheme();
+S.token = store.get('vr_token');
+if (S.token) {
+  $('#root').innerHTML = `<div style="min-height:100vh;display:grid;place-items:center"><div class="row muted"><span class="spin" style="width:20px;height:20px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:rot .7s linear infinite"></span> กำลังโหลด…</div></div>`;
+  api('apiBootstrap').then(b => { S.boot = b; startApp(); }).catch(e => { if (!e.silent) renderLogin(); });
+} else {
+  renderLogin();
+}
+})();
+</script>
+</body>
+</html>
