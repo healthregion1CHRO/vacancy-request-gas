@@ -12,3 +12,5 @@ cd "$(dirname "$0")/.."
   cat App.html
   sed -n "/<?!= include('App'); ?>/,\$p" Index.html | sed '1d'
 } > preview/preview.html
+# สำเนาสำหรับ GitHub Pages (main /docs)
+mkdir -p docs && cp preview/preview.html docs/index.html && touch docs/.nojekyll
