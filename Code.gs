@@ -214,7 +214,7 @@ function onOpen() {
   SpreadsheetApp.getUi().createMenu('🗂️ คำขอตำแหน่งว่าง')
     .addItem('ตั้งค่าพร้อมใช้ (รอบ + บัญชีทุกหน่วยงาน)', 'setupAll')
     .addItem('ตั้งค่าเริ่มต้น / ซ่อมชีต', 'setup')
-    .addItem('รีเซ็ตรหัสผ่านผู้ใช้…', 'menuResetPassword')
+    .addItem('ตั้งรหัสผ่านผู้ใช้…', 'menuResetPassword')
     .addItem('เปิดเว็บแอป', 'menuOpenWebApp')
     .addSeparator()
     .addItem('ลบคำขอ (ทั้งหมด / ทั้งรอบ)…', 'menuDeleteRequests')
@@ -332,10 +332,15 @@ function requireOwner_() {
 /** เมนูในชีต — getUi() ใช้ได้เฉพาะคนที่เปิดชีตอยู่ จึงเรียกจากหน้าเว็บไม่ได้ */
 function menuResetPassword() {
   const ui = SpreadsheetApp.getUi();
-  const r = ui.prompt('รีเซ็ตรหัสผ่าน', 'พิมพ์ชื่อผู้ใช้ที่ต้องการรีเซ็ต', ui.ButtonSet.OK_CANCEL);
+  const r = ui.prompt('ตั้งรหัสผ่าน', 'พิมพ์ชื่อผู้ใช้', ui.ButtonSet.OK_CANCEL);
   if (r.getSelectedButton() !== ui.Button.OK) return;
-  const pw = resetPassword_(r.getResponseText().trim(), 'เมนูในชีต');
-  ui.alert('รหัสผ่านใหม่ (ชั่วคราว): ' + pw);
+  const username = r.getResponseText().trim();
+  const p = ui.prompt('ตั้งรหัสผ่าน: ' + username, 'พิมพ์รหัสผ่านใหม่ (อย่างน้อย 8 ตัว มีทั้งตัวอักษรและตัวเลข)\nเว้นว่าง = สุ่มรหัสชั่วคราว ผู้ใช้ต้องเปลี่ยนเมื่อเข้าใช้', ui.ButtonSet.OK_CANCEL);
+  if (p.getSelectedButton() !== ui.Button.OK) return;
+  const want = p.getResponseText().trim();
+  if (want) checkPasswordStrength_(want);
+  const pw = resetPassword_(username, 'เมนูในชีต', want);
+  ui.alert(want ? 'ตั้งรหัสผ่านของ ' + username + ' เรียบร้อย' : 'รหัสผ่านใหม่ (ชั่วคราว): ' + pw);
 }
 
 /**
@@ -398,7 +403,7 @@ function apiLogin(_token, username, password) {
   const users = table_(SH.USERS);
   const u = users.items.find(x => x.username === username);
   if (u && (!u.salt || !u.hash)) {
-    throw new Error('บัญชี "' + username + '" ยังไม่มีรหัสผ่าน (อาจเพิ่มในชีตโดยตรง) — ให้ผู้ดูแลกดปุ่มรีเซ็ตรหัสผ่านในหน้าตั้งค่าเพื่อออกรหัสชั่วคราว');
+    throw new Error('บัญชี "' + username + '" ยังไม่มีรหัสผ่าน (อาจเพิ่มในชีตโดยตรง) — ให้ผู้ดูแลกดปุ่ม 🔑 ตั้งรหัสผ่านในหน้าตั้งค่า');
   }
   password = String(password || '');
   // รหัสที่คัดลอกจากไลน์/อีเมลมักติดช่องว่างหรือขึ้นบรรทัดท้าย — ลองแบบตัดช่องว่างด้วย
@@ -593,12 +598,13 @@ function apiListUsers(token) {
   return table_(SH.USERS).items.map(userToClient_);
 }
 
-/** เพิ่ม/แก้ไขผู้ใช้ — ผู้ใช้ใหม่จะได้รหัสผ่านชั่วคราวคืนมา */
+/** เพิ่ม/แก้ไขผู้ใช้ — ผู้ใช้ใหม่: ผู้ดูแลกำหนดรหัสผ่านเองในฟอร์ม (data.password) */
 function apiSaveUser(token, data, isNew) {
   const me = auth_(token, 'admin');
   const username = String(data.username || '').trim().toLowerCase();
   if (!/^[a-z0-9._-]{3,30}$/.test(username)) throw new Error('ชื่อผู้ใช้ใช้ได้เฉพาะ a-z 0-9 . _ - ยาว 3–30 ตัว');
   if (!ROLES[data.role]) throw new Error('บทบาทไม่ถูกต้อง');
+  if (isNew) checkPasswordStrength_(data.password);
   const orgs = table_(SH.ORGS).items;
   let prov = '', org = '';
   if (data.role === 'prov') {
@@ -618,12 +624,10 @@ function apiSaveUser(token, data, isNew) {
   try {
     const t = table_(SH.USERS);
     let row = t.items.find(x => String(x.username).toLowerCase() === username);
-    let pw = null;
     if (isNew) {
       if (row) throw new Error('มีชื่อผู้ใช้ "' + username + '" แล้ว');
-      pw = randomPassword_();
-      row = { username: username, salt: Utilities.getUuid(), mustChange: true, lastLogin: '' };
-      row.hash = hash_(pw, row.salt);
+      row = { username: username, salt: Utilities.getUuid(), mustChange: false, lastLogin: '' };
+      row.hash = hash_(String(data.password), row.salt);
     } else if (!row) {
       throw new Error('ไม่พบผู้ใช้');
     }
@@ -634,15 +638,18 @@ function apiSaveUser(token, data, isNew) {
       email: clean_(data.email), phone: clean_(data.phone), active: !!data.active });
     if (isNew) appendObj_(t, row); else writeObj_(t, row);
     log_(me.username, isNew ? 'เพิ่มผู้ใช้' : 'แก้ไขผู้ใช้', username, ROLES[data.role] + ' ' + (org || prov));
-    return { user: userToClient_(row), password: pw };
+    return { user: userToClient_(row) };
   } finally {
     lock.releaseLock();
   }
 }
 
-function apiResetPassword(token, username) {
+/** ผู้ดูแลตั้งรหัสผ่านใหม่ให้ผู้ใช้ตามที่พิมพ์ */
+function apiResetPassword(token, username, password) {
   const me = auth_(token, 'admin');
-  return resetPassword_(username, me.username);
+  checkPasswordStrength_(password);
+  resetPassword_(username, me.username, String(password));
+  return true;
 }
 
 /** ลบผู้ใช้ถาวร — คำขอที่ผู้ใช้นี้เคยส่งยังอยู่ครบ */
@@ -943,14 +950,15 @@ function withRequest_(id, fn) {
   }
 }
 
-function resetPassword_(username, by) {
+/** pw = รหัสที่ผู้ดูแลกำหนดเอง (ไม่ต้องเปลี่ยนตอนเข้าใช้) · ไม่ส่ง = สุ่มรหัสชั่วคราว */
+function resetPassword_(username, by, pw) {
   const t = table_(SH.USERS);
   const row = t.items.find(x => String(x.username).toLowerCase() === String(username).toLowerCase());
   if (!row) throw new Error('ไม่พบผู้ใช้ ' + username);
-  const pw = randomPassword_();
+  row.mustChange = !pw;
+  pw = pw || randomPassword_();
   row.salt = Utilities.getUuid();
   row.hash = hash_(pw, row.salt);
-  row.mustChange = true;
   writeObj_(t, row);
   CacheService.getScriptCache().remove('fail:' + row.username);
   log_(by, 'รีเซ็ตรหัสผ่าน', row.username, '');

@@ -925,7 +925,7 @@ function usersHtml() {
       <td>${esc(u.org || u.prov || 'ทั้งเขต')}</td>
       <td>${u.active ? '<span class="chip t-ok">ใช้งาน</span>' : '<span class="chip t-mute">ปิดใช้งาน</span>'}${u.noPassword ? ' <span class="chip nodot t-bad">ยังไม่มีรหัสผ่าน — กด 🔑</span>' : u.mustChange ? ' <span class="chip nodot t-warn">รอเปลี่ยนรหัส</span>' : ''}</td>
       <td class="sub">${u.lastLogin ? ago(u.lastLogin) : 'ยังไม่เคย'}</td>
-      <td style="white-space:nowrap"><button class="btn sm ghost icon" data-act="user-reset" data-u="${esc(u.username)}" title="รีเซ็ตรหัสผ่าน" aria-label="รีเซ็ตรหัสผ่าน ${esc(u.username)}">${icon('key')}</button>${u.username === S.boot.user.username ? '' : `<button class="btn sm ghost icon" style="color:var(--bad)" data-act="user-del" data-u="${esc(u.username)}" title="ลบผู้ใช้" aria-label="ลบผู้ใช้ ${esc(u.username)}">${icon('trash')}</button>`}</td>
+      <td style="white-space:nowrap"><button class="btn sm ghost icon" data-act="user-reset" data-u="${esc(u.username)}" title="ตั้งรหัสผ่าน" aria-label="ตั้งรหัสผ่าน ${esc(u.username)}">${icon('key')}</button>${u.username === S.boot.user.username ? '' : `<button class="btn sm ghost icon" style="color:var(--bad)" data-act="user-del" data-u="${esc(u.username)}" title="ลบผู้ใช้" aria-label="ลบผู้ใช้ ${esc(u.username)}">${icon('trash')}</button>`}</td>
     </tr>`).join('')}</tbody></table></div></div>`;
 }
 
@@ -954,6 +954,7 @@ function userModal(u) {
       <div class="field"><label for="uE">อีเมล</label><input class="input" id="uE" type="email" value="${esc(u.email || '')}"></div>
       <div class="field"><label for="uT">โทรศัพท์</label><input class="input" id="uT" value="${esc(u.phone || '')}"></div>
       <div class="field" style="justify-content:flex-end"><label class="toggle"><input type="checkbox" id="uA" ${u.active ? 'checked' : ''}> เปิดใช้งาน</label></div>
+      ${isNew ? pwFields() : ''}
     </div>`,
     foot: `<button class="btn" data-act="modal-close">ยกเลิก</button><button class="btn primary" id="uOk">${icon('check')} ${isNew ? 'สร้างผู้ใช้' : 'บันทึก'}</button>`,
     onMount: w => {
@@ -971,22 +972,63 @@ function userModal(u) {
         }
         if (data.role === 'prov' && !data.prov) return bad('#uP', 'กรุณาเลือกจังหวัด');
         if (data.role === 'unit' && !data.org) return bad('#uO', 'กรุณาเลือกหน่วยงาน');
+        if (isNew) {
+          const m = pwProblem(w);
+          if (m) return bad(m[0], m[1]);
+          data.password = $('#nP', w).value;
+        }
         try {
           const res = await api('apiSaveUser', data, isNew);
           const i = S.users.findIndex(x => x.username === res.user.username);
           if (i >= 0) S.users[i] = res.user; else S.users.push(res.user);
           refreshSettings();
-          if (res.password) secretModal('สร้างผู้ใช้เรียบร้อย', res.user.username, res.password); else { closeModal(); toast('บันทึกผู้ใช้แล้ว'); }
+          if (isNew) secretModal('สร้างผู้ใช้เรียบร้อย', res.user.username, data.password); else { closeModal(); toast('บันทึกผู้ใช้แล้ว'); }
         } catch (err) { fail(err); }
       });
     }
   });
 }
 
+/** ช่องรหัสผ่าน + ยืนยัน (ผู้ดูแลกำหนดเอง) — ใช้ในฟอร์มเพิ่มผู้ใช้และปุ่ม 🔑 */
+function pwFields() {
+  return `<div class="field"><label for="nP">รหัสผ่าน <span class="req">*</span></label>
+      <div class="input-wrap pw-wrap">${icon('key')}<input class="input mono" id="nP" type="password" autocomplete="new-password">
+      <button type="button" class="btn ghost sm icon" data-act="pw-toggle" data-for="nP" aria-label="แสดงรหัสผ่าน">${icon('eye')}</button></div>
+      <span class="hint">อย่างน้อย 8 ตัว มีทั้งตัวอักษรและตัวเลข</span></div>
+    <div class="field"><label for="nC">ยืนยันรหัสผ่าน <span class="req">*</span></label><input class="input mono" id="nC" type="password" autocomplete="new-password"></div>`;
+}
+
+/** [selector, ข้อความ] ถ้ารหัสใน pwFields ใช้ไม่ได้ · null ถ้าผ่าน */
+function pwProblem(w) {
+  const n = $('#nP', w).value;
+  if (n.length < 8 || !/[A-Za-z]/.test(n) || !/\d/.test(n)) return ['#nP', 'รหัสผ่านต้องยาว 8 ตัวขึ้นไป มีทั้งตัวอักษรและตัวเลข'];
+  if (n !== $('#nC', w).value) return ['#nC', 'รหัสผ่านทั้งสองช่องไม่ตรงกัน'];
+  return null;
+}
+
+function setPwModal(un) {
+  modal({ title: 'ตั้งรหัสผ่าน ' + un,
+    body: `<p class="muted" style="margin:0">รหัสเดิมจะใช้ไม่ได้ทันที — ผู้ใช้เข้าระบบด้วยรหัสนี้ได้เลย</p>${pwFields()}`,
+    foot: `<button class="btn" data-act="modal-close">ยกเลิก</button><button class="btn primary" id="spOk">${icon('check')} บันทึกรหัสผ่าน</button>`,
+    onMount: w => {
+      $('#nP', w).focus();
+      $('#spOk', w).onclick = e => withBtn(e.currentTarget, async () => {
+        const m = pwProblem(w);
+        if (m) { toast(m[1], 'err'); $(m[0], w).focus(); return; }
+        const pw = $('#nP', w).value;
+        try {
+          await api('apiResetPassword', un, pw);
+          const u = S.users.find(x => x.username === un); if (u) { u.mustChange = false; u.noPassword = false; }
+          refreshSettings(); secretModal('ตั้งรหัสผ่านแล้ว', un, pw);
+        } catch (err) { fail(err); }
+      });
+    } });
+}
+
 function secretModal(title, username, pw) {
-  const text = `ระบบคำขอใช้ตำแหน่งว่าง เขตสุขภาพที่ 1\n${S.boot.url ? 'ลิงก์: ' + S.boot.url + '\n' : ''}ชื่อผู้ใช้: ${username}\nรหัสผ่านชั่วคราว: ${pw}\n(ระบบจะให้ตั้งรหัสผ่านใหม่เมื่อเข้าใช้ครั้งแรก)`;
+  const text = `ระบบคำขอใช้ตำแหน่งว่าง เขตสุขภาพที่ 1\n${S.boot.url ? 'ลิงก์: ' + S.boot.url + '\n' : ''}ชื่อผู้ใช้: ${username}\nรหัสผ่าน: ${pw}`;
   modal({ title: title,
-    body: `<p style="margin:0">ส่งข้อมูลนี้ให้ผู้ใช้ <b>${esc(username)}</b> — รหัสผ่านจะแสดงเพียงครั้งเดียว</p>
+    body: `<p style="margin:0">ส่งข้อมูลนี้ให้ผู้ใช้ <b>${esc(username)}</b></p>
       <div class="secret">${icon('key')}<code class="mono">${esc(pw)}</code></div>`,
     foot: `<button class="btn" data-act="modal-close">ปิด</button><button class="btn primary" id="cpSecret">${icon('copy')} คัดลอกข้อความสำหรับส่งต่อ</button>`,
     onMount: w => { $('#cpSecret', w).onclick = () => copyText(text); } });
@@ -1137,11 +1179,9 @@ const ACT = {
   stab: el => { S.settingsTab = el.dataset.k; renderView(); },
   'user-add': () => userModal(null),
   'user-edit': el => userModal(S.users.find(u => u.username === el.dataset.u)),
-  'user-reset': async (el, e) => {
+  'user-reset': (el, e) => {
     e.stopPropagation();
-    const un = el.dataset.u;
-    if (!await confirmBox(`รีเซ็ตรหัสผ่านของ <b>${esc(un)}</b>? รหัสเดิมจะใช้ไม่ได้ทันที`, { title: 'รีเซ็ตรหัสผ่าน', ok: 'รีเซ็ต' })) return;
-    try { const pw = await api('apiResetPassword', un); const u = S.users.find(x => x.username === un); if (u) u.mustChange = true; refreshSettings(); secretModal('รีเซ็ตรหัสผ่านแล้ว', un, pw); } catch (err) { fail(err); }
+    setPwModal(el.dataset.u);
   },
   'round-add': () => roundModal(null),
   'user-del': async (el, e) => {

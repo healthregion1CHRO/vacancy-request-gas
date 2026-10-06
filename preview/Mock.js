@@ -82,12 +82,13 @@
       if (!/^[a-z0-9._-]{3,30}$/.test(d.username)) throw new Error('ชื่อผู้ใช้ใช้ได้เฉพาะ a-z 0-9 . _ - ยาว 3–30 ตัว');
       let u = USERS.find(x => x.username === d.username);
       if (isNew && u) throw new Error('มีชื่อผู้ใช้นี้แล้ว');
-      if (!u) { u = { username: d.username, mustChange: true, lastLogin: '' }; USERS.push(u); }
+      if (isNew && !/^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(d.password || '')) throw new Error('รหัสผ่านต้องยาว 8 ตัวขึ้นไป มีทั้งตัวอักษรและตัวเลข');
+      if (!u) { u = { username: d.username, mustChange: false, lastLogin: '' }; USERS.push(u); }
       const o = ORGS.find(x => x.org === d.org);
       Object.assign(u, { name: d.name, role: d.role, prov: d.role === 'prov' ? d.prov : d.role === 'unit' && o ? o.prov : '', org: d.role === 'unit' ? d.org : '', email: d.email, phone: d.phone, active: d.active });
-      return { user: roleName(u), password: isNew ? 'Demo' + Math.floor(Math.random() * 90000 + 10000) : null };
+      return { user: roleName(u) };
     },
-    apiResetPassword() { return 'Reset' + Math.floor(Math.random() * 90000 + 10000); },
+    apiResetPassword(tok, un) { who(tok); const u = USERS.find(x => x.username === un); if (u) u.mustChange = false; return true; },
     apiDeleteUser(tok, un) {
       if (who(tok).username === un) throw new Error('ไม่สามารถลบบัญชีของตัวเองได้');
       USERS.splice(USERS.findIndex(x => x.username === un), 1); return true;
