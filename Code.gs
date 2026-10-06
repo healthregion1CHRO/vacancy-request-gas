@@ -375,11 +375,19 @@ function apiLogin(_token, username, password) {
   if (fails >= 5) throw new Error('ใส่รหัสผิดหลายครั้ง กรุณารอ 10 นาทีแล้วลองใหม่');
 
   const users = table_(SH.USERS);
-  const u = users.items.find(x => String(x.username).toLowerCase() === username);
-  if (!u || !isTrue_(u.active) || hash_(String(password || ''), u.salt) !== u.hash) {
+  const u = users.items.find(x => x.username === username);
+  if (u && (!u.salt || !u.hash)) {
+    throw new Error('บัญชี "' + username + '" ยังไม่มีรหัสผ่าน (อาจเพิ่มในชีตโดยตรง) — ให้ผู้ดูแลกดปุ่มรีเซ็ตรหัสผ่านในหน้าตั้งค่าเพื่อออกรหัสชั่วคราว');
+  }
+  password = String(password || '');
+  // รหัสที่คัดลอกจากไลน์/อีเมลมักติดช่องว่างหรือขึ้นบรรทัดท้าย — ลองแบบตัดช่องว่างด้วย
+  const ok = u && (hash_(password, u.salt) === u.hash ||
+    (password.trim() !== password && hash_(password.trim(), u.salt) === u.hash));
+  if (!ok) {
     cache.put(failKey, String(fails + 1), 600);
     throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
   }
+  if (!isTrue_(u.active)) throw new Error('บัญชีนี้ถูกปิดใช้งาน — ติดต่อผู้ดูแลระบบให้เปิด "ใช้งาน"');
   cache.remove(failKey);
   const token = Utilities.getUuid() + Utilities.getUuid().slice(0, 8);
   cache.put('tok:' + token, u.username, SESSION_SECONDS);
@@ -402,7 +410,9 @@ function apiChangePassword(token, oldPw, newPw) {
   const u = auth_(token);
   const users = table_(SH.USERS);
   const row = users.items.find(x => x.username === u.username);
-  if (hash_(String(oldPw || ''), row.salt) !== row.hash) throw new Error('รหัสผ่านเดิมไม่ถูกต้อง');
+  oldPw = String(oldPw || '');
+  if (hash_(oldPw, row.salt) !== row.hash && hash_(oldPw.trim(), row.salt) !== row.hash) throw new Error('รหัสผ่านเดิมไม่ถูกต้อง');
+  newPw = String(newPw || '').trim();
   checkPasswordStrength_(newPw);
   row.salt = Utilities.getUuid();
   row.hash = hash_(newPw, row.salt);
@@ -1004,6 +1014,12 @@ function table_(name) {
     if (raw[idx[first]] === '' || raw[idx[first]] === null) continue;
     const o = { _row: n + 1, _raw: raw };
     Object.keys(idx).forEach(k => { o[k] = raw[idx[k]]; });
+    if (name === SH.USERS) {
+      // ชื่อผู้ใช้ที่พิมพ์ในชีตเองอาจกลายเป็นตัวเลข/มีช่องว่าง/ตัวพิมพ์ใหญ่ — ทำให้เป็นข้อความรูปแบบเดียวกันเสมอ
+      o.username = String(o.username).trim().toLowerCase();
+      o.salt = String(o.salt || '');
+      o.hash = String(o.hash || '');
+    }
     items.push(o);
   }
   return { sh: sh, idx: idx, width: head.length, items: items };
@@ -1085,6 +1101,7 @@ function userToClient_(u) {
   const o = plain_(u);
   o.active = isTrue_(u.active);
   o.mustChange = isTrue_(u.mustChange);
+  o.noPassword = !u.salt || !u.hash;
   o.roleName = ROLES[u.role] || u.role;
   return o;
 }

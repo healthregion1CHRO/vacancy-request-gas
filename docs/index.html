@@ -1578,7 +1578,7 @@ function usersHtml() {
       <td><div class="row" style="flex-wrap:nowrap"><span class="avatar" style="width:34px;height:34px;font-size:13px">${esc(initials(u.name || u.username))}</span><div><b>${esc(u.name || '–')}</b><span class="sub mono">${esc(u.username)}</span></div></div></td>
       <td><span class="chip nodot ${tone[u.role] || ''}">${esc(u.roleName)}</span></td>
       <td>${esc(u.org || u.prov || 'ทั้งเขต')}</td>
-      <td>${u.active ? '<span class="chip t-ok">ใช้งาน</span>' : '<span class="chip t-mute">ปิดใช้งาน</span>'}${u.mustChange ? ' <span class="chip nodot t-warn">รอเปลี่ยนรหัส</span>' : ''}</td>
+      <td>${u.active ? '<span class="chip t-ok">ใช้งาน</span>' : '<span class="chip t-mute">ปิดใช้งาน</span>'}${u.noPassword ? ' <span class="chip nodot t-bad">ยังไม่มีรหัสผ่าน — กด 🔑</span>' : u.mustChange ? ' <span class="chip nodot t-warn">รอเปลี่ยนรหัส</span>' : ''}</td>
       <td class="sub">${u.lastLogin ? ago(u.lastLogin) : 'ยังไม่เคย'}</td>
       <td style="white-space:nowrap"><button class="btn sm ghost icon" data-act="user-reset" data-u="${esc(u.username)}" title="รีเซ็ตรหัสผ่าน" aria-label="รีเซ็ตรหัสผ่าน ${esc(u.username)}">${icon('key')}</button>${u.username === S.boot.user.username ? '' : `<button class="btn sm ghost icon" style="color:var(--bad)" data-act="user-del" data-u="${esc(u.username)}" title="ลบผู้ใช้" aria-label="ลบผู้ใช้ ${esc(u.username)}">${icon('trash')}</button>`}</td>
     </tr>`).join('')}</tbody></table></div></div>`;
