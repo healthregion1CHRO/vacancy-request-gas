@@ -581,12 +581,15 @@ function apiSaveUser(token, data, isNew) {
   const orgs = table_(SH.ORGS).items;
   let prov = '', org = '';
   if (data.role === 'prov') {
-    prov = clean_(data.prov);
+    prov = normName_(data.prov);
     if (PROVINCES.indexOf(prov) < 0) throw new Error('กรุณาเลือกจังหวัด');
   }
   if (data.role === 'unit') {
-    const o = orgs.find(x => x.org === data.org);
-    if (!o) throw new Error('กรุณาเลือกหน่วยงาน');
+    const want = normName_(data.org);
+    if (!want) throw new Error('กรุณาเลือกหน่วยงาน');
+    const o = orgs.find(x => x.org === want);
+    if (!o) throw new Error('ไม่พบหน่วยงาน "' + want + '" ในชีต "หน่วยงาน" — ตรวจชื่อในหน้า ตั้งค่า → หน่วยงาน');
+    if (PROVINCES.indexOf(o.prov) < 0) throw new Error('หน่วยงาน "' + o.org + '" ยังไม่ได้ระบุจังหวัด (หรือสะกดจังหวัดผิด) ในชีต "หน่วยงาน"');
     org = o.org; prov = o.prov;
   }
   const lock = LockService.getScriptLock();
@@ -1019,7 +1022,10 @@ function table_(name) {
       o.username = String(o.username).trim().toLowerCase();
       o.salt = String(o.salt || '');
       o.hash = String(o.hash || '');
+      o.role = String(o.role || '').trim().toLowerCase();
     }
+    if ('org' in o) o.org = normName_(o.org);
+    if ('prov' in o) o.prov = normName_(o.prov);
     items.push(o);
   }
   return { sh: sh, idx: idx, width: head.length, items: items };
@@ -1037,6 +1043,10 @@ function writeObj_(t, obj) {
 
 function appendObj_(t, obj) {
   const row = t.sh.getLastRow() + 1;
+  // ชีตเต็มแล้ว (เช่น มีช่องติ๊กถูกลากไว้ถึงแถวสุดท้าย) → เพิ่มแถวก่อน ไม่งั้นเขียนเกินขอบชีตไม่ได้
+  if (row > t.sh.getMaxRows()) t.sh.insertRowsAfter(t.sh.getMaxRows(), row - t.sh.getMaxRows());
+  // แถวใหม่ที่อยู่นอกช่วงที่ตั้งรูปแบบไว้ตอน setup: ตั้งเป็นข้อความ กันเลขศูนย์นำหน้าหาย (เช่น ชื่อผู้ใช้ 0123)
+  TEXT_KEYS.forEach(k => { if (k in t.idx) t.sh.getRange(row, t.idx[k] + 1).setNumberFormat('@'); });
   t.sh.getRange(row, 1, 1, t.width).setValues([rowOf_(t, obj)]);
   obj._row = row;
 }
@@ -1104,6 +1114,11 @@ function userToClient_(u) {
   o.noPassword = !u.salt || !u.hash;
   o.roleName = ROLES[u.role] || u.role;
   return o;
+}
+
+/** ชื่อหน่วยงาน/จังหวัด: ตัดช่องว่างหัวท้าย และยุบช่องว่างซ้อน (พิมพ์ในชีตเองมักติดมา) */
+function normName_(v) {
+  return String(v === null || v === undefined ? '' : v).replace(/\s+/g, ' ').trim();
 }
 
 function clean_(v) {

@@ -1116,10 +1116,7 @@ function fieldHtml(cat, k, val, required, cls) {
   if (F.type === 'org') {
     if (S.boot.user.role === 'unit') ctl = `<input class="input" id="${id}" name="org" value="${esc(S.boot.user.org)}" readonly>`;
     else {
-      const groups = S.boot.provinces.map(p => {
-        const os = S.boot.orgs.filter(o => o.prov === p);
-        return os.length ? `<optgroup label="${esc(p)}">${os.map(o => `<option ${o.org === v ? 'selected' : ''}>${esc(o.org)}</option>`).join('')}</optgroup>` : '';
-      }).join('');
+      const groups = orgOptions(v);
       ctl = `<select class="input" id="${id}" name="org"><option value="">— เลือกหน่วยงาน —</option>${groups}</select>`;
     }
   } else if (F.type === 'select') {
@@ -1585,10 +1582,14 @@ function usersHtml() {
 }
 
 function orgOptions(sel) {
-  return S.boot.provinces.map(p => {
+  const P = S.boot.provinces, opt = o => `<option value="${esc(o.org)}" ${o.org === sel ? 'selected' : ''}>${esc(o.org)}</option>`;
+  const groups = P.map(p => {
     const os = S.boot.orgs.filter(o => o.prov === p);
-    return os.length ? `<optgroup label="${esc(p)}">${os.map(o => `<option ${o.org === sel ? 'selected' : ''}>${esc(o.org)}</option>`).join('')}</optgroup>` : '';
+    return os.length ? `<optgroup label="${esc(p)}">${os.map(opt).join('')}</optgroup>` : '';
   }).join('');
+  // หน่วยงานที่จังหวัดว่าง/สะกดไม่ตรง ยังต้องเลือกได้ (ไม่งั้นจะหายจากรายการเงียบ ๆ)
+  const rest = S.boot.orgs.filter(o => P.indexOf(o.prov) < 0);
+  return groups + (rest.length ? `<optgroup label="ไม่ระบุจังหวัด">${rest.map(opt).join('')}</optgroup>` : '');
 }
 
 function userModal(u) {
@@ -1614,6 +1615,14 @@ function userModal(u) {
       $('#uOk', w).onclick = e => withBtn(e.currentTarget, async () => {
         const data = { username: $('#uU', w).value.trim().toLowerCase(), name: $('#uN', w).value, role: $('#uR', w).value, prov: $('#uP', w).value,
           org: $('#uO', w).value, email: $('#uE', w).value, phone: $('#uT', w).value, active: $('#uA', w).checked };
+        const bad = (sel, msg) => { toast(msg, 'err'); const el = $(sel, w); el.classList.add('err'); el.focus(); el.addEventListener('input', () => el.classList.remove('err'), { once: true }); };
+        if (isNew && !/^[a-z0-9._-]{3,30}$/.test(data.username)) {
+          return bad('#uU', /[^\x00-\x7f]/.test(data.username) ? 'ชื่อผู้ใช้ต้องเป็นภาษาอังกฤษ (ตั้งชื่อภาษาไทยได้ที่ช่อง ชื่อ-สกุล)'
+            : /\s/.test(data.username) ? 'ชื่อผู้ใช้ห้ามมีช่องว่าง — ใช้ . หรือ _ แทน เช่น nkp.hr'
+            : 'ชื่อผู้ใช้ใช้ได้เฉพาะ a-z 0-9 . _ - ยาว 3–30 ตัว');
+        }
+        if (data.role === 'prov' && !data.prov) return bad('#uP', 'กรุณาเลือกจังหวัด');
+        if (data.role === 'unit' && !data.org) return bad('#uO', 'กรุณาเลือกหน่วยงาน');
         try {
           const res = await api('apiSaveUser', data, isNew);
           const i = S.users.findIndex(x => x.username === res.user.username);
