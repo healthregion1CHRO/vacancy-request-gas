@@ -185,6 +185,27 @@ function doGet() {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
+/**
+ * ช่องทางให้หน้าเว็บที่อยู่นอก Apps Script (เช่น GitHub Pages) เรียกใช้ API เดียวกับ google.script.run
+ * รับ POST เนื้อหา JSON {fn, args} → ตอบ JSON {ok, data} หรือ {ok:false, error}
+ * เรียกได้เฉพาะฟังก์ชันในรายการ API_IMPL (ฟังก์ชันตั้งค่า/เมนูในชีตเรียกจากภายนอกไม่ได้)
+ */
+const API_IMPL = { apiLogin, apiLogout, apiBootstrap, apiChangePassword, apiListRequests, apiSaveRequest,
+  apiWithdraw, apiReview, apiDeleteRequest, apiListUsers, apiSaveUser, apiResetPassword, apiDeleteUser,
+  apiSaveRound, apiDeleteRound, apiSaveOrgs, apiExportRound, apiExportJson, apiImportRequests };
+
+function doPost(e) {
+  let out;
+  try {
+    const req = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    if (!Object.prototype.hasOwnProperty.call(API_IMPL, req.fn)) throw new Error('ไม่รู้จักคำสั่ง ' + req.fn);
+    out = { ok: true, data: API_IMPL[req.fn].apply(null, Array.isArray(req.args) ? req.args : []) };
+  } catch (err) {
+    out = { ok: false, error: String((err && err.message) || err) };
+  }
+  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
+}
+
 function include(file) {
   return HtmlService.createHtmlOutputFromFile(file).getContent();
 }

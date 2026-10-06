@@ -3,11 +3,10 @@
 เว็บแอป Google Apps Script ให้หน่วยงานส่งคำขอใช้ตำแหน่ง 11 ประเภท (ตามบัญชีประจำเดือน) เขตพิจารณาผลในระบบ
 และออก "บัญชีการขอใช้ตำแหน่งว่าง ประจำเดือน …" เป็น Google Sheet / Excel ได้ในคลิกเดียว
 
-## 🔗 ลองใช้หน้าตัวอย่าง
+## 🔗 ลิงก์
 
-**https://healthregion1chro.github.io/vacancy-request-gas/**
-
-หน้านี้ใช้ข้อมูลสมมติ (ไม่เชื่อมกับข้อมูลจริง) — login ด้วย `admin` + รหัสอะไรก็ได้
+- **ระบบจริง:** https://healthregion1chro.github.io/vacancy-request-gas/ — เชื่อมกับเว็บแอป Apps Script ตามลิงก์ใน `docs/config.js` (login ด้วยบัญชีที่เขตออกให้)
+- **หน้าตัวอย่าง (ข้อมูลสมมติ):** https://healthregion1chro.github.io/vacancy-request-gas/demo/ — login ด้วย `admin` + รหัสอะไรก็ได้
 
 ## ติดตั้งระบบจริง
 
@@ -25,4 +24,4 @@
 | `Index.html` / `Styles.html` / `App.html` | หน้าเว็บ |
 | `appsscript.json` | Manifest |
 | `install/` | `build.ps1` รวมทุกไฟล์เป็น `install/Code.gs` ไฟล์เดียว |
-| `preview/` | หน้าตัวอย่างข้อมูลสมมติ — `sh preview/build-artifact.sh` สร้าง `preview.html` และ `docs/index.html` (GitHub Pages) |
+| `preview/` | หน้าตัวอย่างข้อมูลสมมติ — `sh preview/build-artifact.sh` สร้าง `preview.html`, `docs/demo/` (ตัวอย่าง) และ `docs/index.html` (ระบบจริงบน GitHub Pages) |
