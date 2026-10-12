@@ -405,6 +405,8 @@ const ROUND_STATUSES = ['เปิดรับ', 'ปิดรับ', 'ปร�
 const LISTS = {
   CONDS: ['บรรจุผู้สอบแข่งขัน', 'บรรจุผู้ได้รับคัดเลือก', 'รับย้าย', 'รับโอน', 'รับย้าย/รับโอน', 'เลื่อน',
     'บรรจุกลับ', 'รับย้ายเปลี่ยนสายงาน', 'ตัดโอนตำแหน่งและอัตราเงินเดือน', 'ยุบกำหนดตำแหน่งสูงขึ้น'],
+  GOV_CONDS: ['สรรหาและเลือกสรร', 'จ้างจากบัญชีผู้ผ่านการเลือกสรร', 'ย้าย', 'เปลี่ยนตำแหน่ง / กลุ่มงาน',
+    'ตัดโอนตำแหน่ง', 'ปรับปรุงตำแหน่ง'],
   LEVELS: ['ปฏิบัติการ', 'ชำนาญการ', 'ชำนาญการพิเศษ', 'เชี่ยวชาญ', 'ทรงคุณวุฒิ', 'ปฏิบัติงาน', 'ชำนาญงาน',
     'อาวุโส', 'ทักษะพิเศษ', 'อำนวยการต้น', 'อำนวยการสูง', 'ปก./ชก.', 'ปง./ชง.'],
   EMP_TYPES: ['ลูกจ้างชั่วคราว', 'พนักงานกระทรวงสาธารณสุข'],
@@ -412,7 +414,8 @@ const LISTS = {
 };
 
 /** ช่องข้อมูล — type: text | textarea | number | select | combo | url | org
- *  ประเภทคำขอเปลี่ยนช่องเป็นตัวเลือกได้ด้วย selects: { ช่อง: 'ชื่อรายการใน LISTS' } */
+ *  ประเภทคำขอเปลี่ยนช่องเป็นตัวเลือกได้ด้วย selects: { ช่อง: 'ชื่อรายการใน LISTS' }
+ *  หรือเปลี่ยนแค่รายการ (คงชนิดช่องเดิม) ด้วย lists: { ช่อง: 'ชื่อรายการใน LISTS' } */
 const FIELDS = {
   org:     { label: 'สังกัด', type: 'org' },
   unit:    { label: 'ส่วนราชการ / หน่วยบริการ', type: 'text', ph: 'เช่น รพ.สต.บ้านหัวฝาย สสอ.แม่แตง' },
@@ -464,7 +467,7 @@ const CATS = [
     desc: 'ขอใช้ตำแหน่งพนักงานราชการ', sheet: ' พรก',
     title: 'ผลการพิจารณา การขอใช้ตำแหน่งพนักงานราชการ', grp: 'ข้อมูลตำแหน่ง',
     fields: ['posno', 'pos', 'cond', 'newpos', 'person', 'frame', 'actual'], required: ['posno', 'pos'],
-    labels: { cond: 'เงื่อนไข' } },
+    labels: { cond: 'เงื่อนไข' }, lists: { cond: 'GOV_CONDS' } },
   { key: 'phks', name: 'จ้าง/เปลี่ยนตำแหน่ง พกส.', staff: 'พกส.', icon: 'users',
     desc: 'ขออนุมัติจ้างและเปลี่ยนตำแหน่ง พนักงานกระทรวงสาธารณสุข', sheet: ' จ้าง (พกส) ', alias: ['พกส.'],
     title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่ง พกส.', grp: 'ข้อมูลตำแหน่ง',
@@ -1109,7 +1112,8 @@ function gapOf(sh) {
 }
 
 function fieldHtml(cat, k, val, required, cls) {
-  const F = cat.selects && cat.selects[k] ? Object.assign({}, S.boot.fields[k], { type: 'select', list: cat.selects[k] }) : S.boot.fields[k], id = 'f_' + k, lbl = labelOf(cat, k), v = val == null ? '' : String(val);
+  const F = cat.selects && cat.selects[k] ? Object.assign({}, S.boot.fields[k], { type: 'select', list: cat.selects[k] })
+    : cat.lists && cat.lists[k] ? Object.assign({}, S.boot.fields[k], { list: cat.lists[k] }) : S.boot.fields[k], id = 'f_' + k, lbl = labelOf(cat, k), v = val == null ? '' : String(val);
   let ctl;
   if (F.type === 'org') {
     if (S.boot.user.role === 'unit') ctl = `<input class="input" id="${id}" name="org" value="${esc(S.boot.user.org)}" readonly>`;
@@ -1378,7 +1382,7 @@ const cellTxt = v => String(v == null ? '' : v).replace(/\r/g, '').split('\n').m
 /** อ่านสมุดงาน → { sheets:[{name, cat, rows, skip}], rows:[...], roundHint } */
 function parseBook(XLSX, wb) {
   const B = S.boot, hints = {}, out = { sheets: [], rows: [] };
-  const conds = B.lists.CONDS.map(normSheet);
+  const conds = B.lists.CONDS.concat(B.lists.GOV_CONDS || []).map(normSheet);
   wb.SheetNames.forEach((name, si) => {
     const meta = wb.Workbook && wb.Workbook.Sheets && wb.Workbook.Sheets[si];
     if (meta && meta.Hidden) return;

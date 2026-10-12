@@ -459,7 +459,8 @@ function gapOf(sh) {
 }
 
 function fieldHtml(cat, k, val, required, cls) {
-  const F = cat.selects && cat.selects[k] ? Object.assign({}, S.boot.fields[k], { type: 'select', list: cat.selects[k] }) : S.boot.fields[k], id = 'f_' + k, lbl = labelOf(cat, k), v = val == null ? '' : String(val);
+  const F = cat.selects && cat.selects[k] ? Object.assign({}, S.boot.fields[k], { type: 'select', list: cat.selects[k] })
+    : cat.lists && cat.lists[k] ? Object.assign({}, S.boot.fields[k], { list: cat.lists[k] }) : S.boot.fields[k], id = 'f_' + k, lbl = labelOf(cat, k), v = val == null ? '' : String(val);
   let ctl;
   if (F.type === 'org') {
     if (S.boot.user.role === 'unit') ctl = `<input class="input" id="${id}" name="org" value="${esc(S.boot.user.org)}" readonly>`;
@@ -728,7 +729,7 @@ const cellTxt = v => String(v == null ? '' : v).replace(/\r/g, '').split('\n').m
 /** อ่านสมุดงาน → { sheets:[{name, cat, rows, skip}], rows:[...], roundHint } */
 function parseBook(XLSX, wb) {
   const B = S.boot, hints = {}, out = { sheets: [], rows: [] };
-  const conds = B.lists.CONDS.map(normSheet);
+  const conds = B.lists.CONDS.concat(B.lists.GOV_CONDS || []).map(normSheet);
   wb.SheetNames.forEach((name, si) => {
     const meta = wb.Workbook && wb.Workbook.Sheets && wb.Workbook.Sheets[si];
     if (meta && meta.Hidden) return;
