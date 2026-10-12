@@ -109,7 +109,16 @@
       return ROUNDS.map(x => Object.assign({}, x));
     },
     apiSaveOrgs(tok, list) { who(tok); ORGS.length = 0; list.forEach(o => ORGS.push(o)); return ORGS.slice(); },
-    apiExportRound(tok, rid) { who(tok); const r = ROUNDS.find(x => x.id === rid); return { url: '#', xlsx: '#', title: 'บัญชีการขอใช้ตำแหน่งว่าง ประจำเดือน ' + r.month + ' (ตัวอย่าง)', count: REQS.filter(x => x.round === rid && x.status !== 'ถอนเรื่อง').length }; },
+    apiExportRound(tok, rid, catKey) {
+      who(tok);
+      const r = ROUNDS.find(x => x.id === rid), live = REQS.filter(x => x.round === rid && x.status !== 'ถอนเรื่อง');
+      const f = (title, count, cat) => ({ title: title + ' (ตัวอย่าง)', url: '#', xlsx: '#', count: count, cat: cat || '' });
+      const n = c => live.filter(x => x.cat === c.name).length;
+      const files = !catKey ? [f('บัญชีการขอใช้ตำแหน่งว่าง ประจำเดือน ' + r.month, live.length)]
+        : CATS.filter(c => catKey === '*' ? n(c) : c.key === catKey).map(c => f('บัญชีแนบท้าย ' + c.name + ' ประจำเดือน ' + r.month, n(c), c.name));
+      if (!files.length) throw new Error('รอบนี้ยังไม่มีคำขอ');
+      return Object.assign({}, files[0], { files: files, count: files.reduce((s, x) => s + x.count, 0) });
+    },
     apiExportJson(tok, rid) { who(tok); return REQS.filter(r => (!rid || r.round === rid) && r.status !== 'ถอนเรื่อง').map(r => ({ cat: r.cat, staff: r.staff, prov: r.prov, org: r.org, posno: r.posno, pos: r.pos, result: r.result })); }
   };
   window.MockServer = {

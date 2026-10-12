@@ -79,15 +79,17 @@ const CATS = [
   { key: 'transfer', name: 'เกลี่ยอัตรา ขรก. (มีคนครอง)', staff: 'ข้าราชการ', icon: 'swap',
     desc: 'ตัดโอนตำแหน่งและอัตราเงินเดือน ตำแหน่งที่มีคนครอง', sheet: 'เกลี่ยอัตราตัดโอน (ขรก)',
     title: 'ผลการพิจารณา การเกลี่ยอัตราตำแหน่งข้าราชการ (ตัดโอนตำแหน่งและอัตราเงินเดือน)', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
+    sub3: 'การเกลี่ยอัตราตำแหน่งที่มีคนครอง',
     fields: ['posno', 'pos', 'newunit', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newunit'] },
   { key: 'resident', name: 'เกลี่ยอัตรา แพทย์ประจำบ้าน', staff: 'ข้าราชการ', icon: 'stetho',
     desc: 'ตัดโอนแพทย์/ทันตแพทย์ประจำบ้าน กรณีขึ้นชั้นปีที่ 2', sheet: 'เกลี่ยอัตราตัดโอนแพทย์ประจำบ้าน',
     title: 'การเกลี่ยอัตราตำแหน่งข้าราชการ นายแพทย์ ทันตแพทย์ (ตัดโอนแพทย์ประจำบ้าน และอัตราเงินเดือน) กรณีขึ้นชั้นปีที่ 2 ภายในเขตสุขภาพที่ 1',
-    grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
+    grp: 'ตำแหน่ง / ส่วนราชการ เดิม', sub3: 'การเกลี่ยอัตราตำแหน่งที่มีคนครอง',
     fields: ['posno', 'pos', 'newunit', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newunit', 'person'] },
   { key: 'transferVacant', name: 'เกลี่ยอัตรา ขรก. (ตำแหน่งว่าง)', staff: 'ข้าราชการ', icon: 'move',
     desc: 'ตัดโอนตำแหน่งว่างและอัตราเงินเดือน', sheet: 'เกลี่ยอัตราตัดโอน (ขรก) ต.ว่าง',
     title: 'ผลการพิจารณา การเกลี่ยอัตราตำแหน่งว่าง (ตัดโอนตำแหน่งและอัตราเงินเดือน)', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
+    sub3: 'การเกลี่ยอัตราตำแหน่งว่าง',
     fields: ['posno', 'pos', 'newunit', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newunit'] },
   { key: 'civil', name: 'ขอใช้ตำแหน่ง ขรก.', staff: 'ข้าราชการ', icon: 'badge',
     desc: 'ขอใช้ตำแหน่งว่างข้าราชการ เพื่อบรรจุ/ย้าย/โอน/เลื่อน', sheet: 'ขอใช้ ขรก.',
@@ -740,8 +742,9 @@ function apiSaveOrgs(token, list) {
 
 /* ── ส่งออก ── */
 
-/** สร้าง Google Sheet "บัญชีการขอใช้ตำแหน่งว่าง" ของรอบ ตามรูปแบบชีตเดิม (1 ชีตต่อประเภท + สรุป) */
-function apiExportRound(token, roundId) {
+/** สร้างบัญชีแนบท้ายของรอบ ตามแบบฟอร์มบัญชีประจำเดือน (หัวตารางแถว 5–6 ข้อมูลเริ่มแถว 7)
+ *  catKey: '' = ไฟล์เดียว (ชีตสรุป + 1 ชีตต่อหมวด) · '*' = แยกไฟล์ละหมวด เฉพาะหมวดที่มีคำขอ · key = เฉพาะหมวดนั้น */
+function apiExportRound(token, roundId, catKey) {
   const me = auth_(token, 'admin');
   const round = table_(SH.ROUNDS).items.find(r => String(r.id) === String(roundId));
   if (!round) throw new Error('ไม่พบรอบการประชุม');
@@ -750,12 +753,35 @@ function apiExportRound(token, roundId) {
   reqs.sort((a, b) => provOrder(a) - provOrder(b) || String(a.org).localeCompare(String(b.org), 'th') ||
     String(a.posno).localeCompare(String(b.posno), 'th', { numeric: true }));
 
-  const title = 'บัญชีการขอใช้ตำแหน่งว่าง ประจำเดือน ' + (round.month || round.name);
-  const out = SpreadsheetApp.create(title);
+  const month = round.month || round.name;
   const sub = [round.name, round.meetDate ? 'วันที่ ' + thaiDate_(round.meetDate) : ''].filter(String).join(' ');
+  const byCat = c => reqs.filter(r => r.cat === c.name);
+  const done = (out, count, cat) => {
+    out.getSheets().forEach(s => s.getDataRange().setFontFamily('Sarabun'));
+    return { title: out.getName(), url: out.getUrl(), count: count, cat: cat || '',
+      xlsx: 'https://docs.google.com/spreadsheets/d/' + out.getId() + '/export?format=xlsx' };
+  };
+  let files;
+  if (!catKey) {
+    const out = SpreadsheetApp.create('บัญชีการขอใช้ตำแหน่งว่าง ประจำเดือน ' + month);
+    summarySheet_(out.getSheets()[0].setName('สรุป'), out.getName(), sub, reqs);
+    CATS.forEach(c => catSheet_(out.insertSheet(c.sheet.trim()), c, byCat(c), sub));
+    files = [done(out, reqs.length)];
+  } else {
+    const cats = catKey === '*' ? CATS.filter(c => byCat(c).length) : CATS.filter(c => c.key === catKey);
+    if (!cats.length) throw new Error(catKey === '*' ? 'รอบนี้ยังไม่มีคำขอ' : 'ไม่พบประเภทคำขอ');
+    files = cats.map(c => {
+      const out = SpreadsheetApp.create('บัญชีแนบท้าย ' + c.name + ' ประจำเดือน ' + month);
+      catSheet_(out.getSheets()[0].setName(c.sheet.trim()), c, byCat(c), sub);
+      return done(out, byCat(c).length, c.name);
+    });
+  }
+  log_(me.username, 'ส่งออกบัญชี', roundId, files.map(f => f.title).join(' · '));
+  return Object.assign({}, files[0], { files: files, count: files.reduce((s, f) => s + f.count, 0) });
+}
 
-  // ชีตสรุป
-  const sum = out.getSheets()[0].setName('สรุป');
+/** ชีตสรุปจำนวนคำขอ หมวด × จังหวัด */
+function summarySheet_(sum, title, sub, reqs) {
   const sumRows = [['ประเภทคำขอ'].concat(PROVINCES, ['รวม'])];
   CATS.forEach(c => {
     const rs = reqs.filter(r => r.cat === c.name);
@@ -765,51 +791,48 @@ function apiExportRound(token, roundId) {
   const tot = ['รวม'];
   for (let i = 1; i < sumRows[0].length; i++) tot.push(sumRows.slice(1).reduce((s, r) => s + r[i], 0));
   sumRows.push(tot);
-  sum.getRange(1, 1).setValue(title).setFontSize(14).setFontWeight('bold');
-  sum.getRange(2, 1).setValue(sub);
+  sum.getRange(1, 1).setValue(title).setFontSize(16).setFontWeight('bold');
+  sum.getRange(2, 1).setValue(sub).setFontSize(14);
   sum.getRange(4, 1, sumRows.length, sumRows[0].length).setValues(sumRows).setBorder(true, true, true, true, true, true)
-    .setHorizontalAlignment('center');
-  sum.getRange(4, 1, 1, sumRows[0].length).setFontWeight('bold').setBackground('#e3f2e8');
-  sum.getRange(4 + sumRows.length - 1, 1, 1, sumRows[0].length).setFontWeight('bold').setBackground('#f1f5f9');
+    .setHorizontalAlignment('center').setFontSize(14);
+  sum.getRange(4, 1, 1, sumRows[0].length).setFontWeight('bold');
+  sum.getRange(4 + sumRows.length - 1, 1, 1, sumRows[0].length).setFontWeight('bold');
   sum.getRange(5, 1, sumRows.length - 1, 1).setHorizontalAlignment('left');
   sum.setColumnWidth(1, 260);
+}
 
-  CATS.forEach(c => {
-    const sh = out.insertSheet(c.sheet.trim());
-    const cols = exportCols_(c);
-    const rs = reqs.filter(r => r.cat === c.name);
-    const n = cols.length;
-    sh.getRange(1, 1, 1, n).merge().setValue(c.title).setFontSize(14).setFontWeight('bold').setHorizontalAlignment('center');
-    sh.getRange(2, 1, 1, n).merge().setValue(sub).setHorizontalAlignment('center');
-    // หัวตาราง 2 แถว (รวมเซลล์กลุ่ม "ข้อมูลตำแหน่ง")
-    const h1 = cols.map(c2 => c2.group || c2.label);
-    const h2 = cols.map(c2 => c2.group ? c2.label : '');
-    sh.getRange(4, 1, 2, n).setValues([h1, h2]);
-    let i = 0;
-    while (i < n) {
-      if (cols[i].group) {
-        let j = i;
-        while (j + 1 < n && cols[j + 1].group === cols[i].group) j++;
-        sh.getRange(4, i + 1, 1, j - i + 1).merge();
-        i = j + 1;
-      } else {
-        sh.getRange(4, i + 1, 2, 1).merge();
-        i++;
-      }
+/** ชีตบัญชีแนบท้ายของหมวด ตามแบบฟอร์ม: แถว 1 ชื่อเรื่อง · 2 รอบ/วันประชุม · 3 หัวข้อย่อย · 5–6 หัวตาราง · 7+ ข้อมูล */
+function catSheet_(sh, c, rs, sub) {
+  const cols = exportCols_(c, rs);
+  const n = cols.length, H = 5;
+  sh.getRange(1, 1, 1, n).merge().setValue(c.title).setFontSize(16).setFontWeight('bold')
+    .setHorizontalAlignment('center').setWrap(true);
+  sh.getRange(2, 1, 1, n).merge().setValue(sub).setFontSize(16).setHorizontalAlignment('center');
+  if (c.sub3) sh.getRange(3, 1, 1, n).merge().setValue(c.sub3).setFontSize(14).setFontWeight('bold');
+  // หัวตาราง 2 แถว (รวมเซลล์กลุ่ม "ข้อมูลตำแหน่ง")
+  sh.getRange(H, 1, 2, n).setValues([cols.map(x => x.group || x.label), cols.map(x => x.group ? x.label : '')]);
+  let i = 0;
+  while (i < n) {
+    if (cols[i].group) {
+      let j = i;
+      while (j + 1 < n && cols[j + 1].group === cols[i].group) j++;
+      sh.getRange(H, i + 1, 1, j - i + 1).merge();
+      i = j + 1;
+    } else {
+      sh.getRange(H, i + 1, 2, 1).merge();
+      i++;
     }
-    sh.getRange(4, 1, 2, n).setFontWeight('bold').setBackground('#e3f2e8').setHorizontalAlignment('center')
-      .setVerticalAlignment('middle').setWrap(true);
-    if (rs.length) {
-      const rows = rs.map((r, k) => cols.map(col => col.key === '#' ? k + 1 : col.get(r)));
-      sh.getRange(6, 1, rows.length, n).setValues(rows).setWrap(true).setVerticalAlignment('top');
-    }
-    sh.getRange(4, 1, Math.max(rs.length, 1) + 2, n).setBorder(true, true, true, true, true, true);
-    cols.forEach((col, k) => sh.setColumnWidth(k + 1, col.w || 110));
-    sh.setFrozenRows(5);
-  });
-  out.getSheets().forEach(s => s.getDataRange().setFontFamily('Sarabun'));
-  log_(me.username, 'ส่งออกบัญชี', roundId, title);
-  return { url: out.getUrl(), xlsx: 'https://docs.google.com/spreadsheets/d/' + out.getId() + '/export?format=xlsx', title: title, count: reqs.length };
+  }
+  sh.getRange(H, 1, 2, n).setFontSize(14).setFontWeight('bold').setHorizontalAlignment('center')
+    .setVerticalAlignment('middle').setWrap(true);
+  if (rs.length) {
+    const rows = rs.map((r, k) => cols.map(col => col.key === '#' ? k + 1 : col.get(r)));
+    sh.getRange(H + 2, 1, rows.length, n).setValues(rows).setFontSize(14).setWrap(true).setVerticalAlignment('top');
+    cols.forEach((col, k) => { if (col.center) sh.getRange(H + 2, k + 1, rows.length, 1).setHorizontalAlignment('center'); });
+  }
+  sh.getRange(H, 1, Math.max(rs.length, 1) + 2, n).setBorder(true, true, true, true, true, true);
+  cols.forEach((col, k) => sh.setColumnWidth(k + 1, col.w || 110));
+  sh.setFrozenRows(H + 1);
 }
 
 /** ส่งออก JSON สำหรับนำเข้า Dashboard (รูปแบบเดียวกับ data-2569.json) — ไม่มีชื่อบุคคล */
@@ -968,27 +991,30 @@ function resetPassword_(username, by, pw) {
   return pw;
 }
 
-function exportCols_(cat) {
+/** คอลัมน์ของบัญชีแนบท้าย เรียงตามแบบฟอร์ม — "หมายเหตุ" ไม่มีในแบบฟอร์ม จึงใส่เฉพาะเมื่อมีคำขอที่กรอกไว้ */
+function exportCols_(cat, rs) {
   const grpKeys = ['org', 'unit', 'posno', 'pos', 'level', 'typeold'];
   const all = HEAD_FIELDS.concat(cat.fields);
-  const cols = [{ key: '#', label: 'ลำดับ', w: 50 }];
+  const W = { org: 100, unit: 200, posno: 85, pos: 150, level: 90, typeold: 95, exec: 100, newpos: 220, newunit: 220,
+    cond: 140, person: 170, typenew: 95 };
+  const cols = [{ key: '#', label: 'ลำดับ', w: 45, center: true }];
   const val = k => r => (r[k] === null || r[k] === undefined) ? '' : r[k];
   grpKeys.filter(k => all.indexOf(k) >= 0).forEach(k => {
     const label = k === 'org' ? 'สังกัด' : k === 'unit' ? 'ส่วนราชการ' : k === 'pos' ? (cat.key === 'civil' ? 'ชื่อตำแหน่ง' : 'ชื่อสายงาน') : labelOf_(cat, k);
     const get = k === 'unit' ? (r => [r.unit, r.dept].filter(String).join('\n')) : val(k);
-    cols.push({ key: k, group: cat.grp, label: label, get: get, w: k === 'unit' ? 200 : k === 'posno' ? 90 : 150 });
+    cols.push({ key: k, group: cat.grp, label: label, get: get, w: W[k], center: k === 'posno' });
   });
   cat.fields.filter(k => grpKeys.indexOf(k) < 0 && k !== 'frame' && k !== 'actual' && k !== 'reason').forEach(k => {
-    cols.push({ key: k, label: labelOf_(cat, k), get: val(k), w: k === 'newpos' || k === 'newunit' ? 200 : 140 });
+    cols.push({ key: k, label: labelOf_(cat, k), get: val(k), w: W[k] || 140 });
   });
   if (cat.fields.indexOf('frame') >= 0) {
-    cols.push({ key: 'frame', label: 'กรอบ', get: val('frame'), w: 60 });
-    cols.push({ key: 'actual', label: 'ปฏิบัติงานจริง', get: val('actual'), w: 70 });
-    cols.push({ key: 'short', label: 'ขาด', get: val('short'), w: 60 });
+    cols.push({ key: 'frame', label: 'กรอบ', get: val('frame'), w: 60, center: true });
+    cols.push({ key: 'actual', label: 'ปฏิบัติงานจริง', get: val('actual'), w: 70, center: true });
+    cols.push({ key: 'short', label: 'ขาด', get: val('short'), w: 60, center: true });
   }
-  if (cat.fields.indexOf('reason') >= 0) cols.push({ key: 'reason', label: 'เหตุผลประกอบ', get: val('reason'), w: 200 });
-  cols.push({ key: 'result', label: 'ผลการพิจารณาเขต', get: r => r.result || (r.status === 'รอพิจารณา' ? '' : r.status), w: 150 });
-  cols.push({ key: 'note', label: 'หมายเหตุ', get: val('note'), w: 150 });
+  if (cat.fields.indexOf('reason') >= 0) cols.push({ key: 'reason', label: 'เหตุผลประกอบ', get: val('reason'), w: 170 });
+  cols.push({ key: 'result', label: 'ผลการพิจารณาเขต', get: r => r.result || (r.status === 'รอพิจารณา' ? '' : r.status), w: 110 });
+  if ((rs || []).some(r => String(r.note || '').trim())) cols.push({ key: 'note', label: 'หมายเหตุ', get: val('note'), w: 150 });
   return cols;
 }
 

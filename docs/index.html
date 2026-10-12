@@ -989,7 +989,7 @@ function viewList() {
   const B = S.boot, u = B.user, F = S.filters;
   const provSel = u.role === 'admin' ? `<select class="input" data-change="f-prov" aria-label="จังหวัด"><option value="">ทุกจังหวัด</option>${B.provinces.map(p => `<option ${F.prov === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select>` : '';
   const orgSel = u.role !== 'unit' ? `<select class="input" data-change="f-org" aria-label="หน่วยงาน"><option value="">ทุกหน่วยงาน</option>${B.orgs.filter(o => !F.prov || o.prov === F.prov).map(o => `<option ${F.org === o.org ? 'selected' : ''}>${esc(o.org)}</option>`).join('')}</select>` : '';
-  const exp = isAdmin() ? `<button class="btn icon" data-act="import" title="นำเข้าจากไฟล์บัญชี (.xlsx)" aria-label="นำเข้าจากไฟล์บัญชี (.xlsx)">${icon('upload')}</button><button class="btn" data-act="export">${icon('sheet')} ออกบัญชีประจำเดือน</button><button class="btn icon" data-act="export-json" title="ส่งออก JSON สำหรับ Dashboard" aria-label="ส่งออก JSON สำหรับ Dashboard">${icon('download')}</button>` : '';
+  const exp = isAdmin() ? `<button class="btn icon" data-act="import" title="นำเข้าจากไฟล์บัญชี (.xlsx)" aria-label="นำเข้าจากไฟล์บัญชี (.xlsx)">${icon('upload')}</button><button class="btn" data-act="export">${icon('sheet')} ออกบัญชีแนบท้าย</button><button class="btn icon" data-act="export-json" title="ส่งออก JSON สำหรับ Dashboard" aria-label="ส่งออก JSON สำหรับ Dashboard">${icon('download')}</button>` : '';
   return `<div class="card">
     <div class="toolbar">
       <div class="input-wrap">${icon('search')}<input class="input" type="search" id="q" placeholder="ค้นหาเลขตำแหน่ง ชื่อตำแหน่ง หน่วยงาน รหัสคำขอ…" value="${esc(F.q)}" aria-label="ค้นหา"></div>
@@ -1064,15 +1064,29 @@ function reviewModal(ids, status) {
 
 async function doExport(btn) {
   if (!S.round) { toast('เลือกรอบการประชุมด้านบนก่อนออกบัญชี', 'err'); return; }
-  const rd = roundOf(S.round);
-  const ok = await confirmBox(`สร้าง <b>บัญชีการขอใช้ตำแหน่งว่าง ประจำเดือน ${esc(rd.month || rd.name)}</b> เป็น Google Sheet ใหม่ แยกชีตตามประเภท พร้อมชีตสรุป<br><span class="muted">ไม่รวมคำขอที่ถอนเรื่อง · ไฟล์จะอยู่ใน Google Drive ของเจ้าของระบบ</span>`, { title: 'ออกบัญชีประจำเดือน', ok: 'สร้างไฟล์' });
-  if (!ok) return;
+  const rd = roundOf(S.round), B = S.boot;
+  const live = scoped().filter(r => r.status !== 'ถอนเรื่อง');
+  const cnt = c => live.filter(r => r.cat === c.name).length;
+  const kind = await new Promise(res => {
+    const w = modal({ title: 'ออกบัญชีแนบท้าย',
+      body: `<p class="muted" style="margin:0">บัญชีการขอใช้ตำแหน่งว่าง ประจำเดือน <b>${esc(rd.month || rd.name)}</b> ตามแบบฟอร์มบัญชีประจำเดือน · สร้างเป็น Google Sheet ใหม่ใน Drive ของเจ้าของระบบ · ไม่รวมคำขอที่ถอนเรื่อง</p>
+        <div class="field"><label for="expKind">ออกบัญชี</label><select class="input" id="expKind">
+          <option value="">ทุกหมวด · ไฟล์เดียว แยกชีตตามหมวด + ชีตสรุป (${live.length} รายการ)</option>
+          <option value="*">ทุกหมวด · แยกไฟล์ละหมวด เฉพาะหมวดที่มีคำขอ (${B.cats.filter(cnt).length} ไฟล์)</option>
+          <optgroup label="เฉพาะหมวด">${B.cats.map(c => `<option value="${esc(c.key)}">${esc(c.name)} (${cnt(c)} รายการ)</option>`).join('')}</optgroup>
+        </select></div>`,
+      foot: `<button class="btn" data-x="no">ยกเลิก</button><button class="btn primary" data-x="yes">${icon('sheet')} สร้างไฟล์</button>` });
+    w.addEventListener('click', e => { const b = e.target.closest('[data-x]'); if (b) { const v = $('#expKind', w).value; closeModal(); res(b.dataset.x === 'yes' ? v : null); } });
+  });
+  if (kind === null) return;
   await withBtn(btn, async () => {
     try {
-      const r = await api('apiExportRound', S.round);
-      modal({ title: 'สร้างบัญชีเรียบร้อย',
-        body: `<div class="alert info">${icon('check')}<span>${esc(r.title)} · ${r.count} รายการ</span></div>`,
-        foot: `<a class="btn" href="${esc(r.xlsx)}" target="_blank" rel="noopener">${icon('download')} ดาวน์โหลด .xlsx</a><a class="btn primary" href="${esc(r.url)}" target="_blank" rel="noopener">${icon('sheet')} เปิด Google Sheet</a>` });
+      const r = await api('apiExportRound', S.round, kind);
+      const files = r.files || [r];
+      modal({ title: 'สร้างบัญชีแนบท้ายเรียบร้อย', wide: files.length > 1,
+        body: `<div class="alert info">${icon('check')}<span>${files.length} ไฟล์ · ${r.count} รายการ</span></div>
+          ${files.map(f => `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border)"><span style="flex:1;min-width:200px">${esc(f.title)} <span class="muted">· ${f.count} รายการ</span></span><a class="btn sm" href="${esc(f.xlsx)}" target="_blank" rel="noopener">${icon('download')} .xlsx</a><a class="btn sm primary" href="${esc(f.url)}" target="_blank" rel="noopener">${icon('sheet')} Google Sheet</a></div>`).join('')}`,
+        foot: `<button class="btn" data-act="modal-close">ปิด</button>` });
     } catch (e) { fail(e); }
   });
 }
