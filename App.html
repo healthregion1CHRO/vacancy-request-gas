@@ -213,6 +213,20 @@ const isDark = () => { const t = document.documentElement.dataset.theme; return 
 function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', localStorage); applyTheme(); }
 
 /* ───────────── login ───────────── */
+/** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
+const PAGE_BUILD = '__BUILD__';
+function checkServerBuild() {
+  if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
+  fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
+    .then(r => r.json()).then(res => {
+      const srv = res.ok ? String(res.data) : '';
+      const w = $('#verWarn');
+      if (!w || srv === PAGE_BUILD) return;
+      w.innerHTML = icon('alert') + `<span><b>โค้ดใน Apps Script ยังเป็นรุ่นเก่า</b> (เว็บแอป: ${esc(srv || 'ก่อนมีรหัสรุ่น')} · หน้าเว็บ: ${esc(PAGE_BUILD)}) — วาง install/Code.gs ตัวล่าสุด แล้ว Deploy → Manage deployments → ✏️ → Version: New version</span>`;
+      w.hidden = false;
+    }, () => {});
+}
+
 function renderLogin(msg) {
   S.boot = null;
   $('#root').innerHTML = `
@@ -242,9 +256,12 @@ function renderLogin(msg) {
           <button type="button" class="btn ghost sm icon" data-act="pw-toggle" data-for="lp" aria-label="แสดงรหัสผ่าน">${icon('eye')}</button></div></div>
         <button class="btn primary" type="submit" style="min-height:46px">เข้าสู่ระบบ ${icon('arrowRight')}</button>
         <p class="muted" style="font-size:13px;margin:0">ลืมรหัสผ่าน? ติดต่อผู้ดูแลระบบของเขตเพื่อรีเซ็ต</p>
+        ${/^_/.test(PAGE_BUILD) ? '' : `<p class="muted" style="font-size:11px;margin:0">รุ่น ${esc(PAGE_BUILD)}</p>`}
+        <div class="alert" id="verWarn" hidden></div>
       </form>
     </section>
   </div>`;
+  checkServerBuild();
   const form = $('#loginForm');
   form.addEventListener('submit', async e => {
     e.preventDefault();
