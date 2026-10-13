@@ -1083,12 +1083,77 @@ async function doExport(btn) {
     try {
       const r = await api('apiExportRound', S.round, kind);
       const files = r.files || [r];
-      modal({ title: 'สร้างบัญชีแนบท้ายเรียบร้อย', wide: files.length > 1,
-        body: `<div class="alert info">${icon('check')}<span>${files.length} ไฟล์ · ${r.count} รายการ</span></div>
-          ${files.map(f => `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border)"><span style="flex:1;min-width:200px">${esc(f.title)} <span class="muted">· ${f.count} รายการ</span></span><a class="btn sm" href="${esc(f.xlsx)}" target="_blank" rel="noopener">${icon('download')} .xlsx</a><a class="btn sm primary" href="${esc(f.url)}" target="_blank" rel="noopener">${icon('sheet')} Google Sheet</a></div>`).join('')}`,
-        foot: `<button class="btn" data-act="modal-close">ปิด</button>` });
+      // หน้าตัวอย่างส่งข้อมูลชีตมาด้วย (f.sheets) → ดูบนจอ + สร้าง .xlsx ในเบราว์เซอร์ แทนลิงก์ Google Sheet
+      const row = (f, i) => f.sheets
+        ? `<button class="btn sm" data-xi="${i}">${icon('download')} .xlsx</button><button class="btn sm primary" data-vi="${i}">${icon('sheet')} ดูตัวอย่าง</button>`
+        : `<a class="btn sm" href="${esc(f.xlsx)}" target="_blank" rel="noopener">${icon('download')} .xlsx</a><a class="btn sm primary" href="${esc(f.url)}" target="_blank" rel="noopener">${icon('sheet')} Google Sheet</a>`;
+      const show = () => modal({ title: 'สร้างบัญชีแนบท้ายเรียบร้อย', wide: files.length > 1,
+        body: `<div class="alert info">${icon('check')}<span>${files.length} ไฟล์ · ${r.count} รายการ${files[0].sheets ? ' · หน้าตัวอย่าง: ดูบนจอหรือดาวน์โหลด .xlsx ได้ (ระบบจริงสร้างเป็น Google Sheet)' : ''}</span></div>
+          ${files.map((f, i) => `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border)"><span style="flex:1;min-width:200px">${esc(f.title)} <span class="muted">· ${f.count} รายการ</span></span>${row(f, i)}</div>`).join('')}`,
+        foot: `<button class="btn" data-act="modal-close">ปิด</button>`,
+        onMount: w => w.addEventListener('click', e => {
+          const b = e.target.closest('[data-xi],[data-vi]'); if (!b) return;
+          if (b.dataset.vi) viewSheets(files[b.dataset.vi], show);
+          else withBtn(b, () => xlsxSheets(files[b.dataset.xi]).catch(fail));
+        }) });
+      show();
     } catch (e) { fail(e); }
   });
+}
+
+/** ดูบัญชีแนบท้ายบนจอ ตามแบบฟอร์ม: ชื่อเรื่อง · รอบ/วันประชุม · หัวข้อย่อย · หัวตาราง 2 แถว · ข้อมูล */
+function viewSheets(f, back) {
+  let cur = 0;
+  const table = s => {
+    const g = s.cols.some(c => c.group), th = 'border:1px solid var(--border);padding:4px 6px;background:var(--surface-2,rgba(127,127,127,.12));text-align:center;vertical-align:middle';
+    let h1 = '', h2 = '';
+    for (let i = 0; i < s.cols.length; i++) {
+      const c = s.cols[i];
+      if (g && c.group) { let j = i; while (j + 1 < s.cols.length && s.cols[j + 1].group === c.group) j++;
+        h1 += `<th colspan="${j - i + 1}" style="${th}">${esc(c.group)}</th>`; h2 += s.cols.slice(i, j + 1).map(x => `<th style="${th};min-width:${Math.round(x.w * .6)}px">${esc(x.label)}</th>`).join(''); i = j;
+      } else h1 += `<th ${g ? 'rowspan="2"' : ''} style="${th};min-width:${Math.round(c.w * .6)}px">${esc(c.label)}</th>`;
+    }
+    const td = (v, c, last) => `<td style="border:1px solid var(--border);padding:4px 6px;vertical-align:top;white-space:pre-line;${c.center ? 'text-align:center;' : ''}${last ? 'font-weight:600;' : ''}">${esc(v)}</td>`;
+    const body = s.rows.length ? s.rows.map((r, k) => `<tr>${r.map((v, i) => td(v, s.cols[i], s.total && k === s.rows.length - 1)).join('')}</tr>`).join('')
+      : `<tr><td colspan="${s.cols.length}" style="border:1px solid var(--border);padding:8px;text-align:center" class="muted">ไม่มีคำขอในหมวดนี้</td></tr>`;
+    return `<div style="text-align:center;font-weight:700;font-size:16px">${esc(s.title)}</div><div style="text-align:center">${esc(s.sub)}</div>
+      ${s.sub3 ? `<div style="font-weight:700;margin-top:4px">${esc(s.sub3)}</div>` : ''}
+      <div style="overflow:auto;margin-top:10px;max-height:60vh"><table style="border-collapse:collapse;font-size:13px;width:100%"><thead><tr>${h1}</tr>${g ? `<tr>${h2}</tr>` : ''}</thead><tbody>${body}</tbody></table></div>`;
+  };
+  const render = w => {
+    $('#shTabs', w).innerHTML = f.sheets.map((s, i) => `<button class="btn sm ${i === cur ? 'primary' : ''}" data-si="${i}">${esc(s.name)} <span class="muted">${s.total ? '' : s.rows.length}</span></button>`).join('');
+    $('#shBody', w).innerHTML = table(f.sheets[cur]);
+  };
+  modal({ title: f.title, wide: true,
+    body: `<div id="shTabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div><div id="shBody"></div>`,
+    foot: `<button class="btn" id="shBack">กลับ</button><button class="btn primary" id="shX">${icon('download')} ดาวน์โหลด .xlsx</button>`,
+    onMount: w => {
+      render(w);
+      w.addEventListener('click', e => { const b = e.target.closest('[data-si]'); if (b) { cur = +b.dataset.si; render(w); } });
+      $('#shBack', w).onclick = back;
+      $('#shX', w).onclick = e => withBtn(e.currentTarget, () => xlsxSheets(f).catch(fail));
+    } });
+}
+
+/** สร้างไฟล์ .xlsx จากข้อมูลชีต (หน้าตัวอย่าง) — แถว 1–3 หัวเรื่อง · 5–6 หัวตาราง · ข้อมูลเริ่มแถว 7 */
+async function xlsxSheets(f) {
+  const XLSX = await loadXlsx(), wb = XLSX.utils.book_new();
+  f.sheets.forEach(s => {
+    const n = s.cols.length, g = s.cols.some(c => c.group), H = g ? 4 : 3;
+    const aoa = [[s.title], [s.sub], [s.sub3], []];
+    if (g) { aoa.push(s.cols.map(c => c.group || c.label)); aoa.push(s.cols.map(c => c.group ? c.label : '')); }
+    else aoa.push(s.cols.map(c => c.label));
+    const ws = XLSX.utils.aoa_to_sheet(aoa.concat(s.rows));
+    const m = [0, 1, 2].map(r => ({ s: { r, c: 0 }, e: { r, c: n - 1 } }));
+    if (g) for (let i = 0; i < n; i++) {
+      if (s.cols[i].group) { let j = i; while (j + 1 < n && s.cols[j + 1].group === s.cols[i].group) j++; if (j > i) m.push({ s: { r: H, c: i }, e: { r: H, c: j } }); i = j; }
+      else m.push({ s: { r: H, c: i }, e: { r: H + 1, c: i } });
+    }
+    ws['!merges'] = m;
+    ws['!cols'] = s.cols.map(c => ({ wch: Math.max(6, Math.round(c.w / 7)) }));
+    XLSX.utils.book_append_sheet(wb, ws, s.name.slice(0, 31).replace(/[\\\/?*\[\]:]/g, '-'));
+  });
+  XLSX.writeFile(wb, f.title.replace(/[\\\/?*:"<>|]/g, '-') + '.xlsx');
 }
 
 async function doExportJson(btn) {
