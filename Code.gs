@@ -110,7 +110,7 @@ const CATS = [
     title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่ง พกส. (สายงานผู้ช่วย)', grp: 'ข้อมูลตำแหน่ง',
     fields: ['posno', 'pos', 'newpos', 'person', 'frame', 'actual', 'reason'], required: ['pos', 'newpos', 'person'],
     labels: { newpos: 'ขอเปลี่ยนเป็นตำแหน่ง (สายงานผู้ช่วย)' }, selects: { newpos: 'ASST_POS' } },
-  { key: 'phksMove', name: 'ย้าย พกส.', staff: 'พกส.', icon: 'usermove',
+  { key: 'phksMove', name: 'ย้าย พนักงานกระทรวงสาธารณสุข', oldNames: ['ย้าย พกส.'], staff: 'พกส.', icon: 'usermove',
     desc: 'ขอย้ายพนักงานกระทรวงสาธารณสุข ไปหน่วยงานอื่น', sheet: 'ย้าย (พกส)',
     title: 'ผลการพิจารณา การขอย้ายพนักงานกระทรวงสาธารณสุข', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
     fields: ['posno', 'pos', 'newunit', 'person', 'frame', 'actual', 'reason'], required: ['pos', 'newunit', 'person'],
@@ -759,7 +759,7 @@ function apiExportRound(token, roundId, catKey) {
 
   const month = round.month || round.name;
   const sub = [round.name, round.meetDate ? 'วันที่ ' + thaiDate_(round.meetDate) : ''].filter(String).join(' ');
-  const byCat = c => reqs.filter(r => r.cat === c.name);
+  const byCat = c => reqs.filter(r => catName_(r.cat) === c.name);
   const done = (out, count, cat) => {
     out.getSheets().forEach(s => s.getDataRange().setFontFamily('Sarabun'));
     return { title: out.getName(), url: out.getUrl(), count: count, cat: cat || '',
@@ -788,7 +788,7 @@ function apiExportRound(token, roundId, catKey) {
 function summarySheet_(sum, title, sub, reqs) {
   const sumRows = [['ประเภทคำขอ'].concat(PROVINCES, ['รวม'])];
   CATS.forEach(c => {
-    const rs = reqs.filter(r => r.cat === c.name);
+    const rs = reqs.filter(r => catName_(r.cat) === c.name);
     const row = [c.name].concat(PROVINCES.map(p => rs.filter(r => r.prov === p).length));
     sumRows.push(row.concat([rs.length]));
   });
@@ -846,7 +846,7 @@ function apiExportJson(token, roundId) {
   return table_(SH.REQ).items
     .filter(r => (!roundId || String(r.round) === String(roundId)) && r.status !== 'ถอนเรื่อง')
     .map(r => ({
-      cat: r.cat, staff: r.staff, prov: r.prov, org: r.org, unit: r.unit, dept: r.dept, posno: String(r.posno),
+      cat: catName_(r.cat), staff: r.staff, prov: r.prov, org: r.org, unit: r.unit, dept: r.dept, posno: String(r.posno),
       pos: r.pos, level: r.level, exec: r.exec, newpos: r.newpos || r.newunit, typeold: r.typeold, typenew: r.typenew,
       cond: r.cond, frame: r.frame, actual: r.actual, short: r.short, reason: r.reason,
       result: r.result || (r.status === 'รอพิจารณา' ? '' : r.status),
@@ -875,7 +875,7 @@ function apiImportRequests(token, roundId, rows, status) {
     const orgs = table_(SH.ORGS).items;
     const t = table_(SH.REQ);
     const sp = s => String(s === null || s === undefined ? '' : s).replace(/\s+/g, ' ').trim();
-    const keyOf = r => [r.cat, r.org, sp(r.posno), sp(r.pos), sp(r.person)].join('|');
+    const keyOf = r => [catName_(r.cat), r.org, sp(r.posno), sp(r.pos), sp(r.person)].join('|');
     const have = {};
     t.items.forEach(r => { if (String(r.round) === String(round.id) && r.status !== 'ถอนเรื่อง') have[keyOf(r)] = 1; });
 
@@ -1161,9 +1161,16 @@ function plain_(o) {
   return out;
 }
 
+/** ชื่อประเภทคำขอปัจจุบัน — คำขอเก่าในชีตที่ยังใช้ชื่อเดิม (oldNames) จะนับเป็นประเภทเดียวกัน */
+function catName_(name) {
+  const c = CATS.find(x => x.name === name || (x.oldNames || []).indexOf(name) >= 0);
+  return c ? c.name : name;
+}
+
 function reqToClient_(r) {
   const o = plain_(r);
-  const cat = CATS.find(c => c.name === r.cat);
+  const cat = CATS.find(c => c.name === catName_(r.cat));
+  if (cat) o.cat = cat.name;
   o.catKey = cat ? cat.key : '';
   o.posno = String(o.posno === null || o.posno === undefined ? '' : o.posno);
   return o;
