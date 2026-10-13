@@ -913,9 +913,16 @@ function copyText(text) {
   };
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
 }
-function download(name, text) {
+/** บันทึกไฟล์: ใน claude.ai artifact ต้องผ่าน downloads capability (ผู้ชมกดยืนยัน) · ที่อื่นใช้ลิงก์ดาวน์โหลดปกติ */
+async function download(name, data, type) {
+  const dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null;
+  if (dl) {
+    try { await dl.save({ filename: name, data: data }); }
+    catch (e) { if (e && e.code !== 'declined') toast('ดาวน์โหลดไม่ได้ในหน้านี้ (' + (e.code || e.message) + ')', 'err'); }
+    return;
+  }
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.href = URL.createObjectURL(new Blob([data], { type: type || 'application/json' }));
   a.download = name; document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
@@ -1489,7 +1496,8 @@ async function xlsxSheets(f) {
     ws['!cols'] = s.cols.map(c => ({ wch: Math.max(6, Math.round(c.w / 7)) }));
     XLSX.utils.book_append_sheet(wb, ws, s.name.slice(0, 31).replace(/[\\\/?*\[\]:]/g, '-'));
   });
-  XLSX.writeFile(wb, f.title.replace(/[\\\/?*:"<>|]/g, '-') + '.xlsx');
+  await download(f.title.replace(/[\\\/?*:"<>|]/g, '-') + '.xlsx', new Uint8Array(XLSX.write(wb, { bookType: 'xlsx', type: 'array' })),
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 }
 
 async function doExportJson(btn) {
