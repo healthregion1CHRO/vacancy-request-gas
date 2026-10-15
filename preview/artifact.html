@@ -804,7 +804,7 @@ const ICONS = {
   usermove: '<path d="M14 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="8" cy="7" r="4"/><path d="M16 11h6M19 8l3 3-3 3"/>'
 };
 const icon = (n, cls) => `<svg class="ico ${cls || ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
-const CAT_COLORS = ['#1d7a45', '#0a6ab4', '#7c3aed', '#0e7490', '#b45309', '#be185d', '#4d7c0f', '#c2410c', '#4338ca', '#0f766e', '#a21caf'];
+const CAT_COLORS = ['#4f46e5', '#0284c7', '#0d9488', '#c026d3', '#b45309', '#db2777', '#16a34a', '#ea580c', '#7c3aed', '#0891b2', '#e11d48'];
 
 /* ───────────── state ───────────── */
 const blankFilters = () => ({ q: '', cat: '', status: '', prov: '', org: '' });
@@ -961,7 +961,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = 'd3dc03fc';
+const PAGE_BUILD = 'f929d010';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
