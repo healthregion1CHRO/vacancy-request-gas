@@ -54,7 +54,7 @@
       label: k === 'org' ? 'สังกัด' : k === 'unit' ? 'ส่วนราชการ' : k === 'pos' ? (cat.key === 'civil' ? 'ชื่อตำแหน่ง' : 'ชื่อสายงาน') : lab(k),
       get: k === 'unit' ? (r => [r.unit, r.dept].filter(String).join('\n')) : val(k) }));
     const shortText = r => r.short === '' || r.short == null || isNaN(Number(r.short)) ? '' : (v => v > 0 ? 'ขาด ' + v : v < 0 ? 'เกิน ' + (-v) : 0)(Number(r.short));
-    cat.fields.filter(k => grpKeys.indexOf(k) < 0 && ['frame', 'actual', 'reason'].indexOf(k) < 0).forEach(k => cols.push({ key: k, label: (cat.xlabels && cat.xlabels[k]) || lab(k), get: val(k), w: W[k] || 140 }));
+    cat.fields.filter(k => grpKeys.indexOf(k) < 0 && ['frame', 'actual', 'reason'].indexOf(k) < 0).forEach(k => cols.push({ key: k, label: (cat.xlabels && cat.xlabels[k]) || lab(k), get: val(k), w: W[k] || 140, group: (cat.xgroups && cat.xgroups[k]) || undefined }));
     if (cat.fields.indexOf('frame') >= 0) [['frame', 'กรอบ', 60], ['actual', 'ปฏิบัติงานจริง', 70], ['short', 'ขาด', 70]].forEach(([k, l, w]) =>
       cols.push({ key: k, label: l, get: k === 'short' && cat.form === 'meeting' ? shortText : val(k), w, center: true }));
     if (cat.fields.indexOf('reason') >= 0) cols.push({ key: 'reason', label: 'เหตุผลประกอบ', get: val('reason'), w: 170 });

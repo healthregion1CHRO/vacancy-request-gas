@@ -437,7 +437,8 @@ const FIELDS = {
   note:    { label: 'หมายเหตุ', type: 'textarea' }
 };
 /** บัญชีแนบท้าย: หัวแบบหนังสือแจ้งผล (ประเภทที่มี form: 'meeting' — แถว 1 ชื่อเรื่อง+คณะ+ครั้งที่+วันประชุม · แถว 2 รูปแบบการประชุม)
- *  และรูปแบบตามแบบฟอร์มบัญชีประจำเดือน (ฟอนต์ · เส้นหัวตาราง/ข้อมูลสีส้ม) — ความกว้างคอลัมน์ต่อประเภทอยู่ใน CAT.xw (หน่วยตัวอักษรแบบ Excel) */
+ *  และรูปแบบตามแบบฟอร์มบัญชีประจำเดือน (ฟอนต์ · เส้นหัวตาราง/ข้อมูลสีส้ม) — ความกว้างคอลัมน์ต่อประเภทอยู่ใน CAT.xw (หน่วยตัวอักษรแบบ Excel)
+ *  หัวตารางสองชั้นของช่องอื่นนอกกลุ่มข้อมูลตำแหน่ง: CAT.xgroups { ช่อง: 'หัวชั้นบน' } — ช่องที่ติดกันและหัวเดียวกันจะรวมเซลล์ */
 const FORM_COMMITTEE = 'ของคณะอนุกรรมการบริหารทรัพยากรบุคคล เขตสุขภาพที่ 1';
 const FORM_MEET_VIA = 'โดยผ่านระบบประชุมทางไกลผ่านจอภาพ โปรแกรม ZOOM Cloud Meeting';
 const FORM_HEAD_LINE = '#ED7D31';
@@ -483,7 +484,8 @@ const CATS = [
     title: 'ผลการพิจารณา การขอใช้ตำแหน่งพนักงานราชการ', grp: 'ข้อมูลตำแหน่ง',
     xw: [5.4, 18.6, 23.8, 12.6, 20.4, 12.4, 18, 18, 28.6, 9.1, 10.1, 10.4, 14.8],
     fields: ['posno', 'pos', 'cond', 'newpos', 'cutpos', 'person', 'frame', 'actual'], required: ['posno', 'pos'],
-    labels: { cond: 'เงื่อนไข', newpos: 'ตำแหน่งใหม่' }, lists: { cond: 'GOV_CONDS' } },
+    labels: { cond: 'เงื่อนไข', newpos: 'ตำแหน่งใหม่' }, lists: { cond: 'GOV_CONDS' },
+    xgroups: { newpos: 'ตำแหน่งใหม่/ตัดโอนตำแหน่ง', cutpos: 'ตำแหน่งใหม่/ตัดโอนตำแหน่ง' } },
   { key: 'phks', name: 'จ้าง/เปลี่ยนตำแหน่ง พกส.', staff: 'พกส.', icon: 'users',
     desc: 'ขออนุมัติจ้างและเปลี่ยนตำแหน่ง พนักงานกระทรวงสาธารณสุข', sheet: ' จ้าง (พกส) ', alias: ['พกส.'],
     title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่ง พกส.', grp: 'ข้อมูลตำแหน่ง',
@@ -597,7 +599,7 @@ const SEED_USERNAMES = {
       label: k === 'org' ? 'สังกัด' : k === 'unit' ? 'ส่วนราชการ' : k === 'pos' ? (cat.key === 'civil' ? 'ชื่อตำแหน่ง' : 'ชื่อสายงาน') : lab(k),
       get: k === 'unit' ? (r => [r.unit, r.dept].filter(String).join('\n')) : val(k) }));
     const shortText = r => r.short === '' || r.short == null || isNaN(Number(r.short)) ? '' : (v => v > 0 ? 'ขาด ' + v : v < 0 ? 'เกิน ' + (-v) : 0)(Number(r.short));
-    cat.fields.filter(k => grpKeys.indexOf(k) < 0 && ['frame', 'actual', 'reason'].indexOf(k) < 0).forEach(k => cols.push({ key: k, label: (cat.xlabels && cat.xlabels[k]) || lab(k), get: val(k), w: W[k] || 140 }));
+    cat.fields.filter(k => grpKeys.indexOf(k) < 0 && ['frame', 'actual', 'reason'].indexOf(k) < 0).forEach(k => cols.push({ key: k, label: (cat.xlabels && cat.xlabels[k]) || lab(k), get: val(k), w: W[k] || 140, group: (cat.xgroups && cat.xgroups[k]) || undefined }));
     if (cat.fields.indexOf('frame') >= 0) [['frame', 'กรอบ', 60], ['actual', 'ปฏิบัติงานจริง', 70], ['short', 'ขาด', 70]].forEach(([k, l, w]) =>
       cols.push({ key: k, label: l, get: k === 'short' && cat.form === 'meeting' ? shortText : val(k), w, center: true }));
     if (cat.fields.indexOf('reason') >= 0) cols.push({ key: 'reason', label: 'เหตุผลประกอบ', get: val('reason'), w: 170 });
@@ -964,7 +966,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '0b6e76c0';
+const PAGE_BUILD = '05893d2d';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })

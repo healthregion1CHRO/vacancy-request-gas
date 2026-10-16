@@ -68,7 +68,8 @@ const FIELDS = {
   note:    { label: 'หมายเหตุ', type: 'textarea' }
 };
 /** บัญชีแนบท้าย: หัวแบบหนังสือแจ้งผล (ประเภทที่มี form: 'meeting' — แถว 1 ชื่อเรื่อง+คณะ+ครั้งที่+วันประชุม · แถว 2 รูปแบบการประชุม)
- *  และรูปแบบตามแบบฟอร์มบัญชีประจำเดือน (ฟอนต์ · เส้นหัวตาราง/ข้อมูลสีส้ม) — ความกว้างคอลัมน์ต่อประเภทอยู่ใน CAT.xw (หน่วยตัวอักษรแบบ Excel) */
+ *  และรูปแบบตามแบบฟอร์มบัญชีประจำเดือน (ฟอนต์ · เส้นหัวตาราง/ข้อมูลสีส้ม) — ความกว้างคอลัมน์ต่อประเภทอยู่ใน CAT.xw (หน่วยตัวอักษรแบบ Excel)
+ *  หัวตารางสองชั้นของช่องอื่นนอกกลุ่มข้อมูลตำแหน่ง: CAT.xgroups { ช่อง: 'หัวชั้นบน' } — ช่องที่ติดกันและหัวเดียวกันจะรวมเซลล์ */
 const FORM_COMMITTEE = 'ของคณะอนุกรรมการบริหารทรัพยากรบุคคล เขตสุขภาพที่ 1';
 const FORM_MEET_VIA = 'โดยผ่านระบบประชุมทางไกลผ่านจอภาพ โปรแกรม ZOOM Cloud Meeting';
 const FORM_HEAD_LINE = '#ED7D31';
@@ -114,7 +115,8 @@ const CATS = [
     title: 'ผลการพิจารณา การขอใช้ตำแหน่งพนักงานราชการ', grp: 'ข้อมูลตำแหน่ง',
     xw: [5.4, 18.6, 23.8, 12.6, 20.4, 12.4, 18, 18, 28.6, 9.1, 10.1, 10.4, 14.8],
     fields: ['posno', 'pos', 'cond', 'newpos', 'cutpos', 'person', 'frame', 'actual'], required: ['posno', 'pos'],
-    labels: { cond: 'เงื่อนไข', newpos: 'ตำแหน่งใหม่' }, lists: { cond: 'GOV_CONDS' } },
+    labels: { cond: 'เงื่อนไข', newpos: 'ตำแหน่งใหม่' }, lists: { cond: 'GOV_CONDS' },
+    xgroups: { newpos: 'ตำแหน่งใหม่/ตัดโอนตำแหน่ง', cutpos: 'ตำแหน่งใหม่/ตัดโอนตำแหน่ง' } },
   { key: 'phks', name: 'จ้าง/เปลี่ยนตำแหน่ง พกส.', staff: 'พกส.', icon: 'users',
     desc: 'ขออนุมัติจ้างและเปลี่ยนตำแหน่ง พนักงานกระทรวงสาธารณสุข', sheet: ' จ้าง (พกส) ', alias: ['พกส.'],
     title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่ง พกส.', grp: 'ข้อมูลตำแหน่ง',
@@ -1042,7 +1044,8 @@ function exportCols_(cat, rs) {
     cols.push({ key: k, group: cat.grp, label: label, get: get, w: W[k], center: k === 'posno' });
   });
   cat.fields.filter(k => grpKeys.indexOf(k) < 0 && k !== 'frame' && k !== 'actual' && k !== 'reason').forEach(k => {
-    cols.push({ key: k, label: (cat.xlabels && cat.xlabels[k]) || labelOf_(cat, k), get: val(k), w: W[k] || 140 });
+    cols.push({ key: k, label: (cat.xlabels && cat.xlabels[k]) || labelOf_(cat, k), get: val(k), w: W[k] || 140,
+      group: (cat.xgroups && cat.xgroups[k]) || undefined });
   });
   if (cat.fields.indexOf('frame') >= 0) {
     cols.push({ key: 'frame', label: 'กรอบ', get: val('frame'), w: 60, center: true });
