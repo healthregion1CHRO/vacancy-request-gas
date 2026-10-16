@@ -24,7 +24,8 @@
     ['civil', 'รพศ.นครพิงค์', { unit: 'รพศ.นครพิงค์', dept: 'กลุ่มงานการพยาบาล', posno: '183901', pos: 'พยาบาลวิชาชีพ', level: 'ปฏิบัติการ', cond: 'บรรจุผู้สอบแข่งขัน', frame: 420, actual: 398 }, 'เห็นชอบ'],
     ['civil', 'รพท.น่าน', { unit: 'รพท.น่าน', dept: 'กลุ่มงานรังสีวิทยา', posno: '77120', pos: 'นักรังสีการแพทย์', level: 'ชำนาญการ', cond: 'รับย้าย/รับโอน', frame: 10, actual: 8 }],
     ['civil', 'สสจ.แพร่', { unit: 'สสจ.แพร่', dept: 'กลุ่มงานบริหารทรัพยากรบุคคล', posno: '9012', pos: 'นักทรัพยากรบุคคล', level: 'ชำนาญการพิเศษ', exec: 'หัวหน้ากลุ่มงาน', cond: 'เลื่อน', frame: 4, actual: 3 }],
-    ['gov', 'รพท.พะเยา', { unit: 'รพท.พะเยา', dept: 'กลุ่มงานประกันสุขภาพ', posno: 'พร.1205', pos: 'นักวิชาการคอมพิวเตอร์', cond: 'สรรหาและเลือกสรร', frame: 3, actual: 2 }, 'เห็นชอบ'],
+    ['gov', 'รพท.พะเยา', { unit: 'รพท.พะเยา', dept: 'กลุ่มงานประกันสุขภาพ', posno: 'พร.1205', pos: 'นักวิชาการคอมพิวเตอร์', cond: 'สรรหาและเลือกสรร', newpos: 'นักวิชาการคอมพิวเตอร์', frame: 3, actual: 2 }, 'เห็นชอบ'],
+    ['gov', 'สสจ.ลำพูน', { unit: 'สสจ.ลำพูน', dept: 'กลุ่มงานควบคุมโรคติดต่อ', posno: 'พร.0877', pos: 'นักวิชาการสาธารณสุข', cond: 'ตัดโอนตำแหน่ง', cutpos: 'นักวิชาการสาธารณสุข รพ.สต.บ้านธิ สสอ.บ้านธิ', frame: 5, actual: 5 }],
     ['phks', 'รพท.สันทราย', { unit: 'รพท.สันทราย', dept: 'กลุ่มงานการพยาบาล', posno: 'พกส.0331', pos: 'พนักงานช่วยการพยาบาล', frame: 35, actual: 30, reason: 'ภาระงานผู้ป่วยในเพิ่มขึ้น' }, 'อนุมัติ'],
     ['phks', 'รพท.เกาะคา', { unit: 'รพท.เกาะคา', dept: 'กลุ่มงานโภชนศาสตร์', pos: 'พนักงานประกอบอาหาร', newpos: 'โภชนากร', frame: 4, actual: 3, reason: 'มีวุฒิตรงตามตำแหน่ง' }],
     ['phksAsst', 'รพศ.ลำพูน', { unit: 'รพศ.ลำพูน', dept: 'กลุ่มงานการพยาบาล', posno: 'พกส.0458', pos: 'พนักงานช่วยการพยาบาล', newpos: 'ผู้ช่วยพยาบาล', person: 'นางสาวพิมพ์ชนก คำแก้ว', frame: 40, actual: 33, reason: 'สำเร็จหลักสูตรผู้ช่วยพยาบาล' }, 'อนุมัติ'],
@@ -46,7 +47,7 @@
   /* บัญชีแนบท้าย: ข้อมูลแต่ละชีตสำหรับดูตัวอย่าง/ดาวน์โหลด .xlsx — ตรรกะเดียวกับ exportCols_/catSheet_/summarySheet_ ใน Code.gs */
   const exportCols = (cat, rs) => {
     const grpKeys = ['org', 'unit', 'posno', 'pos', 'level', 'typeold'], all = HEAD_FIELDS.concat(cat.fields);
-    const W = { org: 100, unit: 200, posno: 85, pos: 150, level: 90, typeold: 95, exec: 100, newpos: 220, newunit: 220, cond: 140, person: 170, typenew: 95 };
+    const W = { org: 100, unit: 200, posno: 85, pos: 150, level: 90, typeold: 95, exec: 100, newpos: 220, newunit: 220, cutpos: 160, cond: 140, person: 170, typenew: 95 };
     const lab = k => (cat.labels && cat.labels[k]) || FIELDS[k].label, val = k => r => r[k] == null ? '' : r[k];
     const cols = [{ key: '#', label: 'ลำดับ', w: 45, center: true }];
     grpKeys.filter(k => all.indexOf(k) >= 0).forEach(k => cols.push({ key: k, group: cat.grp, w: W[k], center: k === 'posno',

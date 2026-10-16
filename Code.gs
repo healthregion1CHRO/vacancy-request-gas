@@ -57,6 +57,7 @@ const FIELDS = {
   exec:    { label: 'ชื่อตำแหน่งทางการบริหาร', type: 'text', ph: 'ถ้ามี' },
   newpos:  { label: 'ตำแหน่งใหม่ / ตัดโอนตำแหน่ง', type: 'textarea' },
   newunit: { label: 'ส่วนราชการใหม่', type: 'textarea', ph: 'หน่วยงานปลายทางที่จะตัดโอนไป' },
+  cutpos:  { label: 'ตัดโอนตำแหน่ง', type: 'textarea', ph: 'ตำแหน่ง/หน่วยงานที่จะตัดโอนไป (ถ้ามี)' },
   cond:    { label: 'เงื่อนไขในการดำรงตำแหน่ง', type: 'combo', list: 'CONDS' },
   person:  { label: 'ผู้ที่จะมาดำรงตำแหน่ง', type: 'text', ph: 'ชื่อ-สกุล' },
   typeold: { label: 'ประเภทการจ้างเดิม', type: 'select', list: 'EMP_TYPES' },
@@ -111,9 +112,9 @@ const CATS = [
   { key: 'gov', name: 'ขอใช้ตำแหน่ง พนักงานราชการ', staff: 'พนักงานราชการ', icon: 'briefcase',
     desc: 'ขอใช้ตำแหน่งพนักงานราชการ', sheet: ' พรก',
     title: 'ผลการพิจารณา การขอใช้ตำแหน่งพนักงานราชการ', grp: 'ข้อมูลตำแหน่ง',
-    xw: [5.4, 18.6, 23.8, 12.6, 20.4, 12.4, 21.8, 28.6, 9.1, 10.1, 10.4, 14.8],
-    fields: ['posno', 'pos', 'cond', 'newpos', 'person', 'frame', 'actual'], required: ['posno', 'pos'],
-    labels: { cond: 'เงื่อนไข' }, lists: { cond: 'GOV_CONDS' } },
+    xw: [5.4, 18.6, 23.8, 12.6, 20.4, 12.4, 18, 18, 28.6, 9.1, 10.1, 10.4, 14.8],
+    fields: ['posno', 'pos', 'cond', 'newpos', 'cutpos', 'person', 'frame', 'actual'], required: ['posno', 'pos'],
+    labels: { cond: 'เงื่อนไข', newpos: 'ตำแหน่งใหม่' }, lists: { cond: 'GOV_CONDS' } },
   { key: 'phks', name: 'จ้าง/เปลี่ยนตำแหน่ง พกส.', staff: 'พกส.', icon: 'users',
     desc: 'ขออนุมัติจ้างและเปลี่ยนตำแหน่ง พนักงานกระทรวงสาธารณสุข', sheet: ' จ้าง (พกส) ', alias: ['พกส.'],
     title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่ง พกส.', grp: 'ข้อมูลตำแหน่ง',
@@ -181,7 +182,7 @@ const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอ�
 const SCHEMA = {
   'คำขอ': [['id', 'รหัสคำขอ'], ['round', 'รอบ'], ['cat', 'ประเภทคำขอ'], ['staff', 'ประเภทบุคลากร'], ['prov', 'จังหวัด'],
     ['org', 'สังกัด'], ['unit', 'ส่วนราชการ'], ['dept', 'กลุ่มงาน'], ['posno', 'ตำแหน่งเลขที่'], ['pos', 'ชื่อสายงาน'],
-    ['level', 'ระดับ'], ['exec', 'ตำแหน่งทางการบริหาร'], ['newpos', 'ตำแหน่งใหม่'], ['newunit', 'ส่วนราชการใหม่'],
+    ['level', 'ระดับ'], ['exec', 'ตำแหน่งทางการบริหาร'], ['newpos', 'ตำแหน่งใหม่'], ['newunit', 'ส่วนราชการใหม่'], ['cutpos', 'ตัดโอนตำแหน่ง'],
     ['cond', 'เงื่อนไข'], ['person', 'ผู้ที่จะมาดำรงตำแหน่ง'], ['typeold', 'ประเภทการจ้างเดิม'], ['typenew', 'ประเภทการจ้างใหม่'],
     ['frame', 'กรอบ'], ['actual', 'ปฏิบัติงานจริง'], ['short', 'ขาด'], ['reason', 'เหตุผลประกอบ'], ['note', 'หมายเหตุ'],
     ['status', 'สถานะ'], ['result', 'ผลการพิจารณาเขต'], ['reviewNote', 'ข้อเสนอแนะจากเขต'],
@@ -879,7 +880,7 @@ function apiExportJson(token, roundId) {
     .filter(r => (!roundId || String(r.round) === String(roundId)) && r.status !== 'ถอนเรื่อง')
     .map(r => ({
       cat: catName_(r.cat), staff: r.staff, prov: r.prov, org: r.org, unit: r.unit, dept: r.dept, posno: String(r.posno),
-      pos: r.pos, level: r.level, exec: r.exec, newpos: r.newpos || r.newunit, typeold: r.typeold, typenew: r.typenew,
+      pos: r.pos, level: r.level, exec: r.exec, newpos: r.newpos || r.cutpos || r.newunit, typeold: r.typeold, typenew: r.typenew,
       cond: r.cond, frame: r.frame, actual: r.actual, short: r.short, reason: r.reason,
       result: r.result || (r.status === 'รอพิจารณา' ? '' : r.status),
       meetDate: round && round.meetDate ? thaiDate_(round.meetDate) : ''
@@ -1031,7 +1032,7 @@ function resetPassword_(username, by, pw) {
 function exportCols_(cat, rs) {
   const grpKeys = ['org', 'unit', 'posno', 'pos', 'level', 'typeold'];
   const all = HEAD_FIELDS.concat(cat.fields);
-  const W = { org: 100, unit: 200, posno: 85, pos: 150, level: 90, typeold: 95, exec: 100, newpos: 220, newunit: 220,
+  const W = { org: 100, unit: 200, posno: 85, pos: 150, level: 90, typeold: 95, exec: 100, newpos: 220, newunit: 220, cutpos: 160,
     cond: 140, person: 170, typenew: 95 };
   const cols = [{ key: '#', label: 'ลำดับ', w: 45, center: true }];
   const val = k => r => (r[k] === null || r[k] === undefined) ? '' : r[k];
@@ -1102,11 +1103,17 @@ function ensureSheet_(ss, name) {
 }
 
 /** อ่านชีตเป็น object ตามชื่อหัวคอลัมน์ (สลับลำดับคอลัมน์ได้ แต่ห้ามเปลี่ยนชื่อหัว) */
-function table_(name) {
+function table_(name, retried) {
   let sh = ss_().getSheetByName(name);
   if (!sh) sh = ensureSheet_(ss_(), name);
   const values = sh.getDataRange().getValues();
   const head = (values[0] || []).map(String);
+  // รุ่นใหม่เพิ่มคอลัมน์ (เช่น ตัดโอนตำแหน่ง) → เติมหัวคอลัมน์ที่ขาดให้เองครั้งเดียว ไม่ต้องรัน setup ใหม่
+  if (!retried && SCHEMA[name].some(([, l]) => head.indexOf(l) < 0)) {
+    ensureSheet_(ss_(), name);
+    SpreadsheetApp.flush();
+    return table_(name, true);
+  }
   const idx = {};
   SCHEMA[name].forEach(([k, l]) => {
     const i = head.indexOf(l);

@@ -536,7 +536,7 @@ function formHtml() {
     ${isAdmin() ? `<div class="sec"><h4><span class="n">${++n}</span>รอบการประชุม</h4><div class="grid g2"><div class="field"><label for="f_round">รอบ</label>
       <select class="input" id="f_round" name="round">${B.rounds.slice().reverse().map(r => `<option value="${esc(r.id)}" ${String(curRound) === String(r.id) ? 'selected' : ''}>${esc(r.name)} · ${esc(r.status)}</option>`).join('')}</select></div></div></div>` : ''}
     <div class="sec"><h4><span class="n">${++n}</span>หน่วยงาน</h4><div class="grid g3">${fld('org')}${fld('unit')}${fld('dept')}</div></div>
-    <div class="sec"><h4><span class="n">${++n}</span>ข้อมูลตำแหน่ง</h4><div class="grid g2">${posFields.map(k => fld(k, ['newpos', 'newunit'].indexOf(k) >= 0 ? 'spanall' : '')).join('')}</div></div>
+    <div class="sec"><h4><span class="n">${++n}</span>ข้อมูลตำแหน่ง</h4><div class="grid g2">${posFields.map(k => fld(k, ['newpos', 'newunit', 'cutpos'].indexOf(k) >= 0 ? 'spanall' : '')).join('')}</div></div>
     ${hasFrame ? `<div class="sec"><h4><span class="n">${++n}</span>อัตรากำลัง</h4><div class="grid g3">${fld('frame')}${fld('actual')}
       <div class="field"><label>ขาด / เกิน (กรอบ-ปฏิบัติงานจริง)</label><div class="shortbox ${gapOf(sh).c}" id="shortBox"><b class="mono">${gapOf(sh).t}</b></div></div></div></div>` : ''}
     <div class="sec"><h4><span class="n">${++n}</span>รายละเอียดเพิ่มเติม</h4><div class="grid">${more.map(k => fld(k)).join('')}</div></div>
@@ -617,7 +617,7 @@ function filtered(ignoreStatus) {
   const F = S.filters, q = F.q.trim().toLowerCase();
   return scoped().filter(r => (!F.cat || r.catKey === F.cat) && (!F.prov || r.prov === F.prov) && (!F.org || r.org === F.org) &&
     (ignoreStatus || matchSt(r, F.status)) &&
-    (!q || [r.id, r.posno, r.pos, r.newpos, r.newunit, r.org, r.unit, r.dept, r.person, r.cond, r.cat].join(' ').toLowerCase().indexOf(q) >= 0));
+    (!q || [r.id, r.posno, r.pos, r.newpos, r.newunit, r.cutpos, r.org, r.unit, r.dept, r.person, r.cond, r.cat].join(' ').toLowerCase().indexOf(q) >= 0));
 }
 
 function viewList() {
@@ -662,7 +662,7 @@ function listArea() {
 function refreshList() { const a = $('#listArea'); if (a) a.innerHTML = listArea(); }
 
 function rowHtml(r) {
-  const to = r.newpos || r.newunit;
+  const to = r.newpos || r.cutpos || r.newunit;
   const fr = has(r.frame) ? `${esc(r.frame)}/${has(r.actual) ? esc(r.actual) : '–'}${has(r.short) ? ` · <span class="s ${gapOf(r.short).c}">${gapOf(r.short).t}</span>` : ''}` : '<span class="muted">–</span>';
   const sel = S.sel.has(r.id);
   return `<tr data-act="open" data-id="${esc(r.id)}" class="${sel ? 'sel' : ''}">
@@ -839,7 +839,7 @@ function loadXlsx() {
 /** หัวคอลัมน์ในบัญชีเดิม → ช่องข้อมูล (ตรวจตามลำดับ — กฎที่เจาะจงกว่าอยู่ก่อน) */
 const IMPORT_HEADS = [
   ['#', /^ลำดับ/], ['org', /สังกัด/], ['newunit', /ส่วนราชการใหม่|หน่วยงานใหม่|ปลายทาง|ย้ายไป/], ['unit', /ส่วนราชการ/], ['posno', /เลขที่/],
-  ['newpos', /ตำแหน่งใหม่|ขอปรับปรุง|ที่ขออนุมัติกำหนด/], ['pos', /ชื่อสายงาน|ชื่อตำแหน่ง/], ['level', /^ระดับ/],
+  ['cutpos', /^ตัดโอนตำแหน่ง$/], ['newpos', /ตำแหน่งใหม่|ขอปรับปรุง|ที่ขออนุมัติกำหนด/], ['pos', /ชื่อสายงาน|ชื่อตำแหน่ง/], ['level', /^ระดับ/],
   ['exec', /บริหาร/], ['cond', /เงื่อนไข/], ['person', /ผู้ที่จะมา|ผู้ขอย้าย|ชื่อ-?สกุล/], ['type', /ประเภทการจ้าง/], ['frame', /กรอบ/],
   ['actual', /ปฏิบัติ/], ['short', /^ขาด/], ['reason', /เหตุผล/], ['result', /ผลการพิจารณา/], ['note', /หมายเหตุ/]
 ];
@@ -886,7 +886,7 @@ function parseBook(XLSX, wb) {
       const d = { org: get('org'), posno: get('posno'), pos: get('pos') };
       if (!d.pos && !d.posno) continue;
       info.rows++;
-      ['unit', 'level', 'exec', 'newpos', 'newunit', 'cond', 'person', 'typeold', 'typenew', 'reason', 'note', 'result']
+      ['unit', 'level', 'exec', 'newpos', 'newunit', 'cutpos', 'cond', 'person', 'typeold', 'typenew', 'reason', 'note', 'result']
         .forEach(k => { d[k] = get(k); });
       ['frame', 'actual'].forEach(k => { const v = String(row[col[k]] == null ? '' : row[col[k]]).replace(/[^\d.]/g, ''); d[k] = k in col && v !== '' ? Math.round(Number(v)) : ''; });
       d.org = d.org.replace(/\s+/g, ' ');
