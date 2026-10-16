@@ -443,6 +443,10 @@ const FIELDS = {
   reason:  { label: 'เหตุผลประกอบ', type: 'textarea' },
   note:    { label: 'หมายเหตุ', type: 'textarea' }
 };
+/** หัวบัญชีแนบท้ายแบบหนังสือแจ้งผล (ประเภทที่มี form: 'meeting') — แถว 1 ชื่อเรื่อง+คณะ+ครั้งที่+วันประชุม · แถว 2 รูปแบบการประชุม · เส้นตารางสีส้ม */
+const FORM_COMMITTEE = 'ของคณะอนุกรรมการบริหารทรัพยากรบุคคล เขตสุขภาพที่ 1';
+const FORM_MEET_VIA = 'โดยผ่านระบบประชุมทางไกลผ่านจอภาพ โปรแกรม ZOOM Cloud Meeting';
+const FORM_LINE = '#ED7D31';
 const HEAD_FIELDS = ['org', 'unit', 'dept'];
 const TAIL_FIELDS = ['note'];
 
@@ -450,9 +454,9 @@ const TAIL_FIELDS = ['note'];
 const CATS = [
   { key: 'improve', name: 'ปรับปรุงตำแหน่ง ขรก.', staff: 'ข้าราชการ', icon: 'wrench',
     desc: 'ปรับปรุงตำแหน่งว่างไปเป็นสายงานอื่น', sheet: 'ปรับปรุง (ขรก)',
-    title: 'ผลการพิจารณา การปรับปรุงตำแหน่งข้าราชการ', grp: 'ข้อมูลตำแหน่งเดิม',
+    title: 'ผลการพิจารณา การปรับปรุงตำแหน่งข้าราชการ', grp: 'ข้อมูลตำแหน่งเดิม', form: 'meeting',
     fields: ['posno', 'pos', 'newpos', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos'],
-    labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ขอปรับปรุงตำแหน่งเป็น' } },
+    labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ขอปรับปรุงตำแหน่งเป็น' }, xlabels: { newpos: 'ขอปรับปรุงตำแหน่ง' } },
   { key: 'transfer', name: 'เกลี่ยอัตรา ขรก. (มีคนครอง)', staff: 'ข้าราชการ', icon: 'swap',
     desc: 'ตัดโอนตำแหน่งและอัตราเงินเดือน ตำแหน่งที่มีคนครอง', sheet: 'เกลี่ยอัตราตัดโอน (ขรก)',
     title: 'ผลการพิจารณา การเกลี่ยอัตราตำแหน่งข้าราชการ (ตัดโอนตำแหน่งและอัตราเงินเดือน)', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
@@ -584,16 +588,19 @@ const SEED_USERNAMES = {
     grpKeys.filter(k => all.indexOf(k) >= 0).forEach(k => cols.push({ key: k, group: cat.grp, w: W[k], center: k === 'posno',
       label: k === 'org' ? 'สังกัด' : k === 'unit' ? 'ส่วนราชการ' : k === 'pos' ? (cat.key === 'civil' ? 'ชื่อตำแหน่ง' : 'ชื่อสายงาน') : lab(k),
       get: k === 'unit' ? (r => [r.unit, r.dept].filter(String).join('\n')) : val(k) }));
-    cat.fields.filter(k => grpKeys.indexOf(k) < 0 && ['frame', 'actual', 'reason'].indexOf(k) < 0).forEach(k => cols.push({ key: k, label: lab(k), get: val(k), w: W[k] || 140 }));
-    if (cat.fields.indexOf('frame') >= 0) [['frame', 'กรอบ', 60], ['actual', 'ปฏิบัติงานจริง', 70], ['short', 'ขาด', 60]].forEach(([k, l, w]) => cols.push({ key: k, label: l, get: val(k), w, center: true }));
+    const shortText = r => r.short === '' || r.short == null || isNaN(Number(r.short)) ? '' : (v => v > 0 ? 'ขาด ' + v : v < 0 ? 'เกิน ' + (-v) : 0)(Number(r.short));
+    cat.fields.filter(k => grpKeys.indexOf(k) < 0 && ['frame', 'actual', 'reason'].indexOf(k) < 0).forEach(k => cols.push({ key: k, label: (cat.xlabels && cat.xlabels[k]) || lab(k), get: val(k), w: W[k] || 140 }));
+    if (cat.fields.indexOf('frame') >= 0) [['frame', 'กรอบ', 60], ['actual', 'ปฏิบัติงานจริง', 70], ['short', 'ขาด', 70]].forEach(([k, l, w]) =>
+      cols.push({ key: k, label: l, get: k === 'short' && cat.form === 'meeting' ? shortText : val(k), w, center: true }));
     if (cat.fields.indexOf('reason') >= 0) cols.push({ key: 'reason', label: 'เหตุผลประกอบ', get: val('reason'), w: 170 });
     cols.push({ key: 'result', label: 'ผลการพิจารณาเขต', get: r => r.result || (r.status === 'รอพิจารณา' ? '' : r.status), w: 110 });
     if (rs.some(r => String(r.note || '').trim())) cols.push({ key: 'note', label: 'หมายเหตุ', get: val('note'), w: 150 });
     return cols;
   };
-  const catSheet = (c, rs, sub) => {
-    const cols = exportCols(c, rs);
-    return { name: c.sheet.trim(), title: c.title, sub, sub3: c.sub3 || '', cols: cols.map(x => ({ label: x.label, group: x.group || '', w: x.w || 110, center: !!x.center })),
+  const catSheet = (c, rs, sub, meet) => {
+    const cols = exportCols(c, rs), m = c.form === 'meeting';
+    const title = m ? [c.title, FORM_COMMITTEE, meet.name, meet.date ? 'เมื่อวันที่ ' + meet.date : ''].filter(String).join(' ') : c.title;
+    return { name: c.sheet.trim(), title, sub: m ? FORM_MEET_VIA : sub, line: m ? FORM_LINE : '', sub3: c.sub3 || '', cols: cols.map(x => ({ label: x.label, group: x.group || '', w: x.w || 110, center: !!x.center })),
       rows: rs.map((r, k) => cols.map(col => col.key === '#' ? k + 1 : col.get(r))) };
   };
   const summarySheet = (title, sub, reqs) => {
@@ -702,12 +709,13 @@ const SEED_USERNAMES = {
       const r = ROUNDS.find(x => x.id === rid), PO = x => { const i = PROVINCES.indexOf(x.prov); return i < 0 ? 99 : i; };
       const live = REQS.filter(x => x.round === rid && x.status !== 'ถอนเรื่อง').sort((a, b) => PO(a) - PO(b) ||
         String(a.org).localeCompare(String(b.org), 'th') || String(a.posno).localeCompare(String(b.posno), 'th', { numeric: true }));
-      const sub = [r.name, r.meetDate ? 'วันที่ ' + new Date(r.meetDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }) : ''].filter(String).join(' ');
+      const md = r.meetDate ? new Date(r.meetDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+      const sub = [r.name, md ? 'วันที่ ' + md : ''].filter(String).join(' '), meet = { name: r.name, date: md };
       const byCat = c => live.filter(x => x.cat === c.name), n = c => byCat(c).length;
       const f = (title, count, cat, sheets) => ({ title: title, url: '#', xlsx: '#', count: count, cat: cat || '', sheets: sheets });
       const t0 = 'บัญชีการขอใช้ตำแหน่งว่าง ประจำเดือน ' + r.month;
-      const files = !catKey ? [f(t0, live.length, '', [summarySheet(t0, sub, live)].concat(CATS.map(c => catSheet(c, byCat(c), sub))))]
-        : CATS.filter(c => catKey === '*' ? n(c) : c.key === catKey).map(c => f('บัญชีแนบท้าย ' + c.name + ' ประจำเดือน ' + r.month, n(c), c.name, [catSheet(c, byCat(c), sub)]));
+      const files = !catKey ? [f(t0, live.length, '', [summarySheet(t0, sub, live)].concat(CATS.map(c => catSheet(c, byCat(c), sub, meet))))]
+        : CATS.filter(c => catKey === '*' ? n(c) : c.key === catKey).map(c => f('บัญชีแนบท้าย ' + c.name + ' ประจำเดือน ' + r.month, n(c), c.name, [catSheet(c, byCat(c), sub, meet)]));
       if (!files.length) throw new Error('รอบนี้ยังไม่มีคำขอ');
       return Object.assign({}, files[0], { files: files, count: files.reduce((s, x) => s + x.count, 0) });
     },
@@ -946,7 +954,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '4738f61c';
+const PAGE_BUILD = '473f6d6e';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1473,7 +1481,8 @@ async function doExport(btn) {
 function viewSheets(f, back) {
   let cur = 0;
   const table = s => {
-    const g = s.cols.some(c => c.group), th = 'border:1px solid var(--border);padding:4px 6px;background:var(--surface-2,rgba(127,127,127,.12));text-align:center;vertical-align:middle';
+    const bd = s.line ? `2px solid ${s.line}` : '1px solid var(--border)';
+    const g = s.cols.some(c => c.group), th = `border:${bd};padding:4px 6px;background:var(--surface-2,rgba(127,127,127,.12));text-align:center;vertical-align:middle`;
     let h1 = '', h2 = '';
     for (let i = 0; i < s.cols.length; i++) {
       const c = s.cols[i];
@@ -1481,10 +1490,10 @@ function viewSheets(f, back) {
         h1 += `<th colspan="${j - i + 1}" style="${th}">${esc(c.group)}</th>`; h2 += s.cols.slice(i, j + 1).map(x => `<th style="${th};min-width:${Math.round(x.w * .6)}px">${esc(x.label)}</th>`).join(''); i = j;
       } else h1 += `<th ${g ? 'rowspan="2"' : ''} style="${th};min-width:${Math.round(c.w * .6)}px">${esc(c.label)}</th>`;
     }
-    const td = (v, c, last) => `<td style="border:1px solid var(--border);padding:4px 6px;vertical-align:top;white-space:pre-line;${c.center ? 'text-align:center;' : ''}${last ? 'font-weight:600;' : ''}">${esc(v)}</td>`;
+    const td = (v, c, last) => `<td style="border:${bd};padding:4px 6px;vertical-align:top;white-space:pre-line;${c.center ? 'text-align:center;' : ''}${last ? 'font-weight:600;' : ''}">${esc(v)}</td>`;
     const body = s.rows.length ? s.rows.map((r, k) => `<tr>${r.map((v, i) => td(v, s.cols[i], s.total && k === s.rows.length - 1)).join('')}</tr>`).join('')
-      : `<tr><td colspan="${s.cols.length}" style="border:1px solid var(--border);padding:8px;text-align:center" class="muted">ไม่มีคำขอในหมวดนี้</td></tr>`;
-    return `<div style="text-align:center;font-weight:700;font-size:16px">${esc(s.title)}</div><div style="text-align:center">${esc(s.sub)}</div>
+      : `<tr><td colspan="${s.cols.length}" style="border:${bd};padding:8px;text-align:center" class="muted">ไม่มีคำขอในหมวดนี้</td></tr>`;
+    return `<div style="text-align:center;font-weight:700;font-size:16px">${esc(s.title)}</div><div style="text-align:center;${s.line ? 'font-weight:700' : ''}">${esc(s.sub)}</div>
       ${s.sub3 ? `<div style="font-weight:700;margin-top:4px">${esc(s.sub3)}</div>` : ''}
       <div style="overflow:auto;margin-top:10px;max-height:60vh"><table style="border-collapse:collapse;font-size:13px;width:100%"><thead><tr>${h1}</tr>${g ? `<tr>${h2}</tr>` : ''}</thead><tbody>${body}</tbody></table></div>`;
   };

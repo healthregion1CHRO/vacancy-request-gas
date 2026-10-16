@@ -602,7 +602,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '4738f61c';
+const PAGE_BUILD = '473f6d6e';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1129,7 +1129,8 @@ async function doExport(btn) {
 function viewSheets(f, back) {
   let cur = 0;
   const table = s => {
-    const g = s.cols.some(c => c.group), th = 'border:1px solid var(--border);padding:4px 6px;background:var(--surface-2,rgba(127,127,127,.12));text-align:center;vertical-align:middle';
+    const bd = s.line ? `2px solid ${s.line}` : '1px solid var(--border)';
+    const g = s.cols.some(c => c.group), th = `border:${bd};padding:4px 6px;background:var(--surface-2,rgba(127,127,127,.12));text-align:center;vertical-align:middle`;
     let h1 = '', h2 = '';
     for (let i = 0; i < s.cols.length; i++) {
       const c = s.cols[i];
@@ -1137,10 +1138,10 @@ function viewSheets(f, back) {
         h1 += `<th colspan="${j - i + 1}" style="${th}">${esc(c.group)}</th>`; h2 += s.cols.slice(i, j + 1).map(x => `<th style="${th};min-width:${Math.round(x.w * .6)}px">${esc(x.label)}</th>`).join(''); i = j;
       } else h1 += `<th ${g ? 'rowspan="2"' : ''} style="${th};min-width:${Math.round(c.w * .6)}px">${esc(c.label)}</th>`;
     }
-    const td = (v, c, last) => `<td style="border:1px solid var(--border);padding:4px 6px;vertical-align:top;white-space:pre-line;${c.center ? 'text-align:center;' : ''}${last ? 'font-weight:600;' : ''}">${esc(v)}</td>`;
+    const td = (v, c, last) => `<td style="border:${bd};padding:4px 6px;vertical-align:top;white-space:pre-line;${c.center ? 'text-align:center;' : ''}${last ? 'font-weight:600;' : ''}">${esc(v)}</td>`;
     const body = s.rows.length ? s.rows.map((r, k) => `<tr>${r.map((v, i) => td(v, s.cols[i], s.total && k === s.rows.length - 1)).join('')}</tr>`).join('')
-      : `<tr><td colspan="${s.cols.length}" style="border:1px solid var(--border);padding:8px;text-align:center" class="muted">ไม่มีคำขอในหมวดนี้</td></tr>`;
-    return `<div style="text-align:center;font-weight:700;font-size:16px">${esc(s.title)}</div><div style="text-align:center">${esc(s.sub)}</div>
+      : `<tr><td colspan="${s.cols.length}" style="border:${bd};padding:8px;text-align:center" class="muted">ไม่มีคำขอในหมวดนี้</td></tr>`;
+    return `<div style="text-align:center;font-weight:700;font-size:16px">${esc(s.title)}</div><div style="text-align:center;${s.line ? 'font-weight:700' : ''}">${esc(s.sub)}</div>
       ${s.sub3 ? `<div style="font-weight:700;margin-top:4px">${esc(s.sub3)}</div>` : ''}
       <div style="overflow:auto;margin-top:10px;max-height:60vh"><table style="border-collapse:collapse;font-size:13px;width:100%"><thead><tr>${h1}</tr>${g ? `<tr>${h2}</tr>` : ''}</thead><tbody>${body}</tbody></table></div>`;
   };

@@ -52,16 +52,19 @@
     grpKeys.filter(k => all.indexOf(k) >= 0).forEach(k => cols.push({ key: k, group: cat.grp, w: W[k], center: k === 'posno',
       label: k === 'org' ? 'สังกัด' : k === 'unit' ? 'ส่วนราชการ' : k === 'pos' ? (cat.key === 'civil' ? 'ชื่อตำแหน่ง' : 'ชื่อสายงาน') : lab(k),
       get: k === 'unit' ? (r => [r.unit, r.dept].filter(String).join('\n')) : val(k) }));
-    cat.fields.filter(k => grpKeys.indexOf(k) < 0 && ['frame', 'actual', 'reason'].indexOf(k) < 0).forEach(k => cols.push({ key: k, label: lab(k), get: val(k), w: W[k] || 140 }));
-    if (cat.fields.indexOf('frame') >= 0) [['frame', 'กรอบ', 60], ['actual', 'ปฏิบัติงานจริง', 70], ['short', 'ขาด', 60]].forEach(([k, l, w]) => cols.push({ key: k, label: l, get: val(k), w, center: true }));
+    const shortText = r => r.short === '' || r.short == null || isNaN(Number(r.short)) ? '' : (v => v > 0 ? 'ขาด ' + v : v < 0 ? 'เกิน ' + (-v) : 0)(Number(r.short));
+    cat.fields.filter(k => grpKeys.indexOf(k) < 0 && ['frame', 'actual', 'reason'].indexOf(k) < 0).forEach(k => cols.push({ key: k, label: (cat.xlabels && cat.xlabels[k]) || lab(k), get: val(k), w: W[k] || 140 }));
+    if (cat.fields.indexOf('frame') >= 0) [['frame', 'กรอบ', 60], ['actual', 'ปฏิบัติงานจริง', 70], ['short', 'ขาด', 70]].forEach(([k, l, w]) =>
+      cols.push({ key: k, label: l, get: k === 'short' && cat.form === 'meeting' ? shortText : val(k), w, center: true }));
     if (cat.fields.indexOf('reason') >= 0) cols.push({ key: 'reason', label: 'เหตุผลประกอบ', get: val('reason'), w: 170 });
     cols.push({ key: 'result', label: 'ผลการพิจารณาเขต', get: r => r.result || (r.status === 'รอพิจารณา' ? '' : r.status), w: 110 });
     if (rs.some(r => String(r.note || '').trim())) cols.push({ key: 'note', label: 'หมายเหตุ', get: val('note'), w: 150 });
     return cols;
   };
-  const catSheet = (c, rs, sub) => {
-    const cols = exportCols(c, rs);
-    return { name: c.sheet.trim(), title: c.title, sub, sub3: c.sub3 || '', cols: cols.map(x => ({ label: x.label, group: x.group || '', w: x.w || 110, center: !!x.center })),
+  const catSheet = (c, rs, sub, meet) => {
+    const cols = exportCols(c, rs), m = c.form === 'meeting';
+    const title = m ? [c.title, FORM_COMMITTEE, meet.name, meet.date ? 'เมื่อวันที่ ' + meet.date : ''].filter(String).join(' ') : c.title;
+    return { name: c.sheet.trim(), title, sub: m ? FORM_MEET_VIA : sub, line: m ? FORM_LINE : '', sub3: c.sub3 || '', cols: cols.map(x => ({ label: x.label, group: x.group || '', w: x.w || 110, center: !!x.center })),
       rows: rs.map((r, k) => cols.map(col => col.key === '#' ? k + 1 : col.get(r))) };
   };
   const summarySheet = (title, sub, reqs) => {
@@ -170,12 +173,13 @@
       const r = ROUNDS.find(x => x.id === rid), PO = x => { const i = PROVINCES.indexOf(x.prov); return i < 0 ? 99 : i; };
       const live = REQS.filter(x => x.round === rid && x.status !== 'ถอนเรื่อง').sort((a, b) => PO(a) - PO(b) ||
         String(a.org).localeCompare(String(b.org), 'th') || String(a.posno).localeCompare(String(b.posno), 'th', { numeric: true }));
-      const sub = [r.name, r.meetDate ? 'วันที่ ' + new Date(r.meetDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }) : ''].filter(String).join(' ');
+      const md = r.meetDate ? new Date(r.meetDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+      const sub = [r.name, md ? 'วันที่ ' + md : ''].filter(String).join(' '), meet = { name: r.name, date: md };
       const byCat = c => live.filter(x => x.cat === c.name), n = c => byCat(c).length;
       const f = (title, count, cat, sheets) => ({ title: title, url: '#', xlsx: '#', count: count, cat: cat || '', sheets: sheets });
       const t0 = 'บัญชีการขอใช้ตำแหน่งว่าง ประจำเดือน ' + r.month;
-      const files = !catKey ? [f(t0, live.length, '', [summarySheet(t0, sub, live)].concat(CATS.map(c => catSheet(c, byCat(c), sub))))]
-        : CATS.filter(c => catKey === '*' ? n(c) : c.key === catKey).map(c => f('บัญชีแนบท้าย ' + c.name + ' ประจำเดือน ' + r.month, n(c), c.name, [catSheet(c, byCat(c), sub)]));
+      const files = !catKey ? [f(t0, live.length, '', [summarySheet(t0, sub, live)].concat(CATS.map(c => catSheet(c, byCat(c), sub, meet))))]
+        : CATS.filter(c => catKey === '*' ? n(c) : c.key === catKey).map(c => f('บัญชีแนบท้าย ' + c.name + ' ประจำเดือน ' + r.month, n(c), c.name, [catSheet(c, byCat(c), sub, meet)]));
       if (!files.length) throw new Error('รอบนี้ยังไม่มีคำขอ');
       return Object.assign({}, files[0], { files: files, count: files.reduce((s, x) => s + x.count, 0) });
     },

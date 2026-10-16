@@ -66,6 +66,10 @@ const FIELDS = {
   reason:  { label: 'เหตุผลประกอบ', type: 'textarea' },
   note:    { label: 'หมายเหตุ', type: 'textarea' }
 };
+/** หัวบัญชีแนบท้ายแบบหนังสือแจ้งผล (ประเภทที่มี form: 'meeting') — แถว 1 ชื่อเรื่อง+คณะ+ครั้งที่+วันประชุม · แถว 2 รูปแบบการประชุม · เส้นตารางสีส้ม */
+const FORM_COMMITTEE = 'ของคณะอนุกรรมการบริหารทรัพยากรบุคคล เขตสุขภาพที่ 1';
+const FORM_MEET_VIA = 'โดยผ่านระบบประชุมทางไกลผ่านจอภาพ โปรแกรม ZOOM Cloud Meeting';
+const FORM_LINE = '#ED7D31';
 const HEAD_FIELDS = ['org', 'unit', 'dept'];
 const TAIL_FIELDS = ['note'];
 
@@ -73,9 +77,9 @@ const TAIL_FIELDS = ['note'];
 const CATS = [
   { key: 'improve', name: 'ปรับปรุงตำแหน่ง ขรก.', staff: 'ข้าราชการ', icon: 'wrench',
     desc: 'ปรับปรุงตำแหน่งว่างไปเป็นสายงานอื่น', sheet: 'ปรับปรุง (ขรก)',
-    title: 'ผลการพิจารณา การปรับปรุงตำแหน่งข้าราชการ', grp: 'ข้อมูลตำแหน่งเดิม',
+    title: 'ผลการพิจารณา การปรับปรุงตำแหน่งข้าราชการ', grp: 'ข้อมูลตำแหน่งเดิม', form: 'meeting',
     fields: ['posno', 'pos', 'newpos', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos'],
-    labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ขอปรับปรุงตำแหน่งเป็น' } },
+    labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ขอปรับปรุงตำแหน่งเป็น' }, xlabels: { newpos: 'ขอปรับปรุงตำแหน่ง' } },
   { key: 'transfer', name: 'เกลี่ยอัตรา ขรก. (มีคนครอง)', staff: 'ข้าราชการ', icon: 'swap',
     desc: 'ตัดโอนตำแหน่งและอัตราเงินเดือน ตำแหน่งที่มีคนครอง', sheet: 'เกลี่ยอัตราตัดโอน (ขรก)',
     title: 'ผลการพิจารณา การเกลี่ยอัตราตำแหน่งข้าราชการ (ตัดโอนตำแหน่งและอัตราเงินเดือน)', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
@@ -759,6 +763,7 @@ function apiExportRound(token, roundId, catKey) {
 
   const month = round.month || round.name;
   const sub = [round.name, round.meetDate ? 'วันที่ ' + thaiDate_(round.meetDate) : ''].filter(String).join(' ');
+  const meet = { name: round.name || '', date: round.meetDate ? thaiDate_(round.meetDate) : '' };
   const byCat = c => reqs.filter(r => catName_(r.cat) === c.name);
   const done = (out, count, cat) => {
     out.getSheets().forEach(s => s.getDataRange().setFontFamily('Sarabun'));
@@ -769,14 +774,14 @@ function apiExportRound(token, roundId, catKey) {
   if (!catKey) {
     const out = SpreadsheetApp.create('บัญชีการขอใช้ตำแหน่งว่าง ประจำเดือน ' + month);
     summarySheet_(out.getSheets()[0].setName('สรุป'), out.getName(), sub, reqs);
-    CATS.forEach(c => catSheet_(out.insertSheet(c.sheet.trim()), c, byCat(c), sub));
+    CATS.forEach(c => catSheet_(out.insertSheet(c.sheet.trim()), c, byCat(c), sub, meet));
     files = [done(out, reqs.length)];
   } else {
     const cats = catKey === '*' ? CATS.filter(c => byCat(c).length) : CATS.filter(c => c.key === catKey);
     if (!cats.length) throw new Error(catKey === '*' ? 'รอบนี้ยังไม่มีคำขอ' : 'ไม่พบประเภทคำขอ');
     files = cats.map(c => {
       const out = SpreadsheetApp.create('บัญชีแนบท้าย ' + c.name + ' ประจำเดือน ' + month);
-      catSheet_(out.getSheets()[0].setName(c.sheet.trim()), c, byCat(c), sub);
+      catSheet_(out.getSheets()[0].setName(c.sheet.trim()), c, byCat(c), sub, meet);
       return done(out, byCat(c).length, c.name);
     });
   }
@@ -806,12 +811,13 @@ function summarySheet_(sum, title, sub, reqs) {
 }
 
 /** ชีตบัญชีแนบท้ายของหมวด ตามแบบฟอร์ม: แถว 1 ชื่อเรื่อง · 2 รอบ/วันประชุม · 3 หัวข้อย่อย · 5–6 หัวตาราง · 7+ ข้อมูล */
-function catSheet_(sh, c, rs, sub) {
+function catSheet_(sh, c, rs, sub, meet) {
   const cols = exportCols_(c, rs);
-  const n = cols.length, H = 5;
-  sh.getRange(1, 1, 1, n).merge().setValue(c.title).setFontSize(16).setFontWeight('bold')
+  const n = cols.length, H = 5, hd = sheetHead_(c, sub, meet);
+  sh.getRange(1, 1, 1, n).merge().setValue(hd.title).setFontSize(16).setFontWeight('bold')
     .setHorizontalAlignment('center').setWrap(true);
-  sh.getRange(2, 1, 1, n).merge().setValue(sub).setFontSize(16).setHorizontalAlignment('center');
+  sh.getRange(2, 1, 1, n).merge().setValue(hd.sub).setFontSize(16).setFontWeight(hd.line ? 'bold' : 'normal')
+    .setHorizontalAlignment('center');
   if (c.sub3) sh.getRange(3, 1, 1, n).merge().setValue(c.sub3).setFontSize(14).setFontWeight('bold');
   // หัวตาราง 2 แถว (รวมเซลล์กลุ่ม "ข้อมูลตำแหน่ง")
   sh.getRange(H, 1, 2, n).setValues([cols.map(x => x.group || x.label), cols.map(x => x.group ? x.label : '')]);
@@ -834,9 +840,19 @@ function catSheet_(sh, c, rs, sub) {
     sh.getRange(H + 2, 1, rows.length, n).setValues(rows).setFontSize(14).setWrap(true).setVerticalAlignment('top');
     cols.forEach((col, k) => { if (col.center) sh.getRange(H + 2, k + 1, rows.length, 1).setHorizontalAlignment('center'); });
   }
-  sh.getRange(H, 1, Math.max(rs.length, 1) + 2, n).setBorder(true, true, true, true, true, true);
+  const box = sh.getRange(H, 1, Math.max(rs.length, 1) + 2, n);
+  if (hd.line) box.setBorder(true, true, true, true, true, true, hd.line, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+  else box.setBorder(true, true, true, true, true, true);
   cols.forEach((col, k) => sh.setColumnWidth(k + 1, col.w || 110));
   sh.setFrozenRows(H + 1);
+}
+
+/** ชื่อเรื่อง/บรรทัดที่ 2/สีเส้นของบัญชีแนบท้าย — form: 'meeting' ใช้แบบหนังสือแจ้งผลการประชุม */
+function sheetHead_(c, sub, meet) {
+  if (c.form !== 'meeting') return { title: c.title, sub: sub, line: '' };
+  meet = meet || {};
+  return { title: [c.title, FORM_COMMITTEE, meet.name, meet.date ? 'เมื่อวันที่ ' + meet.date : ''].filter(String).join(' '),
+    sub: FORM_MEET_VIA, line: FORM_LINE };
 }
 
 /** ส่งออก JSON สำหรับนำเข้า Dashboard (รูปแบบเดียวกับ data-2569.json) — ไม่มีชื่อบุคคล */
@@ -1009,17 +1025,24 @@ function exportCols_(cat, rs) {
     cols.push({ key: k, group: cat.grp, label: label, get: get, w: W[k], center: k === 'posno' });
   });
   cat.fields.filter(k => grpKeys.indexOf(k) < 0 && k !== 'frame' && k !== 'actual' && k !== 'reason').forEach(k => {
-    cols.push({ key: k, label: labelOf_(cat, k), get: val(k), w: W[k] || 140 });
+    cols.push({ key: k, label: (cat.xlabels && cat.xlabels[k]) || labelOf_(cat, k), get: val(k), w: W[k] || 140 });
   });
   if (cat.fields.indexOf('frame') >= 0) {
     cols.push({ key: 'frame', label: 'กรอบ', get: val('frame'), w: 60, center: true });
     cols.push({ key: 'actual', label: 'ปฏิบัติงานจริง', get: val('actual'), w: 70, center: true });
-    cols.push({ key: 'short', label: 'ขาด', get: val('short'), w: 60, center: true });
+    cols.push({ key: 'short', label: 'ขาด', get: cat.form === 'meeting' ? shortText_ : val('short'), w: 70, center: true });
   }
   if (cat.fields.indexOf('reason') >= 0) cols.push({ key: 'reason', label: 'เหตุผลประกอบ', get: val('reason'), w: 170 });
   cols.push({ key: 'result', label: 'ผลการพิจารณาเขต', get: r => r.result || (r.status === 'รอพิจารณา' ? '' : r.status), w: 110 });
   if ((rs || []).some(r => String(r.note || '').trim())) cols.push({ key: 'note', label: 'หมายเหตุ', get: val('note'), w: 150 });
   return cols;
+}
+
+/** จำนวนขาดแบบหนังสือแจ้งผล: "ขาด 9" · "เกิน 2" · 0 */
+function shortText_(r) {
+  if (r.short === '' || r.short === null || r.short === undefined || isNaN(Number(r.short))) return '';
+  const v = Number(r.short);
+  return v > 0 ? 'ขาด ' + v : v < 0 ? 'เกิน ' + (-v) : 0;
 }
 
 function labelOf_(cat, k) {
