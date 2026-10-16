@@ -59,12 +59,14 @@
     if (cat.fields.indexOf('reason') >= 0) cols.push({ key: 'reason', label: 'เหตุผลประกอบ', get: val('reason'), w: 170 });
     cols.push({ key: 'result', label: 'ผลการพิจารณาเขต', get: r => r.result || (r.status === 'รอพิจารณา' ? '' : r.status), w: 110 });
     if (rs.some(r => String(r.note || '').trim())) cols.push({ key: 'note', label: 'หมายเหตุ', get: val('note'), w: 150 });
+    cols.forEach((col, i) => { col.wch = (cat.xw && cat.xw[i]) || Math.round((col.w || 110) / 7); });
     return cols;
   };
   const catSheet = (c, rs, sub, meet) => {
     const cols = exportCols(c, rs), m = c.form === 'meeting';
     const title = m ? [c.title, FORM_COMMITTEE, meet.name, meet.date ? 'เมื่อวันที่ ' + meet.date : ''].filter(String).join(' ') : c.title;
-    return { name: c.sheet.trim(), title, sub: m ? FORM_MEET_VIA : sub, line: m ? FORM_LINE : '', sub3: c.sub3 || '', cols: cols.map(x => ({ label: x.label, group: x.group || '', w: x.w || 110, center: !!x.center })),
+    return { name: c.sheet.trim(), title, sub: m ? FORM_MEET_VIA : sub, bold: m, line: FORM_HEAD_LINE, dline: FORM_DATA_LINE, font: FORM_FONT, sub3: c.sub3 || '',
+      cols: cols.map(x => ({ label: x.label, group: x.group || '', w: Math.round(x.wch * 7 + 5), wch: x.wch, center: !!x.center })),
       rows: rs.map((r, k) => cols.map(col => col.key === '#' ? k + 1 : col.get(r))) };
   };
   const summarySheet = (title, sub, reqs) => {

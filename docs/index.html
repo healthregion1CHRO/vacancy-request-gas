@@ -602,7 +602,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '473f6d6e';
+const PAGE_BUILD = '0d2bfe94';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1129,8 +1129,8 @@ async function doExport(btn) {
 function viewSheets(f, back) {
   let cur = 0;
   const table = s => {
-    const bd = s.line ? `2px solid ${s.line}` : '1px solid var(--border)';
-    const g = s.cols.some(c => c.group), th = `border:${bd};padding:4px 6px;background:var(--surface-2,rgba(127,127,127,.12));text-align:center;vertical-align:middle`;
+    const bd = s.line ? `2px solid ${s.line}` : '1px solid var(--border)', bdd = s.dline ? `2px solid ${s.dline}` : bd, hw = s.line && !s.bold ? 400 : 700;
+    const g = s.cols.some(c => c.group), th = `border:${bd};padding:4px 6px;text-align:center;${s.line ? 'font-weight:400;vertical-align:top' : 'background:var(--surface-2,rgba(127,127,127,.12));vertical-align:middle'}`;
     let h1 = '', h2 = '';
     for (let i = 0; i < s.cols.length; i++) {
       const c = s.cols[i];
@@ -1138,10 +1138,10 @@ function viewSheets(f, back) {
         h1 += `<th colspan="${j - i + 1}" style="${th}">${esc(c.group)}</th>`; h2 += s.cols.slice(i, j + 1).map(x => `<th style="${th};min-width:${Math.round(x.w * .6)}px">${esc(x.label)}</th>`).join(''); i = j;
       } else h1 += `<th ${g ? 'rowspan="2"' : ''} style="${th};min-width:${Math.round(c.w * .6)}px">${esc(c.label)}</th>`;
     }
-    const td = (v, c, last) => `<td style="border:${bd};padding:4px 6px;vertical-align:top;white-space:pre-line;${c.center ? 'text-align:center;' : ''}${last ? 'font-weight:600;' : ''}">${esc(v)}</td>`;
+    const td = (v, c, last) => `<td style="border:${bdd};padding:4px 6px;vertical-align:top;white-space:pre-line;${c.center ? 'text-align:center;' : ''}${last ? 'font-weight:600;' : ''}">${esc(v)}</td>`;
     const body = s.rows.length ? s.rows.map((r, k) => `<tr>${r.map((v, i) => td(v, s.cols[i], s.total && k === s.rows.length - 1)).join('')}</tr>`).join('')
       : `<tr><td colspan="${s.cols.length}" style="border:${bd};padding:8px;text-align:center" class="muted">ไม่มีคำขอในหมวดนี้</td></tr>`;
-    return `<div style="text-align:center;font-weight:700;font-size:16px">${esc(s.title)}</div><div style="text-align:center;${s.line ? 'font-weight:700' : ''}">${esc(s.sub)}</div>
+    return `<div style="text-align:center;font-weight:${hw};font-size:16px">${esc(s.title)}</div><div style="text-align:center;${s.bold ? 'font-weight:700' : ''}">${esc(s.sub)}</div>
       ${s.sub3 ? `<div style="font-weight:700;margin-top:4px">${esc(s.sub3)}</div>` : ''}
       <div style="overflow:auto;margin-top:10px;max-height:60vh"><table style="border-collapse:collapse;font-size:13px;width:100%"><thead><tr>${h1}</tr>${g ? `<tr>${h2}</tr>` : ''}</thead><tbody>${body}</tbody></table></div>`;
   };
@@ -1160,25 +1160,40 @@ function viewSheets(f, back) {
     } });
 }
 
-/** สร้างไฟล์ .xlsx จากข้อมูลชีต (หน้าตัวอย่าง) — แถว 1–3 หัวเรื่อง · 5–6 หัวตาราง · ข้อมูลเริ่มแถว 7 */
+/** สร้างไฟล์ .xlsx จากข้อมูลชีต (หน้าตัวอย่าง) — แถว 1–3 หัวเรื่อง · 5–6 หัวตาราง · ข้อมูลเริ่มแถว 7
+ *  ใส่รูปแบบตามแบบฟอร์มบัญชีประจำเดือน (ฟอนต์ · เส้นหนาสีส้ม · ความกว้างคอลัมน์) ด้วย xlsx-js-style */
 async function xlsxSheets(f) {
   const XLSX = await loadXlsx(), wb = XLSX.utils.book_new();
+  const line = c => { const e = c ? { style: 'medium', color: { rgb: c.replace('#', '').toUpperCase() } } : { style: 'thin', color: { rgb: '000000' } };
+    return { top: e, bottom: e, left: e, right: e }; };
   f.sheets.forEach(s => {
-    const n = s.cols.length, g = s.cols.some(c => c.group), H = g ? 4 : 3;
+    const n = s.cols.length, g = s.cols.some(c => c.group), H = g ? 4 : 3, font = { name: s.font || 'TH Sarabun New', sz: 14 };
     const aoa = [[s.title], [s.sub], [s.sub3], []];
     if (g) { aoa.push(s.cols.map(c => c.group || c.label)); aoa.push(s.cols.map(c => c.group ? c.label : '')); }
     else aoa.push(s.cols.map(c => c.label));
-    const ws = XLSX.utils.aoa_to_sheet(aoa.concat(s.rows));
+    const D = aoa.length, rows = s.rows.length ? s.rows : [s.cols.map(() => '')];
+    const ws = XLSX.utils.aoa_to_sheet(aoa.concat(rows));
+    const cell = (r, c) => { const a = XLSX.utils.encode_cell({ r, c }); return ws[a] || (ws[a] = { t: 's', v: '' }); };
+    cell(0, 0).s = { font: Object.assign({}, font, { sz: 16, bold: !!s.bold }), alignment: { horizontal: 'center', vertical: 'top', wrapText: true } };
+    cell(1, 0).s = { font: Object.assign({}, font, { sz: 16, bold: !!s.bold }), alignment: { horizontal: 'center', vertical: 'top' } };
+    cell(2, 0).s = { font, alignment: { vertical: 'top' } };
+    for (let r = H; r < D; r++) for (let c = 0; c < n; c++)
+      cell(r, c).s = { font: Object.assign({}, font, { bold: !s.line }), border: line(s.line), alignment: { horizontal: 'center', vertical: 'top', wrapText: true } };
+    rows.forEach((row, k) => { for (let c = 0; c < n; c++)
+      cell(D + k, c).s = { font: Object.assign({}, font, { bold: !!(s.total && k === rows.length - 1) }), border: line(s.dline || s.line),
+        alignment: { horizontal: s.cols[c].center ? 'center' : undefined, vertical: 'top', wrapText: true } }; });
     const m = [0, 1, 2].map(r => ({ s: { r, c: 0 }, e: { r, c: n - 1 } }));
     if (g) for (let i = 0; i < n; i++) {
       if (s.cols[i].group) { let j = i; while (j + 1 < n && s.cols[j + 1].group === s.cols[i].group) j++; if (j > i) m.push({ s: { r: H, c: i }, e: { r: H, c: j } }); i = j; }
       else m.push({ s: { r: H, c: i }, e: { r: H + 1, c: i } });
     }
     ws['!merges'] = m;
-    ws['!cols'] = s.cols.map(c => ({ wch: Math.max(6, Math.round(c.w / 7)) }));
-    XLSX.utils.book_append_sheet(wb, ws, s.name.slice(0, 31).replace(/[\\\/?*\[\]:]/g, '-'));
+    ws['!cols'] = s.cols.map(c => ({ width: c.wch || Math.max(6, Math.round(c.w / 7)) }));  // width = หน่วยความกว้างแบบ Excel ตรงกับแบบฟอร์ม
+    ws['!rows'] = [{ hpt: 24 }, { hpt: 24 }, { hpt: 21 }, { hpt: 12 }, { hpt: 22.5 }, { hpt: 22.5 }];
+    ws['!margins'] = { left: 0.39, right: 0.24, top: 0.35, bottom: 0.35, header: 0.31, footer: 0.31 };
+    XLSX.utils.book_append_sheet(wb, ws, s.name.slice(0, 31).replace(/[\\/?*\[\]:]/g, '-'));
   });
-  await download(f.title.replace(/[\\\/?*:"<>|]/g, '-') + '.xlsx', new Uint8Array(XLSX.write(wb, { bookType: 'xlsx', type: 'array' })),
+  await download(f.title.replace(/[\\/?*:"<>|]/g, '-') + '.xlsx', new Uint8Array(XLSX.write(wb, { bookType: 'xlsx', type: 'array' })),
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 }
 
@@ -1202,7 +1217,7 @@ function loadXlsx() {
   if (window.XLSX) return Promise.resolve(window.XLSX);
   return xlsxLib || (xlsxLib = new Promise((res, rej) => {
     const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';  // SheetJS ที่เขียนรูปแบบเซลล์ (ฟอนต์/เส้น) ลง .xlsx ได้
     s.onload = () => res(window.XLSX);
     s.onerror = () => { xlsxLib = null; rej(new Error('โหลดตัวอ่านไฟล์ Excel ไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่')); };
     document.head.appendChild(s);

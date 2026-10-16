@@ -66,10 +66,13 @@ const FIELDS = {
   reason:  { label: 'เหตุผลประกอบ', type: 'textarea' },
   note:    { label: 'หมายเหตุ', type: 'textarea' }
 };
-/** หัวบัญชีแนบท้ายแบบหนังสือแจ้งผล (ประเภทที่มี form: 'meeting') — แถว 1 ชื่อเรื่อง+คณะ+ครั้งที่+วันประชุม · แถว 2 รูปแบบการประชุม · เส้นตารางสีส้ม */
+/** บัญชีแนบท้าย: หัวแบบหนังสือแจ้งผล (ประเภทที่มี form: 'meeting' — แถว 1 ชื่อเรื่อง+คณะ+ครั้งที่+วันประชุม · แถว 2 รูปแบบการประชุม)
+ *  และรูปแบบตามแบบฟอร์มบัญชีประจำเดือน (ฟอนต์ · เส้นหัวตาราง/ข้อมูลสีส้ม) — ความกว้างคอลัมน์ต่อประเภทอยู่ใน CAT.xw (หน่วยตัวอักษรแบบ Excel) */
 const FORM_COMMITTEE = 'ของคณะอนุกรรมการบริหารทรัพยากรบุคคล เขตสุขภาพที่ 1';
 const FORM_MEET_VIA = 'โดยผ่านระบบประชุมทางไกลผ่านจอภาพ โปรแกรม ZOOM Cloud Meeting';
-const FORM_LINE = '#ED7D31';
+const FORM_HEAD_LINE = '#ED7D31';
+const FORM_DATA_LINE = '#F79646';
+const FORM_FONT = 'TH Sarabun New';
 const HEAD_FIELDS = ['org', 'unit', 'dept'];
 const TAIL_FIELDS = ['note'];
 
@@ -78,50 +81,60 @@ const CATS = [
   { key: 'improve', name: 'ปรับปรุงตำแหน่ง ขรก.', staff: 'ข้าราชการ', icon: 'wrench',
     desc: 'ปรับปรุงตำแหน่งว่างไปเป็นสายงานอื่น', sheet: 'ปรับปรุง (ขรก)',
     title: 'ผลการพิจารณา การปรับปรุงตำแหน่งข้าราชการ', grp: 'ข้อมูลตำแหน่งเดิม', form: 'meeting',
+    xw: [6.4, 13, 26.8, 11.8, 23.1, 33.2, 17.4, 18.8, 7.1, 7.1, 9.2, 12.8],
     fields: ['posno', 'pos', 'newpos', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos'],
     labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ขอปรับปรุงตำแหน่งเป็น' }, xlabels: { newpos: 'ขอปรับปรุงตำแหน่ง' } },
   { key: 'transfer', name: 'เกลี่ยอัตรา ขรก. (มีคนครอง)', staff: 'ข้าราชการ', icon: 'swap',
     desc: 'ตัดโอนตำแหน่งและอัตราเงินเดือน ตำแหน่งที่มีคนครอง', sheet: 'เกลี่ยอัตราตัดโอน (ขรก)',
     title: 'ผลการพิจารณา การเกลี่ยอัตราตำแหน่งข้าราชการ (ตัดโอนตำแหน่งและอัตราเงินเดือน)', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
+    xw: [7.1, 10.9, 32.1, 11.6, 17.4, 31.4, 13.4, 21.8, 7.2, 9.6, 9.6, 14.2],
     sub3: 'การเกลี่ยอัตราตำแหน่งที่มีคนครอง',
     fields: ['posno', 'pos', 'newunit', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newunit'] },
   { key: 'resident', name: 'เกลี่ยอัตรา แพทย์ประจำบ้าน', staff: 'ข้าราชการ', icon: 'stetho',
     desc: 'ตัดโอนแพทย์/ทันตแพทย์ประจำบ้าน กรณีขึ้นชั้นปีที่ 2', sheet: 'เกลี่ยอัตราตัดโอนแพทย์ประจำบ้าน',
     title: 'การเกลี่ยอัตราตำแหน่งข้าราชการ นายแพทย์ ทันตแพทย์ (ตัดโอนแพทย์ประจำบ้าน และอัตราเงินเดือน) กรณีขึ้นชั้นปีที่ 2 ภายในเขตสุขภาพที่ 1',
+    xw: [6.4, 10.2, 29.8, 10.4, 15.8, 29, 12.1, 24.4, 6.6, 8.6, 8.6, 11],
     grp: 'ตำแหน่ง / ส่วนราชการ เดิม', sub3: 'การเกลี่ยอัตราตำแหน่งที่มีคนครอง',
     fields: ['posno', 'pos', 'newunit', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newunit', 'person'] },
   { key: 'transferVacant', name: 'เกลี่ยอัตรา ขรก. (ตำแหน่งว่าง)', staff: 'ข้าราชการ', icon: 'move',
     desc: 'ตัดโอนตำแหน่งว่างและอัตราเงินเดือน', sheet: 'เกลี่ยอัตราตัดโอน (ขรก) ต.ว่าง',
     title: 'ผลการพิจารณา การเกลี่ยอัตราตำแหน่งว่าง (ตัดโอนตำแหน่งและอัตราเงินเดือน)', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
+    xw: [6.6, 14.1, 28.1, 11.4, 21.6, 29, 16.4, 16.4, 8.6, 9.4, 9.6, 13.8],
     sub3: 'การเกลี่ยอัตราตำแหน่งว่าง',
     fields: ['posno', 'pos', 'newunit', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newunit'] },
   { key: 'civil', name: 'ขอใช้ตำแหน่ง ขรก.', staff: 'ข้าราชการ', icon: 'badge',
     desc: 'ขอใช้ตำแหน่งว่างข้าราชการ เพื่อบรรจุ/ย้าย/โอน/เลื่อน', sheet: 'ขอใช้ ขรก.',
     title: 'ผลการพิจารณา การขอใช้ตำแหน่งข้าราชการ', grp: 'ข้อมูลตำแหน่ง',
+    xw: [6.4, 12.4, 34.9, 12, 19.6, 11.8, 11.6, 18.4, 8.8, 10, 10.9, 15.4],
     fields: ['posno', 'pos', 'level', 'exec', 'cond', 'frame', 'actual'], required: ['posno', 'pos', 'cond'],
     labels: { pos: 'ชื่อตำแหน่ง', cond: 'เงื่อนไขในการขอใช้' } },
   { key: 'gov', name: 'ขอใช้ตำแหน่ง พนักงานราชการ', staff: 'พนักงานราชการ', icon: 'briefcase',
     desc: 'ขอใช้ตำแหน่งพนักงานราชการ', sheet: ' พรก',
     title: 'ผลการพิจารณา การขอใช้ตำแหน่งพนักงานราชการ', grp: 'ข้อมูลตำแหน่ง',
+    xw: [5.4, 18.6, 23.8, 12.6, 20.4, 12.4, 21.8, 28.6, 9.1, 10.1, 10.4, 14.8],
     fields: ['posno', 'pos', 'cond', 'newpos', 'person', 'frame', 'actual'], required: ['posno', 'pos'],
     labels: { cond: 'เงื่อนไข' }, lists: { cond: 'GOV_CONDS' } },
   { key: 'phks', name: 'จ้าง/เปลี่ยนตำแหน่ง พกส.', staff: 'พกส.', icon: 'users',
     desc: 'ขออนุมัติจ้างและเปลี่ยนตำแหน่ง พนักงานกระทรวงสาธารณสุข', sheet: ' จ้าง (พกส) ', alias: ['พกส.'],
     title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่ง พกส.', grp: 'ข้อมูลตำแหน่ง',
+    xw: [6.9, 10.2, 26.8, 11.4, 21.4, 36.9, 8.6, 9.6, 9, 17.1, 13.6],
     fields: ['posno', 'pos', 'newpos', 'frame', 'actual', 'reason'], required: ['pos', 'reason'] },
   { key: 'phksAsst', name: 'พกส. เข้าสู่สายงานผู้ช่วย', staff: 'พกส.', icon: 'userplus',
     desc: 'เปลี่ยนตำแหน่ง พกส. เข้าสู่สายงานผู้ช่วย', sheet: 'พกส(ผู้ช่วย)',
     title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่ง พกส. (สายงานผู้ช่วย)', grp: 'ข้อมูลตำแหน่ง',
+    xw: [6.9, 10.2, 26.8, 11.4, 21.4, 27, 27, 8.6, 9.6, 9, 17.1, 13.6],
     fields: ['posno', 'pos', 'newpos', 'person', 'frame', 'actual', 'reason'], required: ['pos', 'newpos', 'person'],
     labels: { newpos: 'ขอเปลี่ยนเป็นตำแหน่ง (สายงานผู้ช่วย)' }, selects: { newpos: 'ASST_POS' } },
   { key: 'phksMove', name: 'ย้าย พนักงานกระทรวงสาธารณสุข', oldNames: ['ย้าย พกส.'], staff: 'พกส.', icon: 'usermove',
     desc: 'ขอย้ายพนักงานกระทรวงสาธารณสุข ไปหน่วยงานอื่น', sheet: 'ย้าย (พกส)',
     title: 'ผลการพิจารณา การขอย้ายพนักงานกระทรวงสาธารณสุข', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
+    xw: [6.9, 10.2, 26.8, 11.4, 21.4, 27, 27, 8.6, 9.6, 9, 17.1, 13.6],
     fields: ['posno', 'pos', 'newunit', 'person', 'frame', 'actual', 'reason'], required: ['pos', 'newunit', 'person'],
     labels: { pos: 'ชื่อตำแหน่ง', newunit: 'หน่วยงานปลายทาง', person: 'ผู้ขอย้าย (ชื่อ-สกุล)' } },
   { key: 'changeType', name: 'เปลี่ยนประเภทการจ้าง', staff: 'ลจช. → พกส. หรือ พกส. → ลจช.', icon: 'repeat',
     desc: 'เปลี่ยนประเภทการจ้าง เช่น ลูกจ้างชั่วคราว → พกส. หรือ พกส. → ลูกจ้างชั่วคราว', sheet: 'เปลี่ยนประเภทการจ้าง',
     title: 'ผลการพิจารณาการขอเปลี่ยนประเภทการจ้าง', grp: 'ข้อมูลตำแหน่ง',
+    xw: [7.8, 10.2, 22.1, 9.4, 18.8, 9.6, 32.6, 8.4, 7.9, 9.2, 10.8, 14, 11.8],
     fields: ['posno', 'pos', 'typeold', 'newpos', 'typenew', 'frame', 'actual', 'reason'],
     required: ['pos', 'typeold', 'newpos', 'typenew'],
     labels: { newpos: 'ตำแหน่งที่ขออนุมัติกำหนด' },
@@ -129,6 +142,7 @@ const CATS = [
   { key: 'temp', name: 'จ้าง/เปลี่ยนตำแหน่ง ลจช.', staff: 'ลูกจ้างชั่วคราว', icon: 'clock',
     desc: 'ขออนุมัติจ้างและเปลี่ยนตำแหน่งลูกจ้างชั่วคราว', sheet: 'จ้าง (ลจช)',
     title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่งลูกจ้างชั่วคราว', grp: 'ข้อมูลตำแหน่ง',
+    xw: [5.4, 10.9, 27.4, 12, 19, 33.8, 9.4, 9.4, 9.1, 14.2],
     fields: ['posno', 'pos', 'newpos', 'frame', 'actual'], required: ['pos'] }
 ];
 
@@ -766,7 +780,7 @@ function apiExportRound(token, roundId, catKey) {
   const meet = { name: round.name || '', date: round.meetDate ? thaiDate_(round.meetDate) : '' };
   const byCat = c => reqs.filter(r => catName_(r.cat) === c.name);
   const done = (out, count, cat) => {
-    out.getSheets().forEach(s => s.getDataRange().setFontFamily('Sarabun'));
+    out.getSheets().forEach(s => s.getDataRange().setFontFamily(FORM_FONT));
     return { title: out.getName(), url: out.getUrl(), count: count, cat: cat || '',
       xlsx: 'https://docs.google.com/spreadsheets/d/' + out.getId() + '/export?format=xlsx' };
   };
@@ -810,15 +824,16 @@ function summarySheet_(sum, title, sub, reqs) {
   sum.setColumnWidth(1, 260);
 }
 
-/** ชีตบัญชีแนบท้ายของหมวด ตามแบบฟอร์ม: แถว 1 ชื่อเรื่อง · 2 รอบ/วันประชุม · 3 หัวข้อย่อย · 5–6 หัวตาราง · 7+ ข้อมูล */
+/** ชีตบัญชีแนบท้ายของหมวด ตามแบบฟอร์ม (บัญชีการขอใช้ตำแหน่งว่าง ประจำเดือน พ.ย. 2569):
+ *  แถว 1 ชื่อเรื่อง · 2 รอบ/วันประชุม · 3 หัวข้อย่อย · 5–6 หัวตาราง · 7+ ข้อมูล — TH Sarabun New 14/16, เส้นตารางหนาสีส้ม, ความกว้างคอลัมน์ตามแบบฟอร์ม */
 function catSheet_(sh, c, rs, sub, meet) {
   const cols = exportCols_(c, rs);
-  const n = cols.length, H = 5, hd = sheetHead_(c, sub, meet);
-  sh.getRange(1, 1, 1, n).merge().setValue(hd.title).setFontSize(16).setFontWeight('bold')
-    .setHorizontalAlignment('center').setWrap(true);
-  sh.getRange(2, 1, 1, n).merge().setValue(hd.sub).setFontSize(16).setFontWeight(hd.line ? 'bold' : 'normal')
-    .setHorizontalAlignment('center');
-  if (c.sub3) sh.getRange(3, 1, 1, n).merge().setValue(c.sub3).setFontSize(14).setFontWeight('bold');
+  const n = cols.length, H = 5, hd = sheetHead_(c, sub, meet), MED = SpreadsheetApp.BorderStyle.SOLID_MEDIUM;
+  sh.getRange(1, 1, 1, n).merge().setValue(hd.title).setFontSize(16).setFontWeight(hd.bold ? 'bold' : 'normal')
+    .setHorizontalAlignment('center').setVerticalAlignment('top').setWrap(true);
+  sh.getRange(2, 1, 1, n).merge().setValue(hd.sub).setFontSize(16).setFontWeight(hd.bold ? 'bold' : 'normal')
+    .setHorizontalAlignment('center').setVerticalAlignment('top');
+  if (c.sub3) sh.getRange(3, 1, 1, n).merge().setValue(c.sub3).setFontSize(14).setVerticalAlignment('top');
   // หัวตาราง 2 แถว (รวมเซลล์กลุ่ม "ข้อมูลตำแหน่ง")
   sh.getRange(H, 1, 2, n).setValues([cols.map(x => x.group || x.label), cols.map(x => x.group ? x.label : '')]);
   let i = 0;
@@ -833,26 +848,27 @@ function catSheet_(sh, c, rs, sub, meet) {
       i++;
     }
   }
-  sh.getRange(H, 1, 2, n).setFontSize(14).setFontWeight('bold').setHorizontalAlignment('center')
-    .setVerticalAlignment('middle').setWrap(true);
+  sh.getRange(H, 1, 2, n).setFontSize(14).setFontWeight('normal').setHorizontalAlignment('center')
+    .setVerticalAlignment('top').setWrap(true).setBorder(true, true, true, true, true, true, FORM_HEAD_LINE, MED);
+  sh.setRowHeights(H, 2, 30);
+  const nb = Math.max(rs.length, 1);
   if (rs.length) {
     const rows = rs.map((r, k) => cols.map(col => col.key === '#' ? k + 1 : col.get(r)));
-    sh.getRange(H + 2, 1, rows.length, n).setValues(rows).setFontSize(14).setWrap(true).setVerticalAlignment('top');
+    sh.getRange(H + 2, 1, rows.length, n).setValues(rows);
     cols.forEach((col, k) => { if (col.center) sh.getRange(H + 2, k + 1, rows.length, 1).setHorizontalAlignment('center'); });
   }
-  const box = sh.getRange(H, 1, Math.max(rs.length, 1) + 2, n);
-  if (hd.line) box.setBorder(true, true, true, true, true, true, hd.line, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
-  else box.setBorder(true, true, true, true, true, true);
-  cols.forEach((col, k) => sh.setColumnWidth(k + 1, col.w || 110));
+  sh.getRange(H + 2, 1, nb, n).setFontSize(14).setWrap(true).setVerticalAlignment('top')
+    .setBorder(true, true, true, true, true, true, FORM_DATA_LINE, MED);
+  cols.forEach((col, k) => sh.setColumnWidth(k + 1, Math.round(col.wch * 7 + 5)));
   sh.setFrozenRows(H + 1);
 }
 
-/** ชื่อเรื่อง/บรรทัดที่ 2/สีเส้นของบัญชีแนบท้าย — form: 'meeting' ใช้แบบหนังสือแจ้งผลการประชุม */
+/** ชื่อเรื่อง/บรรทัดที่ 2 ของบัญชีแนบท้าย — form: 'meeting' ใช้แบบหนังสือแจ้งผลการประชุม (ตัวหนา) */
 function sheetHead_(c, sub, meet) {
-  if (c.form !== 'meeting') return { title: c.title, sub: sub, line: '' };
+  if (c.form !== 'meeting') return { title: c.title, sub: sub, bold: false };
   meet = meet || {};
   return { title: [c.title, FORM_COMMITTEE, meet.name, meet.date ? 'เมื่อวันที่ ' + meet.date : ''].filter(String).join(' '),
-    sub: FORM_MEET_VIA, line: FORM_LINE };
+    sub: FORM_MEET_VIA, bold: true };
 }
 
 /** ส่งออก JSON สำหรับนำเข้า Dashboard (รูปแบบเดียวกับ data-2569.json) — ไม่มีชื่อบุคคล */
@@ -1035,6 +1051,8 @@ function exportCols_(cat, rs) {
   if (cat.fields.indexOf('reason') >= 0) cols.push({ key: 'reason', label: 'เหตุผลประกอบ', get: val('reason'), w: 170 });
   cols.push({ key: 'result', label: 'ผลการพิจารณาเขต', get: r => r.result || (r.status === 'รอพิจารณา' ? '' : r.status), w: 110 });
   if ((rs || []).some(r => String(r.note || '').trim())) cols.push({ key: 'note', label: 'หมายเหตุ', get: val('note'), w: 150 });
+  // ความกว้างตามแบบฟอร์ม (หน่วยตัวอักษร) — คอลัมน์ที่เกินแบบฟอร์ม (เช่น หมายเหตุ) คิดจากความกว้างพิกเซลเดิม
+  cols.forEach((col, i) => { col.wch = (cat.xw && cat.xw[i]) || Math.round((col.w || 110) / 7); });
   return cols;
 }
 
