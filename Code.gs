@@ -195,7 +195,7 @@ const SCHEMA = {
     ['mustChange', 'ต้องเปลี่ยนรหัส'], ['lastLogin', 'เข้าใช้ล่าสุด']],
   'รอบการประชุม': [['id', 'รหัสรอบ'], ['name', 'ชื่อรอบ'], ['month', 'บัญชีประจำเดือน'], ['meetDate', 'วันที่ประชุม'],
     ['closeDate', 'ปิดรับคำขอ'], ['status', 'สถานะ']],
-  'หน่วยงาน': [['org', 'หน่วยงาน'], ['prov', 'จังหวัด']],
+  'หน่วยงาน': [['org', 'หน่วยงาน'], ['prov', 'จังหวัด'], ['logo', 'ลิงก์รูปตรา']],
   'ประวัติ': [['at', 'เวลา'], ['user', 'ผู้ใช้'], ['action', 'การกระทำ'], ['ref', 'อ้างอิง'], ['detail', 'รายละเอียด']]
 };
 const TEXT_KEYS = ['id', 'round', 'posno', 'username', 'phone'];
@@ -750,14 +750,17 @@ function apiDeleteRound(token, id) {
 /** แทนที่รายชื่อหน่วยงานทั้งหมด: list = [{org, prov}] */
 function apiSaveOrgs(token, list) {
   const me = auth_(token, 'admin');
-  const rows = (list || []).map(o => [clean_(o.org), clean_(o.prov)]).filter(r => r[0]);
-  rows.forEach(r => { if (PROVINCES.indexOf(r[1]) < 0) throw new Error('จังหวัดของ "' + r[0] + '" ไม่ถูกต้อง'); });
+  const rows = (list || []).map(o => ({ org: clean_(o.org), prov: clean_(o.prov), logo: clean_(o.logo) })).filter(o => o.org);
+  rows.forEach(o => {
+    if (PROVINCES.indexOf(o.prov) < 0) throw new Error('จังหวัดของ "' + o.org + '" ไม่ถูกต้อง');
+    if (o.logo && !/^https:///i.test(o.logo)) throw new Error('ลิงก์รูปตราของ "' + o.org + '" ต้องขึ้นต้นด้วย https://');
+  });
   const seen = {};
-  rows.forEach(r => { if (seen[r[0]]) throw new Error('หน่วยงานซ้ำ: ' + r[0]); seen[r[0]] = 1; });
+  rows.forEach(o => { if (seen[o.org]) throw new Error('หน่วยงานซ้ำ: ' + o.org); seen[o.org] = 1; });
   const t = table_(SH.ORGS);
   const last = t.sh.getLastRow();
-  if (last > 1) t.sh.getRange(2, 1, last - 1, 2).clearContent();
-  if (rows.length) t.sh.getRange(2, 1, rows.length, 2).setValues(rows);
+  if (last > 1) t.sh.getRange(2, 1, last - 1, t.width).clearContent();
+  if (rows.length) t.sh.getRange(2, 1, rows.length, t.width).setValues(rows.map(o => rowOf_(t, o)));
   log_(me.username, 'แก้ไขรายชื่อหน่วยงาน', '', rows.length + ' หน่วยงาน');
   return table_(SH.ORGS).items.map(plain_);
 }
