@@ -10,7 +10,8 @@
   ];
   let ROUNDS = [
     { id: 'R1', name: 'ครั้งที่ 9/2569', month: 'กันยายน 2569', meetDate: iso(day(-24)).slice(0, 10) + 'T00:00:00', closeDate: iso(day(-35)).slice(0, 10) + 'T00:00:00', status: 'ประชุมแล้ว' },
-    { id: 'R2', name: 'ครั้งที่ 10/2569', month: 'ตุลาคม 2569', meetDate: iso(day(30)).slice(0, 10) + 'T00:00:00', closeDate: iso(day(12)).slice(0, 10) + 'T00:00:00', status: 'เปิดรับ' }
+    { id: 'R2', name: 'ครั้งที่ 10/2569', month: 'ตุลาคม 2569', meetDate: iso(day(30)).slice(0, 10) + 'T00:00:00', closeDate: iso(day(12)).slice(0, 10) + 'T00:00:00', status: 'เปิดรับ' },
+    { id: 'R3', name: 'ครั้งที่ 11/2569', month: 'พฤศจิกายน 2569', meetDate: iso(day(60)).slice(0, 10) + 'T00:00:00', closeDate: iso(day(42)).slice(0, 10) + 'T00:00:00', status: 'เปิดรับ' }
   ];
   let seq = 0;
   const REQS = [];
@@ -97,7 +98,11 @@
     apiSaveRequest(tok, d, force) {
       const u = who(tok), cat = CATS.find(c => c.key === d.catKey);
       let rec = d.id ? REQS.find(r => r.id === d.id) : null;
-      const round = (u.role === 'admin' && d.round) || (rec && rec.round) || (ROUNDS.find(r => r.status === 'เปิดรับ') || {}).id;
+      const open = ROUNDS.filter(r => r.status === 'เปิดรับ');
+      const round = d.round || (rec && rec.round) || (open.length === 1 ? open[0].id : '');
+      if (!round) throw new Error(open.length ? 'มีหลายรอบที่เปิดรับ กรุณาเลือกรอบการประชุม' : 'ขณะนี้ยังไม่เปิดรับคำขอ');
+      const rd = ROUNDS.find(r => r.id === round);
+      if (u.role !== 'admin' && (!rd || rd.status !== 'เปิดรับ')) throw new Error('รอบ "' + (rd ? rd.name : round) + '" ปิดรับคำขอแล้ว');
       if (d.posno && !force) {
         const dup = REQS.filter(r => r.id !== d.id && r.round === round && r.posno === d.posno && r.status !== 'ถอนเรื่อง');
         if (dup.length) return { dup: dup.map(r => ({ id: r.id, cat: r.cat, org: r.org, status: r.status })) };
@@ -167,7 +172,6 @@
       let r = ROUNDS.find(x => x.id === d.id);
       if (!r) { r = { id: 'R' + (ROUNDS.reduce((m, x) => Math.max(m, Number(x.id.slice(1)) || 0), 0) + 1) }; ROUNDS.push(r); }
       Object.assign(r, { name: d.name, month: d.month, status: d.status, closeDate: d.closeDate ? d.closeDate + 'T00:00:00' : '', meetDate: d.meetDate ? d.meetDate + 'T00:00:00' : '' });
-      if (r.status === 'เปิดรับ') ROUNDS.forEach(x => { if (x !== r && x.status === 'เปิดรับ') x.status = 'ปิดรับ'; });
       return ROUNDS.map(x => Object.assign({}, x));
     },
     apiSaveOrgs(tok, list) { who(tok); ORGS.length = 0; list.forEach(o => ORGS.push(o)); return ORGS.slice(); },

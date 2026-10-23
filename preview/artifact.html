@@ -555,7 +555,8 @@ const SEED_USERNAMES = {
   ];
   let ROUNDS = [
     { id: 'R1', name: 'ครั้งที่ 9/2569', month: 'กันยายน 2569', meetDate: iso(day(-24)).slice(0, 10) + 'T00:00:00', closeDate: iso(day(-35)).slice(0, 10) + 'T00:00:00', status: 'ประชุมแล้ว' },
-    { id: 'R2', name: 'ครั้งที่ 10/2569', month: 'ตุลาคม 2569', meetDate: iso(day(30)).slice(0, 10) + 'T00:00:00', closeDate: iso(day(12)).slice(0, 10) + 'T00:00:00', status: 'เปิดรับ' }
+    { id: 'R2', name: 'ครั้งที่ 10/2569', month: 'ตุลาคม 2569', meetDate: iso(day(30)).slice(0, 10) + 'T00:00:00', closeDate: iso(day(12)).slice(0, 10) + 'T00:00:00', status: 'เปิดรับ' },
+    { id: 'R3', name: 'ครั้งที่ 11/2569', month: 'พฤศจิกายน 2569', meetDate: iso(day(60)).slice(0, 10) + 'T00:00:00', closeDate: iso(day(42)).slice(0, 10) + 'T00:00:00', status: 'เปิดรับ' }
   ];
   let seq = 0;
   const REQS = [];
@@ -642,7 +643,11 @@ const SEED_USERNAMES = {
     apiSaveRequest(tok, d, force) {
       const u = who(tok), cat = CATS.find(c => c.key === d.catKey);
       let rec = d.id ? REQS.find(r => r.id === d.id) : null;
-      const round = (u.role === 'admin' && d.round) || (rec && rec.round) || (ROUNDS.find(r => r.status === 'เปิดรับ') || {}).id;
+      const open = ROUNDS.filter(r => r.status === 'เปิดรับ');
+      const round = d.round || (rec && rec.round) || (open.length === 1 ? open[0].id : '');
+      if (!round) throw new Error(open.length ? 'มีหลายรอบที่เปิดรับ กรุณาเลือกรอบการประชุม' : 'ขณะนี้ยังไม่เปิดรับคำขอ');
+      const rd = ROUNDS.find(r => r.id === round);
+      if (u.role !== 'admin' && (!rd || rd.status !== 'เปิดรับ')) throw new Error('รอบ "' + (rd ? rd.name : round) + '" ปิดรับคำขอแล้ว');
       if (d.posno && !force) {
         const dup = REQS.filter(r => r.id !== d.id && r.round === round && r.posno === d.posno && r.status !== 'ถอนเรื่อง');
         if (dup.length) return { dup: dup.map(r => ({ id: r.id, cat: r.cat, org: r.org, status: r.status })) };
@@ -712,7 +717,6 @@ const SEED_USERNAMES = {
       let r = ROUNDS.find(x => x.id === d.id);
       if (!r) { r = { id: 'R' + (ROUNDS.reduce((m, x) => Math.max(m, Number(x.id.slice(1)) || 0), 0) + 1) }; ROUNDS.push(r); }
       Object.assign(r, { name: d.name, month: d.month, status: d.status, closeDate: d.closeDate ? d.closeDate + 'T00:00:00' : '', meetDate: d.meetDate ? d.meetDate + 'T00:00:00' : '' });
-      if (r.status === 'เปิดรับ') ROUNDS.forEach(x => { if (x !== r && x.status === 'เปิดรับ') x.status = 'ปิดรับ'; });
       return ROUNDS.map(x => Object.assign({}, x));
     },
     apiSaveOrgs(tok, list) { who(tok); ORGS.length = 0; list.forEach(o => ORGS.push(o)); return ORGS.slice(); },
@@ -854,6 +858,9 @@ const toneOf = st => (S.boot.statuses.find(s => s.key === st) || {}).tone || 'mu
 const chip = st => `<span class="chip t-${toneOf(st)}">${esc(st)}</span>`;
 const roundOf = id => S.boot.rounds.find(r => String(r.id) === String(id));
 const openRound = () => S.boot.rounds.find(r => r.status === 'เปิดรับ');
+const openRounds = () => S.boot.rounds.filter(r => r.status === 'เปิดรับ');
+/** รอบตั้งต้นของคำขอใหม่: รอบที่เลือกอยู่ด้านบนถ้าเปิดรับ ไม่งั้นรอบแรกที่เปิดรับ */
+const defRound = () => { const rd = roundOf(S.round); return rd && rd.status === 'เปิดรับ' ? rd : openRound(); };
 const isAdmin = () => S.boot.user.role === 'admin';
 const labelOf = (cat, k) => (cat.labels && cat.labels[k]) || S.boot.fields[k].label;
 const has = v => v !== '' && v != null;
@@ -966,7 +973,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '05893d2d';
+const PAGE_BUILD = 'dab4c689';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1141,6 +1148,7 @@ function viewHome() {
   const u = S.boot.user, live = scoped().filter(r => r.status !== 'ถอนเรื่อง');
   const cnt = sts => live.filter(r => sts.indexOf(r.status) >= 0).length;
   const or = openRound(), rd = roundOf(S.round) || or;
+  const others = openRounds().filter(r => !rd || String(r.id) !== String(rd.id));
   const hour = new Date().getHours();
   const greet = hour < 12 ? 'สวัสดีตอนเช้า' : hour < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น';
   const scopeTxt = u.role === 'admin' ? 'ทุกหน่วยงานในเขตสุขภาพที่ 1' : u.role === 'prov' ? 'หน่วยงานในจังหวัด' + u.prov : u.org;
@@ -1156,6 +1164,7 @@ function viewHome() {
       ${dl !== null && dl >= 0 ? `<div class="countdown"><b>${dl}</b><span>${dl === 0 ? 'ปิดรับคำขอวันนี้' : 'วัน ก่อนปิดรับคำขอ'}</span></div>` : ''}
       ${dl !== null && dl < 0 ? `<div class="alert warn">${icon('alert')}<span>เลยกำหนดปิดรับมาแล้ว ${-dl} วัน</span></div>` : ''}
       <dl class="kv"><dt>บัญชีประจำเดือน</dt><dd>${esc(rd.month || '–')}</dd><dt>ปิดรับคำขอ</dt><dd>${fmtDate(rd.closeDate, 1)}</dd><dt>วันที่ประชุม</dt><dd>${fmtDate(rd.meetDate, 1)}</dd></dl>
+      ${others.length ? `<p class="muted" style="margin:8px 0 0;font-size:13px">${icon('calendar')} เปิดรับพร้อมกันอีก: ${others.map(r => esc(r.name) + (r.month ? ' (' + esc(r.month) + ')' : '')).join(', ')} — เลือกดูได้ที่รอบด้านบน</p>` : ''}
     </div>`;
   } else {
     roundHtml = `<div class="card roundcard">${emptyHtml('calendar', 'ยังไม่มีรอบการประชุม', isAdmin() ? 'สร้างรอบได้ที่ ตั้งค่า → รอบการประชุม' : 'รอเขตเปิดรับคำขอ')}</div>`;
@@ -1207,13 +1216,14 @@ function viewHome() {
 
 /* ───────────── new / edit request ───────────── */
 function viewNew() {
-  const or = openRound();
+  const or = defRound(), ors = openRounds();
   if (!S.form && !isAdmin() && !or) {
     return `<div class="card">${emptyHtml('calendar', 'ยังไม่เปิดรับคำขอ', 'ขณะนี้ไม่มีรอบการประชุมที่เปิดรับคำขอ กรุณาติดตามประกาศจากเขต')}</div>`;
   }
   if (!S.form) {
     return `<div class="stack">
-      ${or ? `<div class="alert info">${icon('calendar')}<span>คำขอจะเข้าสู่ <b>${esc(or.name)}</b>${or.month ? ' (บัญชีเดือน' + esc(or.month) + ')' : ''}${or.closeDate ? ' · ปิดรับ ' + fmtDate(or.closeDate, 1) : ''}</span></div>` : ''}
+      ${ors.length > 1 ? `<div class="alert info">${icon('calendar')}<span>ขณะนี้เปิดรับ ${ors.length} รอบ: ${ors.map(r => `<b>${esc(r.name)}</b>${r.month ? ' (' + esc(r.month) + ')' : ''}${r.closeDate ? ' ปิดรับ ' + fmtDate(r.closeDate, 1) : ''}`).join(' · ')} — เลือกรอบได้ในฟอร์ม</span></div>`
+        : or ? `<div class="alert info">${icon('calendar')}<span>คำขอจะเข้าสู่ <b>${esc(or.name)}</b>${or.month ? ' (บัญชีเดือน' + esc(or.month) + ')' : ''}${or.closeDate ? ' · ปิดรับ ' + fmtDate(or.closeDate, 1) : ''}</span></div>` : ''}
       <div><h2 style="font-size:20px">เลือกประเภทคำขอ</h2><p class="muted" style="margin:4px 0 0">ฟอร์มจะแสดงเฉพาะช่องที่ประเภทนั้นต้องใช้</p></div>
       <div class="cats">${S.boot.cats.map(c => `<button class="catcard" style="--c:${catColor(c.key)}" data-act="pick-cat" data-k="${c.key}">
         <div class="ic">${icon(c.icon)}</div><span class="staff">${esc(c.staff)}</span><b>${esc(c.name)}</b><p>${esc(c.desc)}</p></button>`).join('')}</div>
@@ -1278,15 +1288,16 @@ function formHtml() {
   const hasFrame = cat.fields.indexOf('frame') >= 0;
   const more = (cat.fields.indexOf('reason') >= 0 ? ['reason'] : []).concat(B.tailFields);
   const sh = shortOf(d);
-  const curRound = d.round || (openRound() || {}).id;
+  const curRound = d.round || (defRound() || {}).id;
+  const roundOpts = isAdmin() ? B.rounds.slice().reverse() : openRounds().slice().reverse();
   let n = 0;
   return `<form class="card" id="reqForm" novalidate style="--c:${catColor(cat.key)}" onsubmit="return false">
     <div class="formhead"><div class="ic">${icon(cat.icon)}</div>
       <div style="flex:1;min-width:0"><span class="muted" style="font-size:13px">${esc(cat.staff)}${f.id ? ' · ' + esc(f.id) : ''}</span><h2>${esc(cat.name)}</h2></div>
       ${f.id ? '' : `<button type="button" class="btn sm" data-act="change-cat">${icon('swap')} เปลี่ยนประเภท</button>`}</div>
     ${f.id && d.status === 'ส่งกลับแก้ไข' && d.reviewNote ? `<div class="sec"><div class="alert warn">${icon('alert')}<span><b>ข้อเสนอแนะจากเขต:</b> ${esc(d.reviewNote)}</span></div></div>` : ''}
-    ${isAdmin() ? `<div class="sec"><h4><span class="n">${++n}</span>รอบการประชุม</h4><div class="grid g2"><div class="field"><label for="f_round">รอบ</label>
-      <select class="input" id="f_round" name="round">${B.rounds.slice().reverse().map(r => `<option value="${esc(r.id)}" ${String(curRound) === String(r.id) ? 'selected' : ''}>${esc(r.name)} · ${esc(r.status)}</option>`).join('')}</select></div></div></div>` : ''}
+    ${isAdmin() || roundOpts.length > 1 ? `<div class="sec"><h4><span class="n">${++n}</span>รอบการประชุม</h4><div class="grid g2"><div class="field"><label for="f_round">รอบ</label>
+      <select class="input" id="f_round" name="round">${roundOpts.map(r => `<option value="${esc(r.id)}" ${String(curRound) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''} · ${esc(r.status)}</option>`).join('')}</select></div></div></div>` : ''}
     <div class="sec"><h4><span class="n">${++n}</span>หน่วยงาน</h4><div class="grid g3">${fld('org')}${fld('unit')}${fld('dept')}</div></div>
     <div class="sec"><h4><span class="n">${++n}</span>ข้อมูลตำแหน่ง</h4><div class="grid g2">${posFields.map(k => fld(k, ['newpos', 'newunit', 'cutpos'].indexOf(k) >= 0 ? 'spanall' : '')).join('')}</div></div>
     ${hasFrame ? `<div class="sec"><h4><span class="n">${++n}</span>อัตรากำลัง</h4><div class="grid g3">${fld('frame')}${fld('actual')}
@@ -1910,7 +1921,7 @@ function secretModal(title, username, pw) {
 function roundsHtml() {
   const rs = S.boot.rounds.slice().reverse();
   const tone = { 'เปิดรับ': 't-ok', 'ปิดรับ': 't-warn', 'ประชุมแล้ว': 't-mute' };
-  return `<div class="stack"><div class="row"><p class="muted" style="margin:0;flex:1">เปิดรับได้ครั้งละ 1 รอบ — หน่วยงานส่ง/แก้ไขคำขอได้เฉพาะรอบที่ "เปิดรับ"</p>
+  return `<div class="stack"><div class="row"><p class="muted" style="margin:0;flex:1">เปิดรับได้หลายรอบพร้อมกัน — หน่วยงานเลือกรอบได้ตอนส่งคำขอ และส่ง/แก้ไขได้เฉพาะรอบที่ "เปิดรับ"</p>
     <button class="btn primary" data-act="round-add">${icon('plus')} เพิ่มรอบ</button></div>
     ${rs.length ? `<div class="rounds">${rs.map(r => {
       const n = S.reqs.filter(x => String(x.round) === String(r.id) && x.status !== 'ถอนเรื่อง').length;

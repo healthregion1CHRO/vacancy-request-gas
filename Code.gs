@@ -505,12 +505,13 @@ function apiSaveRequest(token, data, force) {
     if (rec && !canEdit_(u, rec, rounds)) throw new Error('คำขอนี้แก้ไขไม่ได้แล้ว (พิจารณาแล้วหรือปิดรับคำขอ)');
 
     // รอบการประชุม
-    let roundId = rec ? rec.round : '';
-    if (u.role === 'admin' && data.round) roundId = data.round;
+    // เปิดรับได้หลายรอบพร้อมกัน: admin เลือกรอบใดก็ได้, คนอื่นเลือกได้เฉพาะรอบที่เปิดรับ
+    let roundId = data.round ? clean_(data.round) : rec ? rec.round : '';
     if (!roundId) {
-      const open = rounds.find(r => r.status === 'เปิดรับ');
-      if (!open) throw new Error('ขณะนี้ยังไม่เปิดรับคำขอ');
-      roundId = open.id;
+      const open = rounds.filter(r => r.status === 'เปิดรับ');
+      if (!open.length) throw new Error('ขณะนี้ยังไม่เปิดรับคำขอ');
+      if (open.length > 1) throw new Error('มีหลายรอบที่เปิดรับ กรุณาเลือกรอบการประชุม');
+      roundId = open[0].id;
     }
     const round = rounds.find(r => String(r.id) === String(roundId));
     if (!round) throw new Error('ไม่พบรอบการประชุม');
@@ -720,10 +721,6 @@ function apiSaveRound(token, data) {
     Object.assign(row, { name: clean_(data.name), month: clean_(data.month), meetDate: toDate_(data.meetDate),
       closeDate: toDate_(data.closeDate), status: data.status });
     if (isNew) appendObj_(t, row); else writeObj_(t, row);
-    // เปิดรับได้ครั้งละ 1 รอบ: รอบอื่นที่เปิดอยู่เปลี่ยนเป็น "ปิดรับ"
-    if (row.status === 'เปิดรับ') {
-      t.items.filter(r => String(r.id) !== String(row.id) && r.status === 'เปิดรับ').forEach(r => { r.status = 'ปิดรับ'; writeObj_(t, r); });
-    }
     log_(me.username, isNew ? 'เพิ่มรอบ' : 'แก้ไขรอบ', row.id, row.name + ' · ' + row.status);
     return table_(SH.ROUNDS).items.map(plain_);
   } finally {
