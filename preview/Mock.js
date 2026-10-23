@@ -98,11 +98,12 @@
     apiSaveRequest(tok, d, force) {
       const u = who(tok), cat = CATS.find(c => c.key === d.catKey);
       let rec = d.id ? REQS.find(r => r.id === d.id) : null;
-      const open = ROUNDS.filter(r => r.status === 'เปิดรับ');
+      const isOpen = r => r.status === 'เปิดรับ' && !(r.closeDate && new Date(r.closeDate.slice(0, 10) + 'T23:59:59') < new Date());
+      const open = ROUNDS.filter(isOpen);
       const round = d.round || (rec && rec.round) || (open.length === 1 ? open[0].id : '');
       if (!round) throw new Error(open.length ? 'มีหลายรอบที่เปิดรับ กรุณาเลือกรอบการประชุม' : 'ขณะนี้ยังไม่เปิดรับคำขอ');
       const rd = ROUNDS.find(r => r.id === round);
-      if (u.role !== 'admin' && (!rd || rd.status !== 'เปิดรับ')) throw new Error('รอบ "' + (rd ? rd.name : round) + '" ปิดรับคำขอแล้ว');
+      if (u.role !== 'admin' && (!rd || !isOpen(rd))) throw new Error('รอบ "' + (rd ? rd.name : round) + '" ปิดรับคำขอแล้ว' + (rd && rd.status === 'เปิดรับ' ? ' (เลยวันปิดรับ)' : ''));
       if (d.posno && !force) {
         const dup = REQS.filter(r => r.id !== d.id && r.round === round && r.posno === d.posno && r.status !== 'ถอนเรื่อง');
         if (dup.length) return { dup: dup.map(r => ({ id: r.id, cat: r.cat, org: r.org, status: r.status })) };

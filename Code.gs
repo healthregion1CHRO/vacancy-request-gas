@@ -508,14 +508,14 @@ function apiSaveRequest(token, data, force) {
     // เปิดรับได้หลายรอบพร้อมกัน: admin เลือกรอบใดก็ได้, คนอื่นเลือกได้เฉพาะรอบที่เปิดรับ
     let roundId = data.round ? clean_(data.round) : rec ? rec.round : '';
     if (!roundId) {
-      const open = rounds.filter(r => r.status === 'เปิดรับ');
+      const open = rounds.filter(isOpen_);
       if (!open.length) throw new Error('ขณะนี้ยังไม่เปิดรับคำขอ');
       if (open.length > 1) throw new Error('มีหลายรอบที่เปิดรับ กรุณาเลือกรอบการประชุม');
       roundId = open[0].id;
     }
     const round = rounds.find(r => String(r.id) === String(roundId));
     if (!round) throw new Error('ไม่พบรอบการประชุม');
-    if (u.role !== 'admin' && round.status !== 'เปิดรับ') throw new Error('รอบ "' + round.name + '" ปิดรับคำขอแล้ว');
+    if (u.role !== 'admin' && !isOpen_(round)) throw new Error('รอบ "' + round.name + '" ปิดรับคำขอแล้ว' + (round.status === 'เปิดรับ' ? ' (เลยวันปิดรับ)' : ''));
 
     // สังกัด → จังหวัด และตรวจสิทธิ์
     const orgs = table_(SH.ORGS).items;
@@ -994,7 +994,17 @@ function canEdit_(u, r, rounds) {
   if (u.role === 'admin') return true;
   if (!canSee_(u, r) || EDITABLE.indexOf(r.status) < 0) return false;
   const round = rounds.find(x => String(x.id) === String(r.round));
-  return !!round && round.status === 'เปิดรับ';
+  return !!round && isOpen_(round);
+}
+
+/** รอบรับคำขอได้: สถานะ "เปิดรับ" และวันนี้ยังไม่เลยวันปิดรับ (รับได้ถึงสิ้นวันปิดรับ; ไม่ระบุวันปิดรับ = รับได้เรื่อยๆ) */
+function isOpen_(round) {
+  if (!round || round.status !== 'เปิดรับ') return false;
+  const c = round.closeDate instanceof Date ? round.closeDate : toDate_(round.closeDate);
+  if (!(c instanceof Date) || isNaN(c)) return true;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const end = new Date(c); end.setHours(0, 0, 0, 0);
+  return today <= end;
 }
 
 function withRequest_(id, fn) {

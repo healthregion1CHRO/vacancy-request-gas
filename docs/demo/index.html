@@ -651,11 +651,12 @@ const SEED_USERNAMES = {
     apiSaveRequest(tok, d, force) {
       const u = who(tok), cat = CATS.find(c => c.key === d.catKey);
       let rec = d.id ? REQS.find(r => r.id === d.id) : null;
-      const open = ROUNDS.filter(r => r.status === 'เปิดรับ');
+      const isOpen = r => r.status === 'เปิดรับ' && !(r.closeDate && new Date(r.closeDate.slice(0, 10) + 'T23:59:59') < new Date());
+      const open = ROUNDS.filter(isOpen);
       const round = d.round || (rec && rec.round) || (open.length === 1 ? open[0].id : '');
       if (!round) throw new Error(open.length ? 'มีหลายรอบที่เปิดรับ กรุณาเลือกรอบการประชุม' : 'ขณะนี้ยังไม่เปิดรับคำขอ');
       const rd = ROUNDS.find(r => r.id === round);
-      if (u.role !== 'admin' && (!rd || rd.status !== 'เปิดรับ')) throw new Error('รอบ "' + (rd ? rd.name : round) + '" ปิดรับคำขอแล้ว');
+      if (u.role !== 'admin' && (!rd || !isOpen(rd))) throw new Error('รอบ "' + (rd ? rd.name : round) + '" ปิดรับคำขอแล้ว' + (rd && rd.status === 'เปิดรับ' ? ' (เลยวันปิดรับ)' : ''));
       if (d.posno && !force) {
         const dup = REQS.filter(r => r.id !== d.id && r.round === round && r.posno === d.posno && r.status !== 'ถอนเรื่อง');
         if (dup.length) return { dup: dup.map(r => ({ id: r.id, cat: r.cat, org: r.org, status: r.status })) };
@@ -865,10 +866,15 @@ const catColor = key => CAT_COLORS[Math.max(0, S.boot.cats.findIndex(c => c.key 
 const toneOf = st => (S.boot.statuses.find(s => s.key === st) || {}).tone || 'mute';
 const chip = st => `<span class="chip t-${toneOf(st)}">${esc(st)}</span>`;
 const roundOf = id => S.boot.rounds.find(r => String(r.id) === String(id));
-const openRound = () => S.boot.rounds.find(r => r.status === 'เปิดรับ');
-const openRounds = () => S.boot.rounds.filter(r => r.status === 'เปิดรับ');
+/** รอบที่รับคำขอได้จริง: สถานะ "เปิดรับ" และยังไม่เลยวันปิดรับ (รับได้ถึงสิ้นวันปิดรับ) */
+const isOpenR = r => !!r && r.status === 'เปิดรับ' && !(daysLeft(r.closeDate) < 0);
+/** สถานะที่แสดง: เปิดรับแต่เลยวันปิดรับแล้ว → ปิดรับ (เลยกำหนด) */
+const roundSt = r => r.status === 'เปิดรับ' && !isOpenR(r) ? 'ปิดรับ (เลยกำหนด)' : r.status;
+const roundTone = r => ({ 'เปิดรับ': 't-ok', 'ปิดรับ': 't-warn', 'ปิดรับ (เลยกำหนด)': 't-warn', 'ประชุมแล้ว': 't-mute' })[roundSt(r)] || '';
+const openRound = () => S.boot.rounds.find(isOpenR);
+const openRounds = () => S.boot.rounds.filter(isOpenR);
 /** รอบตั้งต้นของคำขอใหม่: รอบที่เลือกอยู่ด้านบนถ้าเปิดรับ ไม่งั้นรอบแรกที่เปิดรับ */
-const defRound = () => { const rd = roundOf(S.round); return rd && rd.status === 'เปิดรับ' ? rd : openRound(); };
+const defRound = () => { const rd = roundOf(S.round); return isOpenR(rd) ? rd : openRound(); };
 const isAdmin = () => S.boot.user.role === 'admin';
 const labelOf = (cat, k) => (cat.labels && cat.labels[k]) || S.boot.fields[k].label;
 const has = v => v !== '' && v != null;
@@ -892,7 +898,7 @@ function canEdit(r) {
   if (r.status === 'ถอนเรื่อง') return false;
   if (isAdmin()) return true;
   const rd = roundOf(r.round);
-  return S.boot.editable.indexOf(r.status) >= 0 && !!rd && rd.status === 'เปิดรับ';
+  return S.boot.editable.indexOf(r.status) >= 0 && isOpenR(rd);
 }
 function upsert(item) {
   const i = S.reqs.findIndex(r => r.id === item.id);
@@ -981,7 +987,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = 'dab4c689';
+const PAGE_BUILD = '37cccabb';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1112,7 +1118,7 @@ function renderNav() {
 }
 
 function renderRoundPick() {
-  const opts = S.boot.rounds.slice().reverse().map(r => `<option value="${esc(r.id)}" ${String(S.round) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''}${r.status === 'เปิดรับ' ? ' (เปิดรับ)' : ''}</option>`).join('');
+  const opts = S.boot.rounds.slice().reverse().map(r => `<option value="${esc(r.id)}" ${String(S.round) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''}${isOpenR(r) ? ' (เปิดรับ)' : ''}</option>`).join('');
   $('#roundPick').innerHTML = `${icon('calendar', 'muted')}<select class="input" data-change="round" aria-label="เลือกรอบการประชุม"><option value="">ทุกรอบการประชุม</option>${opts}</select>`;
 }
 
@@ -1164,10 +1170,10 @@ function viewHome() {
 
   let roundHtml;
   if (rd) {
-    const dl = rd.status === 'เปิดรับ' ? daysLeft(rd.closeDate) : null;
-    const tone = rd.status === 'เปิดรับ' ? 't-ok' : rd.status === 'ปิดรับ' ? 't-warn' : 't-mute';
+    const dl = isOpenR(rd) ? daysLeft(rd.closeDate) : null;
+    const tone = roundTone(rd);
     roundHtml = `<div class="card roundcard">
-      <div class="row"><span class="muted">รอบการประชุม</span><span class="spacer"></span><span class="chip ${tone}">${esc(rd.status)}</span></div>
+      <div class="row"><span class="muted">รอบการประชุม</span><span class="spacer"></span><span class="chip ${tone}">${esc(roundSt(rd))}</span></div>
       <div class="big">${esc(rd.name)}</div>
       ${dl !== null && dl >= 0 ? `<div class="countdown"><b>${dl}</b><span>${dl === 0 ? 'ปิดรับคำขอวันนี้' : 'วัน ก่อนปิดรับคำขอ'}</span></div>` : ''}
       ${dl !== null && dl < 0 ? `<div class="alert warn">${icon('alert')}<span>เลยกำหนดปิดรับมาแล้ว ${-dl} วัน</span></div>` : ''}
@@ -1305,7 +1311,7 @@ function formHtml() {
       ${f.id ? '' : `<button type="button" class="btn sm" data-act="change-cat">${icon('swap')} เปลี่ยนประเภท</button>`}</div>
     ${f.id && d.status === 'ส่งกลับแก้ไข' && d.reviewNote ? `<div class="sec"><div class="alert warn">${icon('alert')}<span><b>ข้อเสนอแนะจากเขต:</b> ${esc(d.reviewNote)}</span></div></div>` : ''}
     ${isAdmin() || roundOpts.length > 1 ? `<div class="sec"><h4><span class="n">${++n}</span>รอบการประชุม</h4><div class="grid g2"><div class="field"><label for="f_round">รอบ</label>
-      <select class="input" id="f_round" name="round">${roundOpts.map(r => `<option value="${esc(r.id)}" ${String(curRound) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''} · ${esc(r.status)}</option>`).join('')}</select></div></div></div>` : ''}
+      <select class="input" id="f_round" name="round">${roundOpts.map(r => `<option value="${esc(r.id)}" ${String(curRound) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''} · ${esc(roundSt(r))}</option>`).join('')}</select></div></div></div>` : ''}
     <div class="sec"><h4><span class="n">${++n}</span>หน่วยงาน</h4><div class="grid g3">${fld('org')}${fld('unit')}${fld('dept')}</div></div>
     <div class="sec"><h4><span class="n">${++n}</span>ข้อมูลตำแหน่ง</h4><div class="grid g2">${posFields.map(k => fld(k, ['newpos', 'newunit', 'cutpos'].indexOf(k) >= 0 ? 'spanall' : '')).join('')}</div></div>
     ${hasFrame ? `<div class="sec"><h4><span class="n">${++n}</span>อัตรากำลัง</h4><div class="grid g3">${fld('frame')}${fld('actual')}
@@ -1928,12 +1934,11 @@ function secretModal(title, username, pw) {
 
 function roundsHtml() {
   const rs = S.boot.rounds.slice().reverse();
-  const tone = { 'เปิดรับ': 't-ok', 'ปิดรับ': 't-warn', 'ประชุมแล้ว': 't-mute' };
-  return `<div class="stack"><div class="row"><p class="muted" style="margin:0;flex:1">เปิดรับได้หลายรอบพร้อมกัน — หน่วยงานเลือกรอบได้ตอนส่งคำขอ และส่ง/แก้ไขได้เฉพาะรอบที่ "เปิดรับ"</p>
+  return `<div class="stack"><div class="row"><p class="muted" style="margin:0;flex:1">เปิดรับได้หลายรอบพร้อมกัน — หน่วยงานเลือกรอบได้ตอนส่งคำขอ และส่ง/แก้ไขได้เฉพาะรอบที่ "เปิดรับ" ถึงสิ้นวันปิดรับ (เลยวันปิดรับแล้วระบบปิดรับให้เอง)</p>
     <button class="btn primary" data-act="round-add">${icon('plus')} เพิ่มรอบ</button></div>
     ${rs.length ? `<div class="rounds">${rs.map(r => {
       const n = S.reqs.filter(x => String(x.round) === String(r.id) && x.status !== 'ถอนเรื่อง').length;
-      return `<div class="card roundcard"><div class="row"><span class="chip ${tone[r.status] || ''}">${esc(r.status)}</span><span class="spacer"></span>
+      return `<div class="card roundcard"><div class="row"><span class="chip ${roundTone(r)}">${esc(roundSt(r))}</span><span class="spacer"></span>
         <button class="btn sm ghost icon" data-act="round-edit" data-id="${esc(r.id)}" aria-label="แก้ไขรอบ">${icon('edit')}</button>
         <button class="btn sm ghost icon" style="color:var(--bad)" data-act="round-del" data-id="${esc(r.id)}" title="ลบรอบ" aria-label="ลบรอบ ${esc(r.name)}">${icon('trash')}</button></div>
         <div class="big" style="font-size:18px">${esc(r.name)}</div>
