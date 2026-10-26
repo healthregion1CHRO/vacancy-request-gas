@@ -413,7 +413,8 @@ const LISTS = {
 
 /** ช่องข้อมูล — type: text | textarea | number | select | combo | url | org
  *  ประเภทคำขอเปลี่ยนช่องเป็นตัวเลือกได้ด้วย selects: { ช่อง: 'ชื่อรายการใน LISTS' }
- *  หรือเปลี่ยนแค่รายการ (คงชนิดช่องเดิม) ด้วย lists: { ช่อง: 'ชื่อรายการใน LISTS' } */
+ *  หรือเปลี่ยนแค่รายการ (คงชนิดช่องเดิม) ด้วย lists: { ช่อง: 'ชื่อรายการใน LISTS' }
+ *  หรือเปลี่ยนชนิด/ตัวอย่างในช่อง ด้วย over: { ช่อง: { type, ph } } */
 const FIELDS = {
   org:     { label: 'สังกัด', type: 'org' },
   unit:    { label: 'ส่วนราชการ / หน่วยบริการ', type: 'text', ph: 'เช่น รพ.สต.บ้านหัวฝาย สสอ.แม่แตง' },
@@ -425,6 +426,7 @@ const FIELDS = {
   newpos:  { label: 'ตำแหน่งใหม่ / ตัดโอนตำแหน่ง', type: 'textarea' },
   newunit: { label: 'ส่วนราชการใหม่', type: 'textarea', ph: 'หน่วยงานปลายทางที่จะตัดโอนไป' },
   cutpos:  { label: 'ตัดโอนตำแหน่ง', type: 'textarea', ph: 'ตำแหน่ง/หน่วยงานที่จะตัดโอนไป (ถ้ามี)' },
+  newdept: { label: 'กลุ่มงาน / งาน (ใหม่)', type: 'text', ph: 'เช่น กลุ่มงานบริการด้านปฐมภูมิ (ถ้ามี)' },
   cond:    { label: 'เงื่อนไขในการดำรงตำแหน่ง', type: 'combo', list: 'CONDS' },
   person:  { label: 'ผู้ที่จะมาดำรงตำแหน่ง', type: 'text', ph: 'ชื่อ-สกุล' },
   typeold: { label: 'ประเภทการจ้างเดิม', type: 'select', list: 'EMP_TYPES' },
@@ -450,9 +452,11 @@ const CATS = [
   { key: 'improve', name: 'ปรับปรุงตำแหน่ง ขรก.', staff: 'ข้าราชการ', icon: 'wrench',
     desc: 'ปรับปรุงตำแหน่งว่างไปเป็นสายงานอื่น', sheet: 'ปรับปรุง (ขรก)',
     title: 'ผลการพิจารณา การปรับปรุงตำแหน่งข้าราชการ', grp: 'ข้อมูลตำแหน่งเดิม', form: 'meeting',
-    xw: [6.4, 13, 26.8, 11.8, 23.1, 33.2, 17.4, 18.8, 7.1, 7.1, 9.2, 12.8],
-    fields: ['posno', 'pos', 'newpos', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos'],
-    labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ขอปรับปรุงตำแหน่งเป็น' }, xlabels: { newpos: 'ขอปรับปรุงตำแหน่ง' } },
+    xw: [6.4, 13, 26.8, 11.8, 23.1, 23.1, 22, 20, 17.4, 18.8, 7.1, 7.1, 9.2, 12.8],
+    fields: ['posno', 'pos', 'newpos', 'newunit', 'newdept', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos'],
+    labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ชื่อสายงาน (ใหม่)', newunit: 'หน่วยงาน', newdept: 'กลุ่มงาน/งาน' },
+    over: { newpos: { type: 'text', ph: 'เช่น นักวิชาการสาธารณสุข' }, newunit: { type: 'text', ph: 'เช่น รพ.สต.บ้านหัวฝาย สสอ.แม่แตง' } },
+    xgroups: { newpos: 'ขอปรับปรุงตำแหน่งเป็น', newunit: 'ขอปรับปรุงตำแหน่งเป็น', newdept: 'ขอปรับปรุงตำแหน่งเป็น' } },
   { key: 'transfer', name: 'เกลี่ยอัตรา ขรก. (มีคนครอง)', staff: 'ข้าราชการ', icon: 'swap',
     desc: 'ตัดโอนตำแหน่งและอัตราเงินเดือน ตำแหน่งที่มีคนครอง', sheet: 'เกลี่ยอัตราตัดโอน (ขรก)',
     title: 'ผลการพิจารณา การเกลี่ยอัตราตำแหน่งข้าราชการ (ตัดโอนตำแหน่งและอัตราเงินเดือน)', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
@@ -560,7 +564,7 @@ const SEED_USERNAMES = {
   const REQS = [];
   /* คำขอตัวอย่างในรอบ ครั้งที่ 10/2569 ครบทุกหมวด (ชื่อบุคคลเป็นชื่อสมมติ) */
   [
-    ['improve', 'รพศ.นครพิงค์', { unit: 'รพศ.นครพิงค์', dept: 'กลุ่มงานเภสัชกรรม', posno: '183868', pos: 'เจ้าพนักงานเภสัชกรรม', newpos: 'เภสัชกร', cond: 'บรรจุผู้ได้รับคัดเลือก', person: 'นางสาวกานดา ใจดี', frame: 12, actual: 9 }, 'เห็นชอบ'],
+    ['improve', 'รพศ.นครพิงค์', { unit: 'รพศ.นครพิงค์', dept: 'กลุ่มงานเภสัชกรรม', posno: '183868', pos: 'เจ้าพนักงานเภสัชกรรม', newpos: 'เภสัชกร', newunit: 'รพศ.นครพิงค์', newdept: 'กลุ่มงานเภสัชกรรม', cond: 'บรรจุผู้ได้รับคัดเลือก', person: 'นางสาวกานดา ใจดี', frame: 12, actual: 9 }, 'เห็นชอบ'],
     ['improve', 'รพศ.ลำปาง', { unit: 'รพศ.ลำปาง', dept: 'กลุ่มงานเทคนิคการแพทย์', posno: '201554', pos: 'นักวิทยาศาสตร์การแพทย์', newpos: 'นักเทคนิคการแพทย์', cond: 'บรรจุผู้สอบแข่งขัน', frame: 20, actual: 17 }],
     ['transfer', 'รพท.ฝาง', { unit: 'รพท.ฝาง', dept: 'กลุ่มงานการพยาบาล', posno: '45210', pos: 'พยาบาลวิชาชีพ', newunit: 'รพศ.นครพิงค์ กลุ่มงานการพยาบาล', cond: 'ย้ายตามคู่สมรส', person: 'นางสมพร แสงทอง', frame: 110, actual: 104 }, 'เห็นชอบ'],
     ['resident', 'รพศ.เชียงรายประชานุเคราะห์', { unit: 'รพศ.เชียงรายประชานุเคราะห์', dept: 'กลุ่มงานอายุรกรรม', posno: '30877', pos: 'นายแพทย์', newunit: 'รพท.แม่สาย', cond: 'แพทย์ประจำบ้านชั้นปีที่ 2', person: 'นายแพทย์ธนกร วงศ์ดี', frame: 45, actual: 41 }],
@@ -979,7 +983,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = 'bc158fc5';
+const PAGE_BUILD = 'a12f43a4';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1272,7 +1276,8 @@ function gapOf(sh) {
 
 function fieldHtml(cat, k, val, required, cls) {
   const F = cat.selects && cat.selects[k] ? Object.assign({}, S.boot.fields[k], { type: 'select', list: cat.selects[k] })
-    : cat.lists && cat.lists[k] ? Object.assign({}, S.boot.fields[k], { list: cat.lists[k] }) : S.boot.fields[k], id = 'f_' + k, lbl = labelOf(cat, k), v = val == null ? '' : String(val);
+    : cat.lists && cat.lists[k] ? Object.assign({}, S.boot.fields[k], { list: cat.lists[k] })
+    : cat.over && cat.over[k] ? Object.assign({}, S.boot.fields[k], cat.over[k]) : S.boot.fields[k], id = 'f_' + k, lbl = labelOf(cat, k), v = val == null ? '' : String(val);
   let ctl;
   if (F.type === 'org') {
     // หน่วยงานเลือกได้เฉพาะหน่วยงานในจังหวัดเดียวกัน (S.boot.orgs ส่งมาเฉพาะจังหวัดนั้น) ค่าเริ่มต้น = หน่วยงานของตนเอง
@@ -1323,7 +1328,7 @@ function formHtml() {
     ${isAdmin() || roundOpts.length > 1 ? `<div class="sec"><h4><span class="n">${++n}</span>รอบการประชุม</h4><div class="grid g2"><div class="field"><label for="f_round">รอบ</label>
       <select class="input" id="f_round" name="round">${roundOpts.map(r => `<option value="${esc(r.id)}" ${String(curRound) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''} · ${esc(roundSt(r))}</option>`).join('')}</select></div></div></div>` : ''}
     <div class="sec"><h4><span class="n">${++n}</span>หน่วยงาน</h4><div class="grid g3">${fld('org')}${fld('unit')}${fld('dept')}</div></div>
-    <div class="sec"><h4><span class="n">${++n}</span>ข้อมูลตำแหน่ง</h4><div class="grid g2">${posFields.map(k => fld(k, ['newpos', 'newunit', 'cutpos'].indexOf(k) >= 0 ? 'spanall' : '')).join('')}</div></div>
+    <div class="sec"><h4><span class="n">${++n}</span>ข้อมูลตำแหน่ง</h4><div class="grid g2">${posFields.map(k => fld(k, ['newpos', 'newunit', 'cutpos'].indexOf(k) >= 0 && !(cat.over && cat.over[k]) ? 'spanall' : '')).join('')}</div></div>
     ${hasFrame ? `<div class="sec"><h4><span class="n">${++n}</span>อัตรากำลัง</h4><div class="grid g3">${fld('frame')}${fld('actual')}
       <div class="field"><label>ขาด / เกิน (กรอบ-ปฏิบัติงานจริง)</label><div class="shortbox ${gapOf(sh).c}" id="shortBox"><b class="mono">${gapOf(sh).t}</b></div></div></div></div>` : ''}
     <div class="sec"><h4><span class="n">${++n}</span>รายละเอียดเพิ่มเติม</h4><div class="grid">${more.map(k => fld(k)).join('')}</div></div>
@@ -1404,7 +1409,7 @@ function filtered(ignoreStatus) {
   const F = S.filters, q = F.q.trim().toLowerCase();
   return scoped().filter(r => (!F.cat || r.catKey === F.cat) && (!F.prov || r.prov === F.prov) && (!F.org || r.org === F.org) &&
     (ignoreStatus || matchSt(r, F.status)) &&
-    (!q || [r.id, r.posno, r.pos, r.newpos, r.newunit, r.cutpos, r.org, r.unit, r.dept, r.person, r.cond, r.cat].join(' ').toLowerCase().indexOf(q) >= 0));
+    (!q || [r.id, r.posno, r.pos, r.newpos, r.newunit, r.newdept, r.cutpos, r.org, r.unit, r.dept, r.person, r.cond, r.cat].join(' ').toLowerCase().indexOf(q) >= 0));
 }
 
 function viewList() {
@@ -1625,8 +1630,8 @@ function loadXlsx() {
 
 /** หัวคอลัมน์ในบัญชีเดิม → ช่องข้อมูล (ตรวจตามลำดับ — กฎที่เจาะจงกว่าอยู่ก่อน) */
 const IMPORT_HEADS = [
-  ['#', /^ลำดับ/], ['org', /สังกัด/], ['newunit', /ส่วนราชการใหม่|หน่วยงานใหม่|ปลายทาง|ย้ายไป/], ['unit', /ส่วนราชการ/], ['posno', /เลขที่/],
-  ['cutpos', /^ตัดโอนตำแหน่ง$/], ['newpos', /ตำแหน่งใหม่|ขอปรับปรุง|ที่ขออนุมัติกำหนด/], ['pos', /ชื่อสายงาน|ชื่อตำแหน่ง/], ['level', /^ระดับ/],
+  ['#', /^ลำดับ/], ['org', /สังกัด/], ['newunit', /ส่วนราชการใหม่|หน่วยงานใหม่|ปลายทาง|ย้ายไป|^หน่วยงาน$/], ['unit', /ส่วนราชการ/], ['posno', /เลขที่/],
+  ['newdept', /^กลุ่มงาน/], ['cutpos', /^ตัดโอนตำแหน่ง$/], ['newpos', /ตำแหน่งใหม่|ขอปรับปรุง|ที่ขออนุมัติกำหนด|ชื่อสายงาน\s*\(?ใหม่/], ['pos', /ชื่อสายงาน|ชื่อตำแหน่ง/], ['level', /^ระดับ/],
   ['exec', /บริหาร/], ['cond', /เงื่อนไข/], ['person', /ผู้ที่จะมา|ผู้ขอย้าย|ชื่อ-?สกุล/], ['type', /ประเภทการจ้าง/], ['frame', /กรอบ/],
   ['actual', /ปฏิบัติ/], ['short', /^ขาด/], ['reason', /เหตุผล/], ['result', /ผลการพิจารณา/], ['note', /หมายเหตุ/]
 ];
@@ -1673,7 +1678,7 @@ function parseBook(XLSX, wb) {
       const d = { org: get('org'), posno: get('posno'), pos: get('pos') };
       if (!d.pos && !d.posno) continue;
       info.rows++;
-      ['unit', 'level', 'exec', 'newpos', 'newunit', 'cutpos', 'cond', 'person', 'typeold', 'typenew', 'reason', 'note', 'result']
+      ['unit', 'level', 'exec', 'newpos', 'newunit', 'cutpos', 'newdept', 'cond', 'person', 'typeold', 'typenew', 'reason', 'note', 'result']
         .forEach(k => { d[k] = get(k); });
       ['frame', 'actual'].forEach(k => { const v = String(row[col[k]] == null ? '' : row[col[k]]).replace(/[^\d.]/g, ''); d[k] = k in col && v !== '' ? Math.round(Number(v)) : ''; });
       d.org = d.org.replace(/\s+/g, ' ');
