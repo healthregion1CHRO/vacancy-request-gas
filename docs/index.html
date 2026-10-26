@@ -612,7 +612,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = 'ab6b573f';
+const PAGE_BUILD = '606b1852';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -620,7 +620,7 @@ function checkServerBuild() {
       const srv = res.ok ? String(res.data) : '';
       const w = $('#verWarn');
       if (!w || srv === PAGE_BUILD) return;
-      w.innerHTML = icon('alert') + `<span><b>โค้ดใน Apps Script ยังเป็นรุ่นเก่า</b> (เว็บแอป: ${esc(srv || 'ก่อนมีรหัสรุ่น')} · หน้าเว็บ: ${esc(PAGE_BUILD)}) — วาง install/Code.gs ตัวล่าสุด แล้ว Deploy → Manage deployments → ✏️ → Version: New version</span>`;
+      w.innerHTML = icon('alert') + `<span><b>โค้ดใน Apps Script ยังเป็นรุ่นเก่า</b> (เว็บแอป: ${esc(srv || 'ก่อนมีรหัสรุ่น')} · หน้าเว็บ: ${esc(PAGE_BUILD)}) — วาง install/Code.gs และ install/Index.html (ไฟล์ HTML ชื่อ Index) ตัวล่าสุด แล้ว Deploy → Manage deployments → ✏️ ที่รายการของลิงก์นี้ → Version: New version</span>`;
       w.hidden = false;
     }, () => {});
 }
