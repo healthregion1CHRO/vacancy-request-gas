@@ -112,9 +112,6 @@ textarea.input{min-height:84px;resize:vertical}
 .login-art>*{position:relative}
 .login-art h1{font-size:40px;font-weight:700;margin:12px 0 10px}
 .login-art p{opacity:.88;max-width:440px;margin:0}
-.feat{display:grid;gap:14px;margin-top:36px;max-width:440px}
-.feat div{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(6px);padding:12px 14px;border-radius:12px}
-.feat .ico{width:20px;height:20px;margin-top:2px}
 .login-form{display:flex;align-items:center;justify-content:center;padding:32px 16px}
 .login-card{width:100%;max-width:400px}
 .login-card h2{font-size:28px;margin-bottom:6px}
@@ -345,7 +342,6 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
   .login{grid-template-columns:1fr}
   .login-art{padding:28px 20px}
   .login-art h1{font-size:28px}
-  .feat{display:none}
   .g2,.g3{grid-template-columns:1fr} .span2{grid-column:auto}
   .bar{grid-template-columns:minmax(0,120px) minmax(0,1fr) 36px}
   .dl{grid-template-columns:1fr;gap:2px} .dl dd{margin-bottom:10px}
@@ -991,7 +987,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '606b1852';
+const PAGE_BUILD = 'bc158fc5';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1038,11 +1034,6 @@ function renderLogin(msg) {
         <span class="logo">${logoImg(MOPH_LOGO, 'ตรากระทรวงสาธารณสุข')}</span>
         <h1>ระบบคำขอใช้ตำแหน่งว่าง</h1>
         <p>เขตสุขภาพที่ 1 · ส่งคำขอ ติดตามสถานะ และพิจารณาผลในที่เดียว แทนการรวบรวมไฟล์ Excel ทุกเดือน</p>
-        <div class="feat">
-          <div>${icon('send')}<span><b>ส่งคำขอออนไลน์ครบ 11 ประเภท</b><br>ฟอร์มปรับช่องตามประเภทคำขอให้อัตโนมัติ</span></div>
-          <div>${icon('eye')}<span><b>ติดตามสถานะได้ทันที</b><br>รู้เมื่อเขตเห็นชอบ อนุมัติ หรือส่งกลับให้แก้ไข</span></div>
-          <div>${icon('sheet')}<span><b>ออกบัญชีประจำเดือนในคลิกเดียว</b><br>รูปแบบเดียวกับบัญชีเดิม ดาวน์โหลดเป็น Excel ได้</span></div>
-        </div>
       </div>
       <small style="opacity:.75">ข้าราชการ · พนักงานราชการ · พนักงานกระทรวงสาธารณสุข · ลูกจ้างชั่วคราว</small>
     </section>
