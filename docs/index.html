@@ -612,7 +612,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '13af7e82';
+const PAGE_BUILD = 'b7e02e8c';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -913,11 +913,9 @@ function fieldHtml(cat, k, val, required, cls) {
     : cat.lists && cat.lists[k] ? Object.assign({}, S.boot.fields[k], { list: cat.lists[k] }) : S.boot.fields[k], id = 'f_' + k, lbl = labelOf(cat, k), v = val == null ? '' : String(val);
   let ctl;
   if (F.type === 'org') {
-    if (S.boot.user.role === 'unit') ctl = `<input class="input" id="${id}" name="org" value="${esc(S.boot.user.org)}" readonly>`;
-    else {
-      const groups = orgOptions(v);
-      ctl = `<select class="input" id="${id}" name="org"><option value="">— เลือกหน่วยงาน —</option>${groups}</select>`;
-    }
+    // หน่วยงานเลือกได้เฉพาะหน่วยงานในจังหวัดเดียวกัน (S.boot.orgs ส่งมาเฉพาะจังหวัดนั้น) ค่าเริ่มต้น = หน่วยงานของตนเอง
+    const groups = orgOptions(v);
+    ctl = `<select class="input" id="${id}" name="org"><option value="">— เลือกหน่วยงาน —</option>${groups}</select>`;
   } else if (F.type === 'select') {
     const list = S.boot.lists[F.list];
     ctl = `<select class="input" id="${id}" name="${k}"><option value="">— เลือก —</option>${list.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}${v && list.indexOf(v) < 0 ? `<option selected>${esc(v)}</option>` : ''}</select>`;
@@ -1506,7 +1504,7 @@ function userModal(u) {
     </div>`,
     foot: `<button class="btn" data-act="modal-close">ยกเลิก</button><button class="btn primary" id="uOk">${icon('check')} ${isNew ? 'สร้างผู้ใช้' : 'บันทึก'}</button>`,
     onMount: w => {
-      const hints = { admin: 'เห็นและพิจารณาคำขอทุกหน่วยงาน จัดการผู้ใช้ รอบ และหน่วยงาน', prov: 'เห็นและส่งคำขอแทนทุกหน่วยงานในจังหวัด', unit: 'เห็นและส่งคำขอเฉพาะหน่วยงานของตนเอง' };
+      const hints = { admin: 'เห็นและพิจารณาคำขอทุกหน่วยงาน จัดการผู้ใช้ รอบ และหน่วยงาน', prov: 'เห็นและส่งคำขอแทนทุกหน่วยงานในจังหวัด', unit: 'เห็นและส่งคำขอของหน่วยงานตนเอง และเลือกส่งแทนหน่วยงานอื่นในจังหวัดเดียวกันได้' };
       const sync = () => { const r = $('#uR', w).value; $('#uPF', w).hidden = r !== 'prov'; $('#uOF', w).hidden = r !== 'unit'; $('#uRh', w).textContent = hints[r]; };
       $('#uR', w).onchange = sync; sync();
       $('#uOk', w).onclick = e => withBtn(e.currentTarget, async () => {

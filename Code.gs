@@ -518,11 +518,13 @@ function apiSaveRequest(token, data, force) {
     if (u.role !== 'admin' && !isOpen_(round)) throw new Error('รอบ "' + round.name + '" ปิดรับคำขอแล้ว' + (round.status === 'เปิดรับ' ? ' (เลยวันปิดรับ)' : ''));
 
     // สังกัด → จังหวัด และตรวจสิทธิ์
+    // หน่วยงานเลือกสังกัดได้เฉพาะหน่วยงานในจังหวัดเดียวกัน (ไม่เลือก = หน่วยงานของตนเอง)
     const orgs = table_(SH.ORGS).items;
-    const org = u.role === 'unit' ? u.org : clean_(data.org);
+    const org = clean_(data.org) || (u.role === 'unit' ? u.org : '');
     const orgRow = orgs.find(o => o.org === org);
     if (!orgRow) throw new Error('ไม่พบหน่วยงาน "' + org + '" ในรายชื่อหน่วยงาน');
     if (u.role === 'prov' && orgRow.prov !== u.prov) throw new Error('บันทึกได้เฉพาะหน่วยงานในจังหวัด' + u.prov);
+    if (u.role === 'unit' && orgRow.prov !== unitProv_(u, orgs)) throw new Error('บันทึกได้เฉพาะหน่วยงานในจังหวัด' + unitProv_(u, orgs));
 
     // ตรวจช่องบังคับ
     const keys = HEAD_FIELDS.concat(cat.fields, TAIL_FIELDS);
@@ -969,7 +971,7 @@ function boot_(u) {
     app: APP, user: userToClient_(u), cats: CATS, fields: FIELDS, headFields: HEAD_FIELDS, tailFields: TAIL_FIELDS,
     lists: LISTS, statuses: STATUSES, editable: EDITABLE, roles: ROLES, roundStatuses: ROUND_STATUSES,
     provinces: PROVINCES, url: ScriptApp.getService().getUrl(),
-    orgs: u.role === 'admin' ? orgs : orgs.filter(o => u.role === 'prov' ? o.prov === u.prov : o.org === u.org),
+    orgs: u.role === 'admin' ? orgs : orgs.filter(o => o.prov === (u.role === 'prov' ? u.prov : unitProv_(u, orgs))),
     rounds: rounds
   };
 }
@@ -990,7 +992,13 @@ function auth_(token, needRole) {
 function canSee_(u, r) {
   if (u.role === 'admin') return true;
   if (u.role === 'prov') return r.prov === u.prov;
-  return r.org === u.org;
+  return r.org === u.org || r.createdBy === u.username; // หน่วยงานเห็นคำขอของตนเอง + คำขอที่ตนบันทึกแทนหน่วยงานอื่น
+}
+
+/** จังหวัดของบัญชีหน่วยงาน — อ่านจากชีตหน่วยงานก่อน (เผื่อแก้จังหวัดภายหลัง) */
+function unitProv_(u, orgs) {
+  const o = orgs.find(x => x.org === u.org);
+  return (o && o.prov) || u.prov;
 }
 
 function canEdit_(u, r, rounds) {

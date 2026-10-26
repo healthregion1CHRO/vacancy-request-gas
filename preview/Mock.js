@@ -80,10 +80,11 @@
   const sessions = {};
   const who = tok => { const u = USERS.find(x => x.username === sessions[tok]); if (!u) throw new Error('SESSION_EXPIRED'); return u; };
   const roleName = u => Object.assign({}, u, { roleName: ROLES[u.role] });
-  const vis = (u, r) => u.role === 'admin' || (u.role === 'prov' ? r.prov === u.prov : r.org === u.org);
+  const vis = (u, r) => u.role === 'admin' || (u.role === 'prov' ? r.prov === u.prov : r.org === u.org || r.createdBy === u.username);
+  const unitProv = u => (ORGS.find(o => o.org === u.org) || {}).prov || u.prov;
   const boot = u => ({ app: APP, user: roleName(u), cats: CATS, fields: FIELDS, headFields: HEAD_FIELDS, tailFields: TAIL_FIELDS, lists: LISTS,
     statuses: STATUSES, editable: EDITABLE, roles: ROLES, roundStatuses: ROUND_STATUSES, provinces: PROVINCES, url: location.href,
-    orgs: u.role === 'admin' ? ORGS : ORGS.filter(o => u.role === 'prov' ? o.prov === u.prov : o.org === u.org), rounds: ROUNDS });
+    orgs: u.role === 'admin' ? ORGS : ORGS.filter(o => o.prov === (u.role === 'prov' ? u.prov : unitProv(u))), rounds: ROUNDS });
 
   const H = {
     apiLogin(_, un, pw) {
@@ -104,6 +105,7 @@
       if (!round) throw new Error(open.length ? 'มีหลายรอบที่เปิดรับ กรุณาเลือกรอบการประชุม' : 'ขณะนี้ยังไม่เปิดรับคำขอ');
       const rd = ROUNDS.find(r => r.id === round);
       if (u.role !== 'admin' && (!rd || !isOpen(rd))) throw new Error('รอบ "' + (rd ? rd.name : round) + '" ปิดรับคำขอแล้ว' + (rd && rd.status === 'เปิดรับ' ? ' (เลยวันปิดรับ)' : ''));
+      if (u.role === 'unit' && d.org && (ORGS.find(o => o.org === d.org) || {}).prov !== unitProv(u)) throw new Error('บันทึกได้เฉพาะหน่วยงานในจังหวัด' + unitProv(u));
       if (d.posno && !force) {
         const dup = REQS.filter(r => r.id !== d.id && r.round === round && r.posno === d.posno && r.status !== 'ถอนเรื่อง');
         if (dup.length) return { dup: dup.map(r => ({ id: r.id, cat: r.cat, org: r.org, status: r.status })) };
@@ -113,7 +115,7 @@
       else if (rec.status === 'ส่งกลับแก้ไข' && u.role !== 'admin') rec.status = 'รอพิจารณา';
       const keys = HEAD_FIELDS.concat(cat.fields, TAIL_FIELDS);
       Object.keys(FIELDS).forEach(k => { rec[k] = keys.indexOf(k) >= 0 ? (FIELDS[k].type === 'number' && d[k] !== '' && d[k] != null ? Number(d[k]) : (d[k] || '')) : ''; });
-      if (u.role === 'unit') rec.org = u.org;
+      if (u.role === 'unit' && !rec.org) rec.org = u.org;
       Object.assign(rec, { round, cat: cat.name, catKey: cat.key, staff: cat.staff, prov: (ORGS.find(o => o.org === rec.org) || {}).prov || '',
         short: rec.frame !== '' && rec.actual !== '' ? rec.frame - rec.actual : '', updatedBy: u.username, updatedAt: now });
       return { ok: true, item: Object.assign({}, rec) };

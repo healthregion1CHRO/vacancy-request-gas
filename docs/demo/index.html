@@ -635,10 +635,11 @@ const SEED_USERNAMES = {
   const sessions = {};
   const who = tok => { const u = USERS.find(x => x.username === sessions[tok]); if (!u) throw new Error('SESSION_EXPIRED'); return u; };
   const roleName = u => Object.assign({}, u, { roleName: ROLES[u.role] });
-  const vis = (u, r) => u.role === 'admin' || (u.role === 'prov' ? r.prov === u.prov : r.org === u.org);
+  const vis = (u, r) => u.role === 'admin' || (u.role === 'prov' ? r.prov === u.prov : r.org === u.org || r.createdBy === u.username);
+  const unitProv = u => (ORGS.find(o => o.org === u.org) || {}).prov || u.prov;
   const boot = u => ({ app: APP, user: roleName(u), cats: CATS, fields: FIELDS, headFields: HEAD_FIELDS, tailFields: TAIL_FIELDS, lists: LISTS,
     statuses: STATUSES, editable: EDITABLE, roles: ROLES, roundStatuses: ROUND_STATUSES, provinces: PROVINCES, url: location.href,
-    orgs: u.role === 'admin' ? ORGS : ORGS.filter(o => u.role === 'prov' ? o.prov === u.prov : o.org === u.org), rounds: ROUNDS });
+    orgs: u.role === 'admin' ? ORGS : ORGS.filter(o => o.prov === (u.role === 'prov' ? u.prov : unitProv(u))), rounds: ROUNDS });
 
   const H = {
     apiLogin(_, un, pw) {
@@ -659,6 +660,7 @@ const SEED_USERNAMES = {
       if (!round) throw new Error(open.length ? 'มีหลายรอบที่เปิดรับ กรุณาเลือกรอบการประชุม' : 'ขณะนี้ยังไม่เปิดรับคำขอ');
       const rd = ROUNDS.find(r => r.id === round);
       if (u.role !== 'admin' && (!rd || !isOpen(rd))) throw new Error('รอบ "' + (rd ? rd.name : round) + '" ปิดรับคำขอแล้ว' + (rd && rd.status === 'เปิดรับ' ? ' (เลยวันปิดรับ)' : ''));
+      if (u.role === 'unit' && d.org && (ORGS.find(o => o.org === d.org) || {}).prov !== unitProv(u)) throw new Error('บันทึกได้เฉพาะหน่วยงานในจังหวัด' + unitProv(u));
       if (d.posno && !force) {
         const dup = REQS.filter(r => r.id !== d.id && r.round === round && r.posno === d.posno && r.status !== 'ถอนเรื่อง');
         if (dup.length) return { dup: dup.map(r => ({ id: r.id, cat: r.cat, org: r.org, status: r.status })) };
@@ -668,7 +670,7 @@ const SEED_USERNAMES = {
       else if (rec.status === 'ส่งกลับแก้ไข' && u.role !== 'admin') rec.status = 'รอพิจารณา';
       const keys = HEAD_FIELDS.concat(cat.fields, TAIL_FIELDS);
       Object.keys(FIELDS).forEach(k => { rec[k] = keys.indexOf(k) >= 0 ? (FIELDS[k].type === 'number' && d[k] !== '' && d[k] != null ? Number(d[k]) : (d[k] || '')) : ''; });
-      if (u.role === 'unit') rec.org = u.org;
+      if (u.role === 'unit' && !rec.org) rec.org = u.org;
       Object.assign(rec, { round, cat: cat.name, catKey: cat.key, staff: cat.staff, prov: (ORGS.find(o => o.org === rec.org) || {}).prov || '',
         short: rec.frame !== '' && rec.actual !== '' ? rec.frame - rec.actual : '', updatedBy: u.username, updatedAt: now });
       return { ok: true, item: Object.assign({}, rec) };
@@ -989,7 +991,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '13af7e82';
+const PAGE_BUILD = 'b7e02e8c';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1290,11 +1292,9 @@ function fieldHtml(cat, k, val, required, cls) {
     : cat.lists && cat.lists[k] ? Object.assign({}, S.boot.fields[k], { list: cat.lists[k] }) : S.boot.fields[k], id = 'f_' + k, lbl = labelOf(cat, k), v = val == null ? '' : String(val);
   let ctl;
   if (F.type === 'org') {
-    if (S.boot.user.role === 'unit') ctl = `<input class="input" id="${id}" name="org" value="${esc(S.boot.user.org)}" readonly>`;
-    else {
-      const groups = orgOptions(v);
-      ctl = `<select class="input" id="${id}" name="org"><option value="">— เลือกหน่วยงาน —</option>${groups}</select>`;
-    }
+    // หน่วยงานเลือกได้เฉพาะหน่วยงานในจังหวัดเดียวกัน (S.boot.orgs ส่งมาเฉพาะจังหวัดนั้น) ค่าเริ่มต้น = หน่วยงานของตนเอง
+    const groups = orgOptions(v);
+    ctl = `<select class="input" id="${id}" name="org"><option value="">— เลือกหน่วยงาน —</option>${groups}</select>`;
   } else if (F.type === 'select') {
     const list = S.boot.lists[F.list];
     ctl = `<select class="input" id="${id}" name="${k}"><option value="">— เลือก —</option>${list.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}${v && list.indexOf(v) < 0 ? `<option selected>${esc(v)}</option>` : ''}</select>`;
@@ -1883,7 +1883,7 @@ function userModal(u) {
     </div>`,
     foot: `<button class="btn" data-act="modal-close">ยกเลิก</button><button class="btn primary" id="uOk">${icon('check')} ${isNew ? 'สร้างผู้ใช้' : 'บันทึก'}</button>`,
     onMount: w => {
-      const hints = { admin: 'เห็นและพิจารณาคำขอทุกหน่วยงาน จัดการผู้ใช้ รอบ และหน่วยงาน', prov: 'เห็นและส่งคำขอแทนทุกหน่วยงานในจังหวัด', unit: 'เห็นและส่งคำขอเฉพาะหน่วยงานของตนเอง' };
+      const hints = { admin: 'เห็นและพิจารณาคำขอทุกหน่วยงาน จัดการผู้ใช้ รอบ และหน่วยงาน', prov: 'เห็นและส่งคำขอแทนทุกหน่วยงานในจังหวัด', unit: 'เห็นและส่งคำขอของหน่วยงานตนเอง และเลือกส่งแทนหน่วยงานอื่นในจังหวัดเดียวกันได้' };
       const sync = () => { const r = $('#uR', w).value; $('#uPF', w).hidden = r !== 'prov'; $('#uOF', w).hidden = r !== 'unit'; $('#uRh', w).textContent = hints[r]; };
       $('#uR', w).onchange = sync; sync();
       $('#uOk', w).onclick = e => withBtn(e.currentTarget, async () => {
