@@ -426,7 +426,7 @@ const FIELDS = {
   newpos:  { label: 'ตำแหน่งใหม่ / ตัดโอนตำแหน่ง', type: 'textarea' },
   newunit: { label: 'ส่วนราชการใหม่', type: 'textarea', ph: 'หน่วยงานปลายทางที่จะตัดโอนไป' },
   cutpos:  { label: 'ตัดโอนตำแหน่ง', type: 'textarea', ph: 'ตำแหน่ง/หน่วยงานที่จะตัดโอนไป (ถ้ามี)' },
-  newdept: { label: 'กลุ่มงาน / งาน (ใหม่)', type: 'text', ph: 'เช่น กลุ่มงานบริการด้านปฐมภูมิ (ถ้ามี)' },
+  newdept: { label: 'กลุ่มงาน / งาน (ใหม่)', type: 'text', ph: 'เช่น กลุ่มงานบริการด้านปฐมภูมิ' },
   cond:    { label: 'เงื่อนไขในการดำรงตำแหน่ง', type: 'combo', list: 'CONDS' },
   person:  { label: 'ผู้ที่จะมาดำรงตำแหน่ง', type: 'text', ph: 'ชื่อ-สกุล' },
   typeold: { label: 'ประเภทการจ้างเดิม', type: 'select', list: 'EMP_TYPES' },
@@ -453,7 +453,7 @@ const CATS = [
     desc: 'ปรับปรุงตำแหน่งว่างไปเป็นสายงานอื่น', sheet: 'ปรับปรุง (ขรก)',
     title: 'ผลการพิจารณา การปรับปรุงตำแหน่งข้าราชการ', grp: 'ข้อมูลตำแหน่งเดิม', form: 'meeting',
     xw: [6.4, 13, 26.8, 11.8, 23.1, 23.1, 22, 20, 17.4, 18.8, 7.1, 7.1, 9.2, 12.8],
-    fields: ['posno', 'pos', 'newpos', 'newunit', 'newdept', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos'],
+    fields: ['posno', 'pos', 'newpos', 'newunit', 'newdept', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos', 'newunit', 'newdept'],
     labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ชื่อสายงาน (ใหม่)', newunit: 'หน่วยงาน', newdept: 'กลุ่มงาน/งาน' },
     over: { newpos: { type: 'text', ph: 'เช่น นักวิชาการสาธารณสุข' }, newunit: { type: 'text', ph: 'เช่น รพ.สต.บ้านหัวฝาย สสอ.แม่แตง' } },
     xgroups: { newpos: 'ขอปรับปรุงตำแหน่งเป็น', newunit: 'ขอปรับปรุงตำแหน่งเป็น', newdept: 'ขอปรับปรุงตำแหน่งเป็น' } },
@@ -983,7 +983,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = 'a12f43a4';
+const PAGE_BUILD = '2d916e1b';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
