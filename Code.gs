@@ -114,9 +114,13 @@ const CATS = [
   { key: 'transferVacant', name: 'เกลี่ยอัตรา ขรก. (ตำแหน่งว่าง)', staff: 'ข้าราชการ', icon: 'move',
     desc: 'ตัดโอนตำแหน่งว่างและอัตราเงินเดือน', sheet: 'เกลี่ยอัตราตัดโอน (ขรก) ต.ว่าง',
     title: 'ผลการพิจารณา การเกลี่ยอัตราตำแหน่งว่าง (ตัดโอนตำแหน่งและอัตราเงินเดือน)', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
-    xw: [6.6, 14.1, 28.1, 11.4, 21.6, 29, 16.4, 16.4, 8.6, 9.4, 9.6, 13.8],
+    xw: [6.6, 14.1, 28.1, 11.4, 21.6, 21.6, 22, 20, 16.4, 16.4, 8.6, 9.4, 9.6, 13.8],
     sub3: 'การเกลี่ยอัตราตำแหน่งว่าง',
-    fields: ['posno', 'pos', 'newunit', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newunit'] },
+    fields: ['posno', 'pos', 'newpos', 'newunit', 'newdept', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos', 'newunit', 'newdept'],
+    labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ชื่อสายงาน (ใหม่)', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' },
+    fsecs: [{ title: 'เงื่อนไข / ผู้ที่จะมาดำรงตำแหน่ง', fields: ['cond', 'person'] }, { title: 'ตำแหน่ง / ส่วนราชการ ใหม่', fields: ['newpos', 'newunit', 'newdept'] }],
+    over: { newpos: { type: 'text', ph: 'เช่น นักวิชาการสาธารณสุข' }, newunit: { type: 'text', ph: 'เช่น รพ.สต.บ้านห้วยปันจ๊อย สสอ.บ้านโฮ่ง' } },
+    xgroups: { newpos: 'ตำแหน่ง / ส่วนราชการ ใหม่', newunit: 'ตำแหน่ง / ส่วนราชการ ใหม่', newdept: 'ตำแหน่ง / ส่วนราชการ ใหม่' }, noMore: true },
   { key: 'civil', name: 'ขอใช้ตำแหน่ง ขรก.', staff: 'ข้าราชการ', icon: 'badge',
     desc: 'ขอใช้ตำแหน่งว่างข้าราชการ เพื่อบรรจุ/ย้าย/โอน/เลื่อน', sheet: 'ขอใช้ ขรก.',
     title: 'ผลการพิจารณา การขอใช้ตำแหน่งข้าราชการ', grp: 'ข้อมูลตำแหน่ง',
@@ -897,7 +901,7 @@ function apiExportJson(token, roundId) {
     .filter(r => (!roundId || String(r.round) === String(roundId)) && r.status !== 'ถอนเรื่อง')
     .map(r => ({
       cat: catName_(r.cat), staff: r.staff, prov: r.prov, org: r.org, unit: r.unit, dept: r.dept, posno: String(r.posno),
-      pos: r.pos, level: r.level, exec: r.exec, newpos: (['เกลี่ยอัตรา ขรก. (มีคนครอง)', 'เกลี่ยอัตรา แพทย์ประจำบ้าน'].indexOf(catName_(r.cat)) >= 0 && r.newunit) || r.newpos || r.cutpos || r.newunit, typeold: r.typeold, typenew: r.typenew,
+      pos: r.pos, level: r.level, exec: r.exec, newpos: (['เกลี่ยอัตรา ขรก. (มีคนครอง)', 'เกลี่ยอัตรา แพทย์ประจำบ้าน', 'เกลี่ยอัตรา ขรก. (ตำแหน่งว่าง)'].indexOf(catName_(r.cat)) >= 0 && r.newunit) || r.newpos || r.cutpos || r.newunit, typeold: r.typeold, typenew: r.typenew,
       cond: r.cond, frame: r.frame, actual: r.actual, short: r.short, reason: r.reason,
       result: r.result || (r.status === 'รอพิจารณา' ? '' : r.status),
       meetDate: round && round.meetDate ? thaiDate_(round.meetDate) : ''

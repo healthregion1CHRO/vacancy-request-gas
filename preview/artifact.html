@@ -481,9 +481,13 @@ const CATS = [
   { key: 'transferVacant', name: 'เกลี่ยอัตรา ขรก. (ตำแหน่งว่าง)', staff: 'ข้าราชการ', icon: 'move',
     desc: 'ตัดโอนตำแหน่งว่างและอัตราเงินเดือน', sheet: 'เกลี่ยอัตราตัดโอน (ขรก) ต.ว่าง',
     title: 'ผลการพิจารณา การเกลี่ยอัตราตำแหน่งว่าง (ตัดโอนตำแหน่งและอัตราเงินเดือน)', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
-    xw: [6.6, 14.1, 28.1, 11.4, 21.6, 29, 16.4, 16.4, 8.6, 9.4, 9.6, 13.8],
+    xw: [6.6, 14.1, 28.1, 11.4, 21.6, 21.6, 22, 20, 16.4, 16.4, 8.6, 9.4, 9.6, 13.8],
     sub3: 'การเกลี่ยอัตราตำแหน่งว่าง',
-    fields: ['posno', 'pos', 'newunit', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newunit'] },
+    fields: ['posno', 'pos', 'newpos', 'newunit', 'newdept', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos', 'newunit', 'newdept'],
+    labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ชื่อสายงาน (ใหม่)', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' },
+    fsecs: [{ title: 'เงื่อนไข / ผู้ที่จะมาดำรงตำแหน่ง', fields: ['cond', 'person'] }, { title: 'ตำแหน่ง / ส่วนราชการ ใหม่', fields: ['newpos', 'newunit', 'newdept'] }],
+    over: { newpos: { type: 'text', ph: 'เช่น นักวิชาการสาธารณสุข' }, newunit: { type: 'text', ph: 'เช่น รพ.สต.บ้านห้วยปันจ๊อย สสอ.บ้านโฮ่ง' } },
+    xgroups: { newpos: 'ตำแหน่ง / ส่วนราชการ ใหม่', newunit: 'ตำแหน่ง / ส่วนราชการ ใหม่', newdept: 'ตำแหน่ง / ส่วนราชการ ใหม่' }, noMore: true },
   { key: 'civil', name: 'ขอใช้ตำแหน่ง ขรก.', staff: 'ข้าราชการ', icon: 'badge',
     desc: 'ขอใช้ตำแหน่งว่างข้าราชการ เพื่อบรรจุ/ย้าย/โอน/เลื่อน', sheet: 'ขอใช้ ขรก.',
     title: 'ผลการพิจารณา การขอใช้ตำแหน่งข้าราชการ', grp: 'ข้อมูลตำแหน่ง',
@@ -577,7 +581,7 @@ const SEED_USERNAMES = {
     ['improve', 'รพศ.ลำปาง', { unit: 'รพศ.ลำปาง', dept: 'กลุ่มงานเทคนิคการแพทย์', posno: '201554', pos: 'นักวิทยาศาสตร์การแพทย์', newpos: 'นักเทคนิคการแพทย์', cond: 'บรรจุผู้สอบแข่งขัน', frame: 20, actual: 17 }],
     ['transfer', 'รพท.ฝาง', { unit: 'รพท.ฝาง', dept: 'กลุ่มงานการพยาบาล', posno: '45210', pos: 'พยาบาลวิชาชีพ', newpos: 'พยาบาลวิชาชีพ', newunit: 'รพศ.นครพิงค์', newdept: 'กลุ่มงานการพยาบาล', cond: 'ย้ายตามคู่สมรส', person: 'นางสมพร แสงทอง', frame: 110, actual: 104 }, 'เห็นชอบ'],
     ['resident', 'รพศ.เชียงรายประชานุเคราะห์', { unit: 'รพศ.เชียงรายประชานุเคราะห์', dept: 'กลุ่มงานอายุรกรรม', posno: '30877', pos: 'นายแพทย์', newpos: 'นายแพทย์', newunit: 'รพท.แม่สาย', newdept: 'กลุ่มงานอายุรกรรม', cond: 'แพทย์ประจำบ้านชั้นปีที่ 2', person: 'นายแพทย์ธนกร วงศ์ดี', frame: 45, actual: 41 }],
-    ['transferVacant', 'สสจ.ลำพูน', { unit: 'สสอ.บ้านโฮ่ง', posno: '120044', pos: 'นักวิชาการสาธารณสุข', newunit: 'รพ.สต.บ้านห้วยปันจ๊อย สสอ.บ้านโฮ่ง', cond: 'บรรจุผู้สอบแข่งขัน', frame: 8, actual: 6 }, 'ชะลอ'],
+    ['transferVacant', 'สสจ.ลำพูน', { unit: 'สสอ.บ้านโฮ่ง', posno: '120044', pos: 'นักวิชาการสาธารณสุข', newpos: 'นักวิชาการสาธารณสุข', newunit: 'รพ.สต.บ้านห้วยปันจ๊อย สสอ.บ้านโฮ่ง', newdept: 'งานส่งเสริมสุขภาพ', cond: 'บรรจุผู้สอบแข่งขัน', frame: 8, actual: 6 }, 'ชะลอ'],
     ['civil', 'รพศ.นครพิงค์', { unit: 'รพศ.นครพิงค์', dept: 'กลุ่มงานการพยาบาล', posno: '183901', pos: 'พยาบาลวิชาชีพ', level: 'ปฏิบัติการ', cond: 'บรรจุผู้สอบแข่งขัน', frame: 420, actual: 398 }, 'เห็นชอบ'],
     ['civil', 'รพท.น่าน', { unit: 'รพท.น่าน', dept: 'กลุ่มงานรังสีวิทยา', posno: '77120', pos: 'นักรังสีการแพทย์', level: 'ชำนาญการ', cond: 'รับย้าย/รับโอน', frame: 10, actual: 8 }],
     ['civil', 'สสจ.แพร่', { unit: 'สสจ.แพร่', dept: 'กลุ่มงานบริหารทรัพยากรบุคคล', posno: '9012', pos: 'นักทรัพยากรบุคคล', level: 'ชำนาญการพิเศษ', exec: 'หัวหน้ากลุ่มงาน', cond: 'เลื่อน', frame: 4, actual: 3 }],
@@ -992,7 +996,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '4fc01930';
+const PAGE_BUILD = '83b2489a';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
