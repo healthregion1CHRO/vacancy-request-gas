@@ -471,9 +471,13 @@ const CATS = [
   { key: 'resident', name: 'เกลี่ยอัตรา แพทย์ประจำบ้าน', staff: 'ข้าราชการ', icon: 'stetho',
     desc: 'ตัดโอนแพทย์/ทันตแพทย์ประจำบ้าน กรณีขึ้นชั้นปีที่ 2', sheet: 'เกลี่ยอัตราตัดโอนแพทย์ประจำบ้าน',
     title: 'การเกลี่ยอัตราตำแหน่งข้าราชการ นายแพทย์ ทันตแพทย์ (ตัดโอนแพทย์ประจำบ้าน และอัตราเงินเดือน) กรณีขึ้นชั้นปีที่ 2 ภายในเขตสุขภาพที่ 1',
-    xw: [6.4, 10.2, 29.8, 10.4, 15.8, 29, 12.1, 24.4, 6.6, 8.6, 8.6, 11],
+    xw: [6.4, 10.2, 29.8, 10.4, 15.8, 15.8, 22, 20, 12.1, 24.4, 6.6, 8.6, 8.6, 11],
     grp: 'ตำแหน่ง / ส่วนราชการ เดิม', sub3: 'การเกลี่ยอัตราตำแหน่งที่มีคนครอง',
-    fields: ['posno', 'pos', 'newunit', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newunit', 'person'] },
+    fields: ['posno', 'pos', 'newpos', 'newunit', 'newdept', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos', 'newunit', 'newdept', 'person'],
+    labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ชื่อสายงาน (ใหม่)', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' },
+    fsecs: [{ title: 'เงื่อนไข / ผู้ที่จะมาดำรงตำแหน่ง', fields: ['cond', 'person'] }, { title: 'ตำแหน่ง / ส่วนราชการ ใหม่', fields: ['newpos', 'newunit', 'newdept'] }],
+    over: { newpos: { type: 'text', ph: 'เช่น นายแพทย์' }, newunit: { type: 'text', ph: 'เช่น รพท.แม่สาย' } },
+    xgroups: { newpos: 'ตำแหน่ง / ส่วนราชการ ใหม่', newunit: 'ตำแหน่ง / ส่วนราชการ ใหม่', newdept: 'ตำแหน่ง / ส่วนราชการ ใหม่' }, noMore: true },
   { key: 'transferVacant', name: 'เกลี่ยอัตรา ขรก. (ตำแหน่งว่าง)', staff: 'ข้าราชการ', icon: 'move',
     desc: 'ตัดโอนตำแหน่งว่างและอัตราเงินเดือน', sheet: 'เกลี่ยอัตราตัดโอน (ขรก) ต.ว่าง',
     title: 'ผลการพิจารณา การเกลี่ยอัตราตำแหน่งว่าง (ตัดโอนตำแหน่งและอัตราเงินเดือน)', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
@@ -572,7 +576,7 @@ const SEED_USERNAMES = {
     ['improve', 'รพศ.นครพิงค์', { unit: 'รพศ.นครพิงค์', dept: 'กลุ่มงานเภสัชกรรม', posno: '183868', pos: 'เจ้าพนักงานเภสัชกรรม', newpos: 'เภสัชกร', newunit: 'รพศ.นครพิงค์', newdept: 'กลุ่มงานเภสัชกรรม', cond: 'บรรจุผู้ได้รับคัดเลือก', person: 'นางสาวกานดา ใจดี', frame: 12, actual: 9 }, 'เห็นชอบ'],
     ['improve', 'รพศ.ลำปาง', { unit: 'รพศ.ลำปาง', dept: 'กลุ่มงานเทคนิคการแพทย์', posno: '201554', pos: 'นักวิทยาศาสตร์การแพทย์', newpos: 'นักเทคนิคการแพทย์', cond: 'บรรจุผู้สอบแข่งขัน', frame: 20, actual: 17 }],
     ['transfer', 'รพท.ฝาง', { unit: 'รพท.ฝาง', dept: 'กลุ่มงานการพยาบาล', posno: '45210', pos: 'พยาบาลวิชาชีพ', newpos: 'พยาบาลวิชาชีพ', newunit: 'รพศ.นครพิงค์', newdept: 'กลุ่มงานการพยาบาล', cond: 'ย้ายตามคู่สมรส', person: 'นางสมพร แสงทอง', frame: 110, actual: 104 }, 'เห็นชอบ'],
-    ['resident', 'รพศ.เชียงรายประชานุเคราะห์', { unit: 'รพศ.เชียงรายประชานุเคราะห์', dept: 'กลุ่มงานอายุรกรรม', posno: '30877', pos: 'นายแพทย์', newunit: 'รพท.แม่สาย', cond: 'แพทย์ประจำบ้านชั้นปีที่ 2', person: 'นายแพทย์ธนกร วงศ์ดี', frame: 45, actual: 41 }],
+    ['resident', 'รพศ.เชียงรายประชานุเคราะห์', { unit: 'รพศ.เชียงรายประชานุเคราะห์', dept: 'กลุ่มงานอายุรกรรม', posno: '30877', pos: 'นายแพทย์', newpos: 'นายแพทย์', newunit: 'รพท.แม่สาย', newdept: 'กลุ่มงานอายุรกรรม', cond: 'แพทย์ประจำบ้านชั้นปีที่ 2', person: 'นายแพทย์ธนกร วงศ์ดี', frame: 45, actual: 41 }],
     ['transferVacant', 'สสจ.ลำพูน', { unit: 'สสอ.บ้านโฮ่ง', posno: '120044', pos: 'นักวิชาการสาธารณสุข', newunit: 'รพ.สต.บ้านห้วยปันจ๊อย สสอ.บ้านโฮ่ง', cond: 'บรรจุผู้สอบแข่งขัน', frame: 8, actual: 6 }, 'ชะลอ'],
     ['civil', 'รพศ.นครพิงค์', { unit: 'รพศ.นครพิงค์', dept: 'กลุ่มงานการพยาบาล', posno: '183901', pos: 'พยาบาลวิชาชีพ', level: 'ปฏิบัติการ', cond: 'บรรจุผู้สอบแข่งขัน', frame: 420, actual: 398 }, 'เห็นชอบ'],
     ['civil', 'รพท.น่าน', { unit: 'รพท.น่าน', dept: 'กลุ่มงานรังสีวิทยา', posno: '77120', pos: 'นักรังสีการแพทย์', level: 'ชำนาญการ', cond: 'รับย้าย/รับโอน', frame: 10, actual: 8 }],
@@ -988,7 +992,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '6d6b8906';
+const PAGE_BUILD = '4fc01930';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
