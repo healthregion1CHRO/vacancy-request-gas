@@ -230,7 +230,7 @@ function checkServerBuild() {
       const srv = res.ok ? String(res.data) : '';
       const w = $('#verWarn');
       if (!w || srv === PAGE_BUILD) return;
-      w.innerHTML = icon('alert') + `<span><b>โค้ดใน Apps Script ยังเป็นรุ่นเก่า</b> (เว็บแอป: ${esc(srv || 'ก่อนมีรหัสรุ่น')} · หน้าเว็บ: ${esc(PAGE_BUILD)}) — วาง install/Code.gs ตัวล่าสุด แล้ว Deploy → Manage deployments → ✏️ → Version: New version</span>`;
+      w.innerHTML = icon('alert') + `<span><b>โค้ดใน Apps Script ยังเป็นรุ่นเก่า</b> (เว็บแอป: ${esc(srv || 'ก่อนมีรหัสรุ่น')} · หน้าเว็บ: ${esc(PAGE_BUILD)}) — วาง install/Code.gs และ install/Index.html (ไฟล์ HTML ชื่อ Index) ตัวล่าสุด แล้ว Deploy → Manage deployments → ✏️ ที่รายการของลิงก์นี้ → Version: New version</span>`;
       w.hidden = false;
     }, () => {});
 }
