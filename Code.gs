@@ -206,7 +206,7 @@ const TZ = 'Asia/Bangkok';
 /* ───────────────────────────── หน้าเว็บ ───────────────────────────── */
 
 function doGet() {
-  // ไฟล์ติดตั้งแบบไฟล์เดียว (install/Code.gs) ฝังหน้าเว็บไว้ใน PAGE_HTML; แบบหลายไฟล์ใช้ Index.html
+  // ไฟล์ติดตั้ง (install/) = Code.gs + Index.html ที่รวมหน้าเว็บไว้แล้ว; PAGE_HTML เหลือไว้รองรับไฟล์ติดตั้งแบบไฟล์เดียวรุ่นเก่า
   const page = typeof PAGE_HTML === 'string' ? HtmlService.createHtmlOutput(PAGE_HTML)
     : HtmlService.createTemplateFromFile('Index').evaluate();
   return page

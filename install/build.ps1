@@ -1,5 +1,7 @@
-﻿# สร้าง install\Code.gs = Code.gs + หน้าเว็บ (Index + Styles + App) ฝังเป็นสตริง PAGE_HTML
-# ผลลัพธ์: วางไฟล์เดียวใน Apps Script ก็ใช้งานได้
+﻿# สร้างไฟล์ติดตั้ง 2 ไฟล์:
+#   install\Code.gs    = Code.gs (ฝั่งเซิร์ฟเวอร์)
+#   install\Index.html = หน้าเว็บ (Index + Styles + App รวมเป็นไฟล์เดียว)
+# เดิมฝังหน้าเว็บเป็นสตริง PAGE_HTML ใน Code.gs ไฟล์เดียว แต่ไฟล์ใหญ่เกิน ~260 KB แล้วเครื่องมือแก้ไข Apps Script บันทึกไม่ได้
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $utf8 = New-Object Text.UTF8Encoding($false)
 $read = { param($f) [IO.File]::ReadAllText((Join-Path $root $f), $utf8) }
@@ -11,9 +13,8 @@ $build = (-join ([Security.Cryptography.SHA256]::Create().ComputeHash($ms.ToArra
 $page = (& $read 'Index.html').Replace("<?!= include('Styles'); ?>", (& $read 'Styles.html')).Replace("<?!= include('App'); ?>", (& $read 'App.html'))
 if ($page.Contains('<?')) { throw 'ยังมี scriptlet ค้างใน Index.html' }
 
-$page = $page.Replace('__BUILD__', $build)
-$esc = $page.Replace('\', '\\').Replace('"', '\"').Replace("`r", '').Replace("`n", '\n').Replace([string][char]0x2028, ' ').Replace([string][char]0x2029, ' ')
-$code = (& $read 'Code.gs').TrimEnd().Replace('__BUILD__', $build)
-$out = $code + "`n`n// ===== หน้าเว็บ: สร้างอัตโนมัติจาก Index.html + Styles.html + App.html (install\build.ps1) — อย่าแก้ตรงนี้ =====`nconst PAGE_HTML = `"" + $esc + "`";`n"
-[IO.File]::WriteAllText((Join-Path $root 'install\Code.gs'), $out, $utf8)
-'install\Code.gs: ' + $out.Length + ' chars · build ' + $build
+$page = $page.Replace('__BUILD__', $build).Replace("`r", '')
+$code = (& $read 'Code.gs').TrimEnd().Replace('__BUILD__', $build).Replace("`r", '') + "`n"
+[IO.File]::WriteAllText((Join-Path $root 'install\Code.gs'), $code, $utf8)
+[IO.File]::WriteAllText((Join-Path $root 'install\Index.html'), $page, $utf8)
+'install\Code.gs: ' + $code.Length + ' chars · install\Index.html: ' + $page.Length + ' chars · build ' + $build

@@ -11,7 +11,7 @@
 ## ติดตั้งระบบจริง
 
 1. สร้างโปรเจกต์ Apps Script ผูกกับ Google Sheet
-2. วางโค้ดจาก [`install/Code.gs`](install/Code.gs) (ไฟล์เดียว รวมหน้าเว็บไว้แล้ว)
+2. วางโค้ดจาก [`install/Code.gs`](install/Code.gs) และสร้างไฟล์ HTML ชื่อ `Index` วาง [`install/Index.html`](install/Index.html) (หน้าเว็บรวมไว้แล้ว)
 3. รัน `setup` แล้ว Deploy เป็นเว็บแอป
 
 รายละเอียดทั้งหมดอยู่ใน [คู่มือติดตั้ง.md](คู่มือติดตั้ง.md)
@@ -23,5 +23,5 @@
 | `Code.gs` | ฝั่งเซิร์ฟเวอร์: สิทธิ์ผู้ใช้ บันทึกคำขอ พิจารณา ส่งออก |
 | `Index.html` / `Styles.html` / `App.html` | หน้าเว็บ |
 | `appsscript.json` | Manifest |
-| `install/` | `build.ps1` รวมทุกไฟล์เป็น `install/Code.gs` ไฟล์เดียว |
+| `install/` | `build.ps1` สร้าง `install/Code.gs` + `install/Index.html` (หน้าเว็บรวมเป็นไฟล์เดียว) |
 | `preview/` | หน้าตัวอย่างข้อมูลสมมติ — `sh preview/build-artifact.sh` สร้าง `preview.html`, `docs/demo/` (ตัวอย่าง) และ `docs/index.html` (ระบบจริงบน GitHub Pages) |
