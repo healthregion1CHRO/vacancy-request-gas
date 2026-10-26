@@ -659,7 +659,7 @@ function viewList() {
   if (!S.loaded) return `<div class="card"><div class="card-b stack">${'<div class="sk" style="height:44px"></div>'.repeat(6)}</div></div>`;
   const B = S.boot, u = B.user, F = S.filters;
   const provSel = u.role === 'admin' ? `<select class="input" data-change="f-prov" aria-label="จังหวัด"><option value="">ทุกจังหวัด</option>${B.provinces.map(p => `<option ${F.prov === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select>` : '';
-  const orgSel = u.role !== 'unit' ? `<select class="input" data-change="f-org" aria-label="หน่วยงาน"><option value="">ทุกหน่วยงาน</option>${B.orgs.filter(o => !F.prov || o.prov === F.prov).map(o => `<option ${F.org === o.org ? 'selected' : ''}>${esc(o.org)}</option>`).join('')}</select>` : '';
+  const orgSel = B.orgs.length > 1 ? `<select class="input" data-change="f-org" aria-label="หน่วยงาน"><option value="">ทุกหน่วยงาน</option>${B.orgs.filter(o => !F.prov || o.prov === F.prov).map(o => `<option ${F.org === o.org ? 'selected' : ''}>${esc(o.org)}</option>`).join('')}</select>` : '';
   const exp = isAdmin() ? `<button class="btn icon" data-act="import" title="นำเข้าจากไฟล์บัญชี (.xlsx)" aria-label="นำเข้าจากไฟล์บัญชี (.xlsx)">${icon('upload')}</button><button class="btn" data-act="export">${icon('sheet')} ออกบัญชีแนบท้าย</button><button class="btn icon" data-act="export-json" title="ส่งออก JSON สำหรับ Dashboard" aria-label="ส่งออก JSON สำหรับ Dashboard">${icon('download')}</button>` : '';
   return `<div class="card">
     <div class="toolbar">

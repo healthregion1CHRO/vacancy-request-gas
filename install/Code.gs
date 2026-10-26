@@ -176,7 +176,7 @@ const SEED_USERNAMES = {
 // ==CONFIG-END==
 
 /** รหัสรุ่นของโค้ด (install/build.ps1 ใส่ให้ตอนสร้างไฟล์) — หน้าเว็บบน GitHub Pages ใช้ตรวจว่า Deploy ตรงรุ่นกับหน้าเว็บ */
-const BUILD_ID = '9e1da93b';
+const BUILD_ID = 'ab6b573f';
 function apiVersion() { return BUILD_ID; }
 
 const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอบการประชุม', ORGS: 'หน่วยงาน', LOG: 'ประวัติ' };
