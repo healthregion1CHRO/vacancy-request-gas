@@ -89,7 +89,7 @@ const CATS = [
     fields: ['posno', 'pos', 'newpos', 'newunit', 'newdept', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos', 'newunit', 'newdept'],
     labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ชื่อสายงาน (ใหม่)', newunit: 'หน่วยงาน', newdept: 'กลุ่มงาน/งาน' },
     over: { newpos: { type: 'text', ph: 'เช่น นักวิชาการสาธารณสุข' }, newunit: { type: 'text', ph: 'เช่น รพ.สต.บ้านหัวฝาย สสอ.แม่แตง' } },
-    xgroups: { newpos: 'ขอปรับปรุงตำแหน่งเป็น', newunit: 'ขอปรับปรุงตำแหน่งเป็น', newdept: 'ขอปรับปรุงตำแหน่งเป็น' } },
+    xgroups: { newpos: 'ขอปรับปรุงตำแหน่งเป็น', newunit: 'ขอปรับปรุงตำแหน่งเป็น', newdept: 'ขอปรับปรุงตำแหน่งเป็น' }, noMore: true },
   { key: 'transfer', name: 'เกลี่ยอัตรา ขรก. (มีคนครอง)', staff: 'ข้าราชการ', icon: 'swap',
     desc: 'ตัดโอนตำแหน่งและอัตราเงินเดือน ตำแหน่งที่มีคนครอง', sheet: 'เกลี่ยอัตราตัดโอน (ขรก)',
     title: 'ผลการพิจารณา การเกลี่ยอัตราตำแหน่งข้าราชการ (ตัดโอนตำแหน่งและอัตราเงินเดือน)', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',

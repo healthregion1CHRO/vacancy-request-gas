@@ -554,7 +554,7 @@ function formHtml() {
   const fld = (k, cls) => fieldHtml(cat, k, d[k], req.indexOf(k) >= 0, cls);
   const posFields = cat.fields.filter(k => ['frame', 'actual', 'reason'].indexOf(k) < 0);
   const hasFrame = cat.fields.indexOf('frame') >= 0;
-  const more = (cat.fields.indexOf('reason') >= 0 ? ['reason'] : []).concat(B.tailFields);
+  const more = cat.noMore ? [] : (cat.fields.indexOf('reason') >= 0 ? ['reason'] : []).concat(B.tailFields); // noMore: ไม่มีหัวข้อ "รายละเอียดเพิ่มเติม" (หมายเหตุเดิมยังอยู่ใน f.data)
   const sh = shortOf(d);
   const curRound = d.round || (defRound() || {}).id;
   const roundOpts = isAdmin() ? B.rounds.slice().reverse() : openRounds().slice().reverse();
@@ -570,7 +570,7 @@ function formHtml() {
     <div class="sec"><h4><span class="n">${++n}</span>ข้อมูลตำแหน่ง</h4><div class="grid g2">${posFields.map(k => fld(k, ['newpos', 'newunit', 'cutpos'].indexOf(k) >= 0 && !(cat.over && cat.over[k]) ? 'spanall' : '')).join('')}</div></div>
     ${hasFrame ? `<div class="sec"><h4><span class="n">${++n}</span>อัตรากำลัง</h4><div class="grid g3">${fld('frame')}${fld('actual')}
       <div class="field"><label>ขาด / เกิน (กรอบ-ปฏิบัติงานจริง)</label><div class="shortbox ${gapOf(sh).c}" id="shortBox"><b class="mono">${gapOf(sh).t}</b></div></div></div></div>` : ''}
-    <div class="sec"><h4><span class="n">${++n}</span>รายละเอียดเพิ่มเติม</h4><div class="grid">${more.map(k => fld(k)).join('')}</div></div>
+    ${more.length ? `<div class="sec"><h4><span class="n">${++n}</span>รายละเอียดเพิ่มเติม</h4><div class="grid">${more.map(k => fld(k)).join('')}</div></div>` : ''}
     <div class="formfoot">
       <button type="button" class="btn ghost" data-act="cancel-form">ยกเลิก</button>
       ${f.id ? '' : `<button type="button" class="btn" data-act="save-req" data-more="1">${icon('plus')} บันทึกและเพิ่มต่อ</button>`}
