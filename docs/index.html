@@ -117,7 +117,6 @@ textarea.input{min-height:84px;resize:vertical}
 .login-card h2{font-size:28px;margin-bottom:6px}
 .logo{display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:50%;background:#fff;padding:3px;border:2px solid rgba(255,255,255,.6)}
 .orglogo{display:block;width:100%;height:100%;object-fit:contain;border-radius:50%}
-.orglogo-box{width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid var(--border);padding:2px;display:block}
 .pw-wrap{position:relative} .pw-wrap .btn{position:absolute;right:4px;top:50%;transform:translateY(-50%)}
 .alert{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:10px;background:var(--bad-soft);color:var(--bad);font-size:14px}
 .alert.info{background:var(--accent-soft);color:var(--accent-strong)}
@@ -312,7 +311,6 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
 .subtabs button{border:0;background:transparent;padding:8px 16px;border-radius:9px;font-weight:600;cursor:pointer;color:var(--ink-2);display:flex;gap:8px;align-items:center}
 .subtabs button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
 .rounds{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
-.orgrow{display:grid;grid-template-columns:36px minmax(0,1fr) 150px minmax(0,1fr) 40px;gap:8px;align-items:center}
 
 /* ── toast ── */
 #toasts{position:fixed;z-index:80;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
@@ -355,8 +353,6 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
   .toolbar select.input{flex:1 1 140px}
   .toast{max-width:calc(100vw - 40px)}
   #toasts{right:16px;left:16px;bottom:84px;align-items:stretch}
-  .orgrow{grid-template-columns:36px minmax(0,1fr) 110px 40px}
-  .orgrow [data-k="logo"]{grid-column:2 / 4;grid-row:2}
 }
 
 /* ── โทน น้ำเงิน · เขียว · ดำ ── */
@@ -450,7 +446,7 @@ const blankFilters = () => ({ q: '', cat: '', status: '', prov: '', org: '' });
 const S = {
   token: null, boot: null, reqs: [], loaded: false,
   view: 'home', navKey: 'home', round: null, filters: blankFilters(), sel: new Set(), limit: 100,
-  form: null, users: null, settingsTab: 'users', orgDraft: null
+  form: null, users: null, settingsTab: 'users'
 };
 
 /* ───────────── server ───────────── */
@@ -608,7 +604,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = 'b7dee6d7';
+const PAGE_BUILD = 'a96dfc82';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -769,7 +765,6 @@ function go(v, opt) {
   if (v === 'review') { S.view = 'list'; if (!opt.keepFilters) { S.filters = blankFilters(); S.filters.status = 'รอพิจารณา'; } }
   else { S.view = v; if (v === 'list' && !opt.keepFilters) S.filters = blankFilters(); }
   if (v === 'new' && !opt.keepForm) S.form = null;
-  if (v === 'settings') S.orgDraft = null;
   S.sel.clear(); S.limit = 100;
   renderNav(); renderView(); window.scrollTo(0, 0);
 }
@@ -1380,7 +1375,7 @@ function renderImportSummary(el, p) {
   const total = p.rows.length - bad.length;
   el.innerHTML = `${p.roundHint ? `<div class="alert info">${icon('calendar')}<span>ไฟล์นี้ระบุ <b>ครั้งที่ ${esc(p.roundHint)}</b></span></div>` : ''}
     <div class="tbl-wrap" style="border:1px solid var(--border);border-radius:10px"><table class="tbl imp"><thead><tr><th>ชีตในไฟล์</th><th>นำเข้าเป็น</th><th style="text-align:right">รายการ</th></tr></thead><tbody>${lines}</tbody></table></div>
-    ${bad.length ? `<div class="alert warn">${icon('alert')}<span>${bad.length} รายการจะไม่ถูกนำเข้า เพราะไม่พบสังกัดในรายชื่อหน่วยงาน: <b>${badOrgs.map(esc).join(', ')}</b><br><span style="font-size:13px">เพิ่มหน่วยงานที่ ตั้งค่า → หน่วยงาน แล้วเลือกไฟล์ใหม่</span></span></div>` : ''}
+    ${bad.length ? `<div class="alert warn">${icon('alert')}<span>${bad.length} รายการจะไม่ถูกนำเข้า เพราะไม่พบสังกัดในรายชื่อหน่วยงาน: <b>${badOrgs.map(esc).join(', ')}</b><br><span style="font-size:13px">เพิ่มหน่วยงานในชีต "หน่วยงาน" แล้วเลือกไฟล์ใหม่</span></span></div>` : ''}
     <div class="row"><b>พร้อมนำเข้า ${total} รายการ</b><span class="muted" style="font-size:13px">· รายการที่มีอยู่แล้วในรอบ (ซ้ำ) จะถูกข้าม</span></div>`;
 }
 
@@ -1444,11 +1439,11 @@ function reviewPanel(r) {
 /* ───────────── settings ───────────── */
 function viewSettings() {
   const t = S.settingsTab;
-  const tabs = [['users', 'ผู้ใช้งาน', 'users'], ['rounds', 'รอบการประชุม', 'calendar'], ['orgs', 'หน่วยงาน', 'building']];
+  const tabs = [['users', 'ผู้ใช้งาน', 'users'], ['rounds', 'รอบการประชุม', 'calendar']];
   return `<div class="stack"><div class="subtabs" role="tablist">${tabs.map(x => `<button role="tab" aria-selected="${t === x[0]}" class="${t === x[0] ? 'on' : ''}" data-act="stab" data-k="${x[0]}">${icon(x[2])} ${x[1]}</button>`).join('')}</div>
-    <div id="setArea">${t === 'users' ? usersHtml() : t === 'rounds' ? roundsHtml() : orgsHtml()}</div></div>`;
+    <div id="setArea">${t === 'rounds' ? roundsHtml() : usersHtml()}</div></div>`;
 }
-function refreshSettings() { const a = $('#setArea'); if (a) a.innerHTML = S.settingsTab === 'users' ? usersHtml() : S.settingsTab === 'rounds' ? roundsHtml() : orgsHtml(); }
+function refreshSettings() { const a = $('#setArea'); if (a) a.innerHTML = S.settingsTab === 'rounds' ? roundsHtml() : usersHtml(); }
 
 async function loadUsers() {
   try { S.users = await api('apiListUsers'); if (S.view === 'settings') refreshSettings(); } catch (e) { fail(e); }
@@ -1611,19 +1606,6 @@ function roundModal(r) {
     } });
 }
 
-function orgsHtml() {
-  if (!S.orgDraft) S.orgDraft = S.boot.orgs.map(o => ({ org: o.org, prov: o.prov, logo: o.logo || '' }));
-  return `<div class="card"><div class="card-h"><h3>รายชื่อหน่วยงาน (สังกัด)</h3><button class="btn sm" data-act="org-add">${icon('plus')} เพิ่ม</button></div>
-    <div class="card-b stack" style="gap:8px">
-      <p class="muted" style="margin:0 0 6px">ใช้เป็นตัวเลือก "สังกัด" ในฟอร์ม และผูกกับบัญชีผู้ใช้ระดับหน่วยงาน — ตั้งชื่อให้ตรงกันทุกที่ เช่น รพท.สันทราย<br>ลิงก์รูปตรา: วางลิงก์รูป (https://…) หรือลิงก์แชร์ไฟล์รูปใน Google Drive ที่ตั้งเป็น "ทุกคนที่มีลิงก์" — หน่วยงานที่ล็อกอินจะเห็นตรานี้ที่มุมซ้ายบน เว้นว่าง = ใช้ตรากระทรวง</p>
-      ${S.orgDraft.map((o, i) => `<div class="orgrow"><span class="orglogo-box">${logoImg(logoSrc(o.logo) || MOPH_LOGO, 'ตรา' + o.org)}</span><input class="input" data-org="${i}" data-k="org" value="${esc(o.org)}" aria-label="ชื่อหน่วยงาน">
-        <select class="input" data-org="${i}" data-k="prov" aria-label="จังหวัด">${S.boot.provinces.map(p => `<option ${o.prov === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select>
-        <input class="input" data-org="${i}" data-k="logo" value="${esc(o.logo || '')}" placeholder="ลิงก์รูปตรา (ไม่บังคับ)" aria-label="ลิงก์รูปตรา ${esc(o.org)}" inputmode="url" spellcheck="false">
-        <button class="btn ghost icon" data-act="org-del" data-i="${i}" aria-label="ลบ">${icon('trash')}</button></div>`).join('')}
-    </div>
-    <div class="formfoot"><button class="btn" data-act="org-reset">ยกเลิกการแก้ไข</button><button class="btn primary" data-act="org-save">${icon('check')} บันทึกรายชื่อหน่วยงาน</button></div></div>`;
-}
-
 /* ───────────── account ───────────── */
 function accountModal() {
   const u = S.boot.user;
@@ -1741,13 +1723,7 @@ const ACT = {
       if (String(S.round) === String(r.id)) S.round = String((openRound() || S.boot.rounds[S.boot.rounds.length - 1] || { id: '' }).id);
       refreshSettings(); renderRoundPick(); toast('ลบรอบ ' + r.name + ' แล้ว');
     } catch (err) { fail(err); }
-  },
-  'org-add': () => { S.orgDraft.push({ org: '', prov: S.boot.provinces[0], logo: '' }); refreshSettings(); const ins = $$('[data-org][data-k="org"]'); ins[ins.length - 1].focus(); },
-  'org-del': el => { S.orgDraft.splice(Number(el.dataset.i), 1); refreshSettings(); },
-  'org-reset': () => { S.orgDraft = null; refreshSettings(); },
-  'org-save': el => withBtn(el, async () => {
-    try { S.boot.orgs = await api('apiSaveOrgs', S.orgDraft.filter(o => o.org.trim())); S.orgDraft = null; refreshSettings(); toast('บันทึกรายชื่อหน่วยงานแล้ว'); } catch (e) { fail(e); }
-  })
+  }
 };
 
 const CHG = {
@@ -1781,10 +1757,6 @@ document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'q') { S.filters.q = t.value; debounce(refreshList, 150)(); }
   if (t.closest('#reqForm')) formInput(t);
-  if (t.dataset.org !== undefined && S.orgDraft) {
-    S.orgDraft[Number(t.dataset.org)][t.dataset.k] = t.value;
-    if (t.dataset.k === 'logo') { const im = t.parentNode.querySelector('img.orglogo'); if (im) im.src = logoSrc(t.value) || MOPH_LOGO; }
-  }
 });
 window.addEventListener('scroll', () => { const t = $('#top'); if (t) t.classList.toggle('scrolled', window.scrollY > 4); }, { passive: true });
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme); } catch (e) { /* เบราว์เซอร์เก่า */ }

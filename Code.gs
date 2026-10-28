@@ -664,7 +664,7 @@ function apiSaveUser(token, data, isNew) {
     const want = normName_(data.org);
     if (!want) throw new Error('กรุณาเลือกหน่วยงาน');
     const o = orgs.find(x => x.org === want);
-    if (!o) throw new Error('ไม่พบหน่วยงาน "' + want + '" ในชีต "หน่วยงาน" — ตรวจชื่อในหน้า ตั้งค่า → หน่วยงาน');
+    if (!o) throw new Error('ไม่พบหน่วยงาน "' + want + '" ในชีต "หน่วยงาน" — ตรวจชื่อในชีต หน่วยงาน');
     if (PROVINCES.indexOf(o.prov) < 0) throw new Error('หน่วยงาน "' + o.org + '" ยังไม่ได้ระบุจังหวัด (หรือสะกดจังหวัดผิด) ในชีต "หน่วยงาน"');
     org = o.org; prov = o.prov;
   }
