@@ -573,7 +573,9 @@ const SEED_USERNAMES = {
   const USERS = [
     { username: 'admin', name: 'สุภัทร ผู้ดูแลเขต', role: 'admin', prov: '', org: '', email: '', phone: '', active: true, mustChange: false, lastLogin: iso(day(0)) },
     { username: 'cm.prov', name: 'ผู้ประสาน จังหวัดเชียงใหม่', role: 'prov', prov: 'เชียงใหม่', org: '', email: '', phone: '', active: true, mustChange: false, lastLogin: iso(day(-2)) },
-    { username: 'nkp.hr', name: 'งานบุคคล นครพิงค์', role: 'unit', prov: 'เชียงใหม่', org: 'รพศ.นครพิงค์', email: '', phone: '', active: true, mustChange: true, lastLogin: '' }
+    // บัญชีหน่วยงานครบทุกหน่วยงาน (ชื่อผู้ใช้ตาม SEED_USERNAMES เหมือนที่ setupAll สร้างในชีตจริง)
+    ...ORGS.map((o, i) => ({ username: SEED_USERNAMES[o.org] || ('unit' + (i + 1)), name: 'ผู้รับผิดชอบ ' + o.org, role: 'unit', prov: o.prov, org: o.org,
+      email: '', phone: '', active: true, mustChange: false, lastLogin: i % 3 ? '' : iso(day(-i)) }))
   ];
   let ROUNDS = [
     { id: 'R1', name: 'ครั้งที่ 9/2569', month: 'กันยายน 2569', meetDate: iso(day(-24)).slice(0, 10) + 'T00:00:00', closeDate: iso(day(-35)).slice(0, 10) + 'T00:00:00', status: 'ประชุมแล้ว' },
@@ -774,7 +776,7 @@ new MutationObserver(() => {
   if (f && !document.getElementById('demoHint')) {
     const d = document.createElement('div');
     d.id = 'demoHint'; d.className = 'alert info';
-    d.innerHTML = '<span><b>หน้าตัวอย่าง (ข้อมูลสมมติ)</b><br>ลองเข้าด้วย <b>admin</b> (เขต), <b>cm.prov</b> (จังหวัด) หรือ <b>nkp.hr</b> (หน่วยงาน) — รหัสผ่านอะไรก็ได้</span>';
+    d.innerHTML = '<span><b>หน้าตัวอย่าง (ข้อมูลสมมติ)</b><br>ลองเข้าด้วย <b>admin</b> (เขต), <b>cm.prov</b> (จังหวัด) หรือ <b>nakornping</b> (หน่วยงาน) — รหัสผ่านอะไรก็ได้</span>';
     f.insertBefore(d, f.children[1]);
   }
 }).observe(document.documentElement, { childList: true, subtree: true });
