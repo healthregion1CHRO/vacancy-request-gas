@@ -170,7 +170,7 @@ const CATS = [
     xw: [7.8, 10.2, 22.1, 9.4, 18.8, 9.6, 32.6, 8.4, 18, 18, 7.9, 9.2, 10.8, 14, 11.8],
     fields: ['posno', 'pos', 'typeold', 'newpos', 'typenew', 'newunit', 'newdept', 'frame', 'actual', 'reason'],
     required: ['pos', 'typeold', 'newpos', 'typenew', 'newunit', 'newdept'],
-    labels: { newpos: 'ตำแหน่งที่ขออนุมัติกำหนด', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' },
+    labels: { newpos: 'ชื่อสายงาน (ใหม่)', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' },
     over: { newpos: { type: 'text', ph: 'เช่น พนักงานช่วยเหลือคนไข้' }, newunit: { type: 'text', ph: 'เช่น รพศ.นครพิงค์' } },
     fsecs: [{ title: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', fields: ['newpos', 'typenew', 'newunit', 'newdept'], cols: 2 }],
     xgroups: { newpos: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', typenew: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', newunit: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', newdept: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)' },

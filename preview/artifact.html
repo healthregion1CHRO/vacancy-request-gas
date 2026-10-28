@@ -533,7 +533,7 @@ const CATS = [
     xw: [7.8, 10.2, 22.1, 9.4, 18.8, 9.6, 32.6, 8.4, 18, 18, 7.9, 9.2, 10.8, 14, 11.8],
     fields: ['posno', 'pos', 'typeold', 'newpos', 'typenew', 'newunit', 'newdept', 'frame', 'actual', 'reason'],
     required: ['pos', 'typeold', 'newpos', 'typenew', 'newunit', 'newdept'],
-    labels: { newpos: 'ตำแหน่งที่ขออนุมัติกำหนด', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' },
+    labels: { newpos: 'ชื่อสายงาน (ใหม่)', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' },
     over: { newpos: { type: 'text', ph: 'เช่น พนักงานช่วยเหลือคนไข้' }, newunit: { type: 'text', ph: 'เช่น รพศ.นครพิงค์' } },
     fsecs: [{ title: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', fields: ['newpos', 'typenew', 'newunit', 'newdept'], cols: 2 }],
     xgroups: { newpos: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', typenew: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', newunit: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', newdept: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)' },
@@ -1010,7 +1010,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = 'c0fcbe74';
+const PAGE_BUILD = '39a171ab';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
