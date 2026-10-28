@@ -127,7 +127,7 @@ const CATS = [
     xw: [6.4, 12.4, 34.9, 12, 19.6, 11.8, 11.6, 18.4, 8.8, 10, 10.9, 15.4],
     fields: ['posno', 'pos', 'level', 'exec', 'cond', 'frame', 'actual'], required: ['posno', 'pos', 'cond'],
     labels: { pos: 'ชื่อตำแหน่ง', cond: 'เงื่อนไขในการขอใช้' },
-    fsecs: [{ title: 'เงื่อนไขในการขอใช้', fields: ['cond'] }] },
+    fsecs: [{ title: 'เงื่อนไขในการขอใช้', fields: ['cond'] }], noMore: true },
   { key: 'gov', name: 'ขอใช้ตำแหน่ง พนักงานราชการ', staff: 'พนักงานราชการ', icon: 'briefcase',
     desc: 'ขอใช้ตำแหน่งพนักงานราชการ', sheet: ' พรก',
     title: 'ผลการพิจารณา การขอใช้ตำแหน่งพนักงานราชการ', grp: 'ข้อมูลตำแหน่ง',
