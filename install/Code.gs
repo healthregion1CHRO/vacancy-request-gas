@@ -137,7 +137,7 @@ const CATS = [
     over: { newpos: { type: 'text', ph: 'เช่น พยาบาลวิชาชีพ' }, newunit: { type: 'text', ph: 'เช่น รพศ.นครพิงค์' } },
     xgroups: { newpos: 'ตำแหน่ง / ส่วนราชการ ใหม่', newunit: 'ตำแหน่ง / ส่วนราชการ ใหม่', newdept: 'ตำแหน่ง / ส่วนราชการ ใหม่' },
     fsecs: [{ title: 'เงื่อนไขการขอใช้', fields: ['cond', 'person'] }, { title: 'ตำแหน่ง / ส่วนราชการ ใหม่', fields: ['newpos', 'newunit', 'newdept'] }], noMore: true },
-  { key: 'phks', name: 'จ้าง/เปลี่ยนตำแหน่ง พกส.', staff: 'พกส.', icon: 'users',
+  { key: 'phks', name: 'จ้าง/เปลี่ยนตำแหน่ง พกส.', staff: 'พกส.', staffLabel: 'พนักงานกระทรวงสาธารณสุข', icon: 'users',
     desc: 'ขออนุมัติจ้างและเปลี่ยนตำแหน่ง พนักงานกระทรวงสาธารณสุข', sheet: ' จ้าง (พกส) ', alias: ['พกส.'],
     title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่ง พกส.', grp: 'ข้อมูลตำแหน่ง',
     xw: [6.9, 10.2, 26.8, 11.4, 21.4, 36.9, 18, 18, 8.6, 9.6, 9, 17.1, 13.6],
@@ -200,7 +200,7 @@ const SEED_USERNAMES = {
 // ==CONFIG-END==
 
 /** รหัสรุ่นของโค้ด (install/build.ps1 ใส่ให้ตอนสร้างไฟล์) — หน้าเว็บบน GitHub Pages ใช้ตรวจว่า Deploy ตรงรุ่นกับหน้าเว็บ */
-const BUILD_ID = '70bf95b7';
+const BUILD_ID = '32302c69';
 function apiVersion() { return BUILD_ID; }
 
 const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอบการประชุม', ORGS: 'หน่วยงาน', LOG: 'ประวัติ' };

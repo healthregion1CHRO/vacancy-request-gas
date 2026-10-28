@@ -494,7 +494,7 @@ function viewNew() {
         : or ? `<div class="alert info">${icon('calendar')}<span>คำขอจะเข้าสู่ <b>${esc(or.name)}</b>${or.month ? ' (บัญชีเดือน' + esc(or.month) + ')' : ''}${or.closeDate ? ' · ปิดรับ ' + fmtDate(or.closeDate, 1) : ''}</span></div>` : ''}
       <div><h2 style="font-size:20px">เลือกประเภทคำขอ</h2><p class="muted" style="margin:4px 0 0">ฟอร์มจะแสดงเฉพาะช่องที่ประเภทนั้นต้องใช้</p></div>
       <div class="cats">${S.boot.cats.map(c => `<button class="catcard" style="--c:${catColor(c.key)}" data-act="pick-cat" data-k="${c.key}">
-        <div class="ic">${icon(c.icon)}</div><span class="staff">${esc(c.staff)}</span><b>${esc(c.name)}</b><p>${esc(c.desc)}</p></button>`).join('')}</div>
+        <div class="ic">${icon(c.icon)}</div><span class="staff">${esc(c.staffLabel || c.staff)}</span><b>${esc(c.name)}</b><p>${esc(c.desc)}</p></button>`).join('')}</div>
     </div>`;
   }
   return formHtml();
@@ -562,7 +562,7 @@ function formHtml() {
   let n = 0;
   return `<form class="card" id="reqForm" novalidate style="--c:${catColor(cat.key)}" onsubmit="return false">
     <div class="formhead"><div class="ic">${icon(cat.icon)}</div>
-      <div style="flex:1;min-width:0"><span class="muted" style="font-size:13px">${esc(cat.staff)}${f.id ? ' · ' + esc(f.id) : ''}</span><h2>${esc(cat.name)}</h2></div>
+      <div style="flex:1;min-width:0"><span class="muted" style="font-size:13px">${esc(cat.staffLabel || cat.staff)}${f.id ? ' · ' + esc(f.id) : ''}</span><h2>${esc(cat.name)}</h2></div>
       ${f.id ? '' : `<button type="button" class="btn sm" data-act="change-cat">${icon('swap')} เปลี่ยนประเภท</button>`}</div>
     ${f.id && d.status === 'ส่งกลับแก้ไข' && d.reviewNote ? `<div class="sec"><div class="alert warn">${icon('alert')}<span><b>ข้อเสนอแนะจากเขต:</b> ${esc(d.reviewNote)}</span></div></div>` : ''}
     ${isAdmin() || roundOpts.length > 1 ? `<div class="sec"><h4><span class="n">${++n}</span>รอบการประชุม</h4><div class="grid g2"><div class="field"><label for="f_round">รอบ</label>
