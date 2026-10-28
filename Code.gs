@@ -154,7 +154,7 @@ const CATS = [
     labels: { newpos: 'ขอเปลี่ยนเป็นตำแหน่ง (สายงานผู้ช่วย)', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' }, selects: { newpos: 'ASST_POS' },
     over: { newunit: { type: 'text', ph: 'เช่น รพศ.นครพิงค์' } },
     fsecs: [{ title: 'ขอเปลี่ยนเป็นตำแหน่ง / ผู้ที่จะมาดำรงตำแหน่ง', fields: ['newpos', 'person'] }, { title: 'ตำแหน่ง / ส่วนราชการ ใหม่', fields: ['newunit', 'newdept'] }],
-    xgroups: { newunit: 'ตำแหน่ง / ส่วนราชการ ใหม่', newdept: 'ตำแหน่ง / ส่วนราชการ ใหม่' } },
+    xgroups: { newunit: 'ตำแหน่ง / ส่วนราชการ ใหม่', newdept: 'ตำแหน่ง / ส่วนราชการ ใหม่' }, noMore: true },
   { key: 'phksMove', name: 'ย้าย พนักงานกระทรวงสาธารณสุข', oldNames: ['ย้าย พกส.'], staff: 'พกส.', staffLabel: 'พนักงานกระทรวงสาธารณสุข', icon: 'usermove',
     desc: 'ขอย้ายพนักงานกระทรวงสาธารณสุข ไปหน่วยงานอื่น', sheet: 'ย้าย (พกส)',
     title: 'ผลการพิจารณา การขอย้ายพนักงานกระทรวงสาธารณสุข', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
