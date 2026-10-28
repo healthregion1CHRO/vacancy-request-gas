@@ -149,10 +149,12 @@ const CATS = [
   { key: 'phksAsst', name: 'พกส. เข้าสู่สายงานผู้ช่วย', staff: 'พกส.', staffLabel: 'พนักงานกระทรวงสาธารณสุข', icon: 'userplus',
     desc: 'เปลี่ยนตำแหน่ง พกส. เข้าสู่สายงานผู้ช่วย', sheet: 'พกส(ผู้ช่วย)',
     title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่ง พกส. (สายงานผู้ช่วย)', grp: 'ข้อมูลตำแหน่ง',
-    xw: [6.9, 10.2, 26.8, 11.4, 21.4, 27, 27, 8.6, 9.6, 9, 17.1, 13.6],
-    fields: ['posno', 'pos', 'newpos', 'person', 'frame', 'actual', 'reason'], required: ['pos', 'newpos', 'person'],
-    labels: { newpos: 'ขอเปลี่ยนเป็นตำแหน่ง (สายงานผู้ช่วย)' }, selects: { newpos: 'ASST_POS' },
-    fsecs: [{ title: 'ขอเปลี่ยนเป็นตำแหน่ง / ผู้ที่จะมาดำรงตำแหน่ง', fields: ['newpos', 'person'] }] },
+    xw: [6.9, 10.2, 26.8, 11.4, 21.4, 27, 27, 18, 18, 8.6, 9.6, 9, 17.1, 13.6],
+    fields: ['posno', 'pos', 'newpos', 'person', 'newunit', 'newdept', 'frame', 'actual', 'reason'], required: ['pos', 'newpos', 'person', 'newunit', 'newdept'],
+    labels: { newpos: 'ขอเปลี่ยนเป็นตำแหน่ง (สายงานผู้ช่วย)', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' }, selects: { newpos: 'ASST_POS' },
+    over: { newunit: { type: 'text', ph: 'เช่น รพศ.นครพิงค์' } },
+    fsecs: [{ title: 'ขอเปลี่ยนเป็นตำแหน่ง / ผู้ที่จะมาดำรงตำแหน่ง', fields: ['newpos', 'person'] }, { title: 'ตำแหน่ง / ส่วนราชการ ใหม่', fields: ['newunit', 'newdept'] }],
+    xgroups: { newunit: 'ตำแหน่ง / ส่วนราชการ ใหม่', newdept: 'ตำแหน่ง / ส่วนราชการ ใหม่' } },
   { key: 'phksMove', name: 'ย้าย พนักงานกระทรวงสาธารณสุข', oldNames: ['ย้าย พกส.'], staff: 'พกส.', staffLabel: 'พนักงานกระทรวงสาธารณสุข', icon: 'usermove',
     desc: 'ขอย้ายพนักงานกระทรวงสาธารณสุข ไปหน่วยงานอื่น', sheet: 'ย้าย (พกส)',
     title: 'ผลการพิจารณา การขอย้ายพนักงานกระทรวงสาธารณสุข', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
@@ -201,7 +203,7 @@ const SEED_USERNAMES = {
 // ==CONFIG-END==
 
 /** รหัสรุ่นของโค้ด (install/build.ps1 ใส่ให้ตอนสร้างไฟล์) — หน้าเว็บบน GitHub Pages ใช้ตรวจว่า Deploy ตรงรุ่นกับหน้าเว็บ */
-const BUILD_ID = '1d416082';
+const BUILD_ID = '57447914';
 function apiVersion() { return BUILD_ID; }
 
 const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอบการประชุม', ORGS: 'หน่วยงาน', LOG: 'ประวัติ' };
