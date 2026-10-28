@@ -529,9 +529,12 @@ const CATS = [
   { key: 'phksMove', name: 'ย้าย พนักงานกระทรวงสาธารณสุข', oldNames: ['ย้าย พกส.'], staff: 'พกส.', staffLabel: 'พนักงานกระทรวงสาธารณสุข', icon: 'usermove',
     desc: 'ขอย้ายพนักงานกระทรวงสาธารณสุข ไปหน่วยงานอื่น', sheet: 'ย้าย (พกส)',
     title: 'ผลการพิจารณา การขอย้ายพนักงานกระทรวงสาธารณสุข', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
-    xw: [6.9, 10.2, 26.8, 11.4, 21.4, 27, 27, 8.6, 9.6, 9, 17.1, 13.6],
-    fields: ['posno', 'pos', 'newunit', 'person', 'frame', 'actual', 'reason'], required: ['pos', 'newunit', 'person'],
-    labels: { pos: 'ชื่อตำแหน่ง', newunit: 'หน่วยงานปลายทาง', person: 'ผู้ขอย้าย (ชื่อ-สกุล)' } },
+    xw: [6.9, 10.2, 26.8, 11.4, 21.4, 27, 18, 27, 18, 8.6, 9.6, 9, 17.1, 13.6],
+    fields: ['posno', 'pos', 'person', 'newpos', 'newunit', 'newdept', 'frame', 'actual', 'reason'], required: ['pos', 'person', 'newpos', 'newunit', 'newdept'],
+    labels: { pos: 'ชื่อตำแหน่ง', person: 'ผู้ขอย้าย (ชื่อ-สกุล)', newpos: 'ชื่อสายงาน (ใหม่)', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' },
+    over: { newpos: { type: 'text', ph: 'เช่น พยาบาลวิชาชีพ' }, newunit: { type: 'text', ph: 'เช่น รพศ.นครพิงค์' } },
+    fsecs: [{ title: 'ข้อมูลหน่วยงานปลายทาง', fields: ['newpos', 'newunit', 'newdept'] }],
+    xgroups: { newpos: 'ข้อมูลหน่วยงานปลายทาง', newunit: 'ข้อมูลหน่วยงานปลายทาง', newdept: 'ข้อมูลหน่วยงานปลายทาง' } },
   { key: 'changeType', name: 'เปลี่ยนประเภทการจ้าง', staff: 'ลจช. → พกส. หรือ พกส. → ลจช.', icon: 'repeat',
     desc: 'เปลี่ยนประเภทการจ้าง เช่น ลูกจ้างชั่วคราว → พกส. หรือ พกส. → ลูกจ้างชั่วคราว', sheet: 'เปลี่ยนประเภทการจ้าง',
     title: 'ผลการพิจารณาการขอเปลี่ยนประเภทการจ้าง', grp: 'ข้อมูลตำแหน่ง',
@@ -1012,7 +1015,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '586d9bfc';
+const PAGE_BUILD = '9a4a4dd4';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })

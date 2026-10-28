@@ -158,9 +158,12 @@ const CATS = [
   { key: 'phksMove', name: 'ย้าย พนักงานกระทรวงสาธารณสุข', oldNames: ['ย้าย พกส.'], staff: 'พกส.', staffLabel: 'พนักงานกระทรวงสาธารณสุข', icon: 'usermove',
     desc: 'ขอย้ายพนักงานกระทรวงสาธารณสุข ไปหน่วยงานอื่น', sheet: 'ย้าย (พกส)',
     title: 'ผลการพิจารณา การขอย้ายพนักงานกระทรวงสาธารณสุข', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
-    xw: [6.9, 10.2, 26.8, 11.4, 21.4, 27, 27, 8.6, 9.6, 9, 17.1, 13.6],
-    fields: ['posno', 'pos', 'newunit', 'person', 'frame', 'actual', 'reason'], required: ['pos', 'newunit', 'person'],
-    labels: { pos: 'ชื่อตำแหน่ง', newunit: 'หน่วยงานปลายทาง', person: 'ผู้ขอย้าย (ชื่อ-สกุล)' } },
+    xw: [6.9, 10.2, 26.8, 11.4, 21.4, 27, 18, 27, 18, 8.6, 9.6, 9, 17.1, 13.6],
+    fields: ['posno', 'pos', 'person', 'newpos', 'newunit', 'newdept', 'frame', 'actual', 'reason'], required: ['pos', 'person', 'newpos', 'newunit', 'newdept'],
+    labels: { pos: 'ชื่อตำแหน่ง', person: 'ผู้ขอย้าย (ชื่อ-สกุล)', newpos: 'ชื่อสายงาน (ใหม่)', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' },
+    over: { newpos: { type: 'text', ph: 'เช่น พยาบาลวิชาชีพ' }, newunit: { type: 'text', ph: 'เช่น รพศ.นครพิงค์' } },
+    fsecs: [{ title: 'ข้อมูลหน่วยงานปลายทาง', fields: ['newpos', 'newunit', 'newdept'] }],
+    xgroups: { newpos: 'ข้อมูลหน่วยงานปลายทาง', newunit: 'ข้อมูลหน่วยงานปลายทาง', newdept: 'ข้อมูลหน่วยงานปลายทาง' } },
   { key: 'changeType', name: 'เปลี่ยนประเภทการจ้าง', staff: 'ลจช. → พกส. หรือ พกส. → ลจช.', icon: 'repeat',
     desc: 'เปลี่ยนประเภทการจ้าง เช่น ลูกจ้างชั่วคราว → พกส. หรือ พกส. → ลูกจ้างชั่วคราว', sheet: 'เปลี่ยนประเภทการจ้าง',
     title: 'ผลการพิจารณาการขอเปลี่ยนประเภทการจ้าง', grp: 'ข้อมูลตำแหน่ง',
@@ -203,7 +206,7 @@ const SEED_USERNAMES = {
 // ==CONFIG-END==
 
 /** รหัสรุ่นของโค้ด (install/build.ps1 ใส่ให้ตอนสร้างไฟล์) — หน้าเว็บบน GitHub Pages ใช้ตรวจว่า Deploy ตรงรุ่นกับหน้าเว็บ */
-const BUILD_ID = '586d9bfc';
+const BUILD_ID = '9a4a4dd4';
 function apiVersion() { return BUILD_ID; }
 
 const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอบการประชุม', ORGS: 'หน่วยงาน', LOG: 'ประวัติ' };
@@ -911,7 +914,7 @@ function apiExportJson(token, roundId) {
     .filter(r => (!roundId || String(r.round) === String(roundId)) && r.status !== 'ถอนเรื่อง')
     .map(r => ({
       cat: catName_(r.cat), staff: r.staff, prov: r.prov, org: r.org, unit: r.unit, dept: r.dept, posno: String(r.posno),
-      pos: r.pos, level: r.level, exec: r.exec, newpos: (['เกลี่ยอัตรา ขรก. (มีคนครอง)', 'เกลี่ยอัตรา แพทย์ประจำบ้าน', 'เกลี่ยอัตรา ขรก. (ตำแหน่งว่าง)'].indexOf(catName_(r.cat)) >= 0 && r.newunit) || r.newpos || r.cutpos || r.newunit, typeold: r.typeold, typenew: r.typenew,
+      pos: r.pos, level: r.level, exec: r.exec, newpos: (['เกลี่ยอัตรา ขรก. (มีคนครอง)', 'เกลี่ยอัตรา แพทย์ประจำบ้าน', 'เกลี่ยอัตรา ขรก. (ตำแหน่งว่าง)', 'ย้าย พนักงานกระทรวงสาธารณสุข'].indexOf(catName_(r.cat)) >= 0 && r.newunit) || r.newpos || r.cutpos || r.newunit, typeold: r.typeold, typenew: r.typenew,
       cond: r.cond, frame: r.frame, actual: r.actual, short: r.short, reason: r.reason,
       result: r.result || (r.status === 'รอพิจารณา' ? '' : r.status),
       meetDate: round && round.meetDate ? thaiDate_(round.meetDate) : ''
