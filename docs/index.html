@@ -604,7 +604,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = 'd3b15782';
+const PAGE_BUILD = '70bf95b7';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -933,7 +933,7 @@ function formHtml() {
   const f = S.form, cat = catOf(f.catKey), d = f.data, B = S.boot;
   const req = ['org', 'unit'].concat(cat.required || []);
   const fld = (k, cls) => fieldHtml(cat, k, d[k], req.indexOf(k) >= 0, cls);
-  // fsecs: [{ title, fields }] = กรอบเพิ่มเติม (เรียงตามลำดับ) ต่อจาก "ข้อมูลตำแหน่ง"
+  // fsecs: [{ title, fields, full? }] = กรอบเพิ่มเติม (เรียงตามลำดับ) ต่อจาก "ข้อมูลตำแหน่ง" · full = ช่องเต็มแถว
   const secKeys = [].concat.apply([], (cat.fsecs || []).map(s => s.fields));
   const posFields = cat.fields.filter(k => ['frame', 'actual', 'reason'].indexOf(k) < 0 && secKeys.indexOf(k) < 0);
   const hasFrame = cat.fields.indexOf('frame') >= 0;
@@ -951,7 +951,7 @@ function formHtml() {
       <select class="input" id="f_round" name="round">${roundOpts.map(r => `<option value="${esc(r.id)}" ${String(curRound) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''} · ${esc(roundSt(r))}</option>`).join('')}</select></div></div></div>` : ''}
     <div class="sec"><h4><span class="n">${++n}</span>หน่วยงาน</h4><div class="grid g3">${fld('org')}${fld('unit')}${fld('dept')}</div></div>
     <div class="sec"><h4><span class="n">${++n}</span>ข้อมูลตำแหน่ง</h4><div class="grid g2">${posFields.map(k => fld(k, ['newpos', 'newunit', 'cutpos'].indexOf(k) >= 0 && !(cat.over && cat.over[k]) ? 'spanall' : '')).join('')}</div></div>
-    ${(cat.fsecs || []).map(s => `<div class="sec"><h4><span class="n">${++n}</span>${esc(s.title)}</h4><div class="grid ${s.fields.length > 2 ? 'g3' : 'g2'}">${s.fields.map(k => fld(k)).join('')}</div></div>`).join('')}
+    ${(cat.fsecs || []).map(s => `<div class="sec"><h4><span class="n">${++n}</span>${esc(s.title)}</h4><div class="grid ${s.full ? '' : s.fields.length > 2 ? 'g3' : 'g2'}">${s.fields.map(k => fld(k)).join('')}</div></div>`).join('')}
     ${hasFrame ? `<div class="sec"><h4><span class="n">${++n}</span>อัตรากำลัง</h4><div class="grid g3">${fld('frame')}${fld('actual')}
       <div class="field"><label>ขาด / เกิน (กรอบ-ปฏิบัติงานจริง)</label><div class="shortbox ${gapOf(sh).c}" id="shortBox"><b class="mono">${gapOf(sh).t}</b></div></div></div></div>` : ''}
     ${more.length ? `<div class="sec"><h4><span class="n">${++n}</span>รายละเอียดเพิ่มเติม</h4><div class="grid">${more.map(k => fld(k)).join('')}</div></div>` : ''}
