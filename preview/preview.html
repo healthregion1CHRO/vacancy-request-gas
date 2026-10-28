@@ -537,11 +537,14 @@ const CATS = [
     xgroups: { newunit: 'ข้อมูลหน่วยงานปลายทาง', newdept: 'ข้อมูลหน่วยงานปลายทาง' }, noNote: true },
   { key: 'changeType', name: 'เปลี่ยนประเภทการจ้าง', staff: 'ลจช. → พกส. หรือ พกส. → ลจช.', icon: 'repeat',
     desc: 'เปลี่ยนประเภทการจ้าง เช่น ลูกจ้างชั่วคราว → พกส. หรือ พกส. → ลูกจ้างชั่วคราว', sheet: 'เปลี่ยนประเภทการจ้าง',
-    title: 'ผลการพิจารณาการขอเปลี่ยนประเภทการจ้าง', grp: 'ข้อมูลตำแหน่ง',
-    xw: [7.8, 10.2, 22.1, 9.4, 18.8, 9.6, 32.6, 8.4, 7.9, 9.2, 10.8, 14, 11.8],
-    fields: ['posno', 'pos', 'typeold', 'newpos', 'typenew', 'frame', 'actual', 'reason'],
-    required: ['pos', 'typeold', 'newpos', 'typenew'],
-    labels: { newpos: 'ตำแหน่งที่ขออนุมัติกำหนด' },
+    title: 'ผลการพิจารณาการขอเปลี่ยนประเภทการจ้าง', grp: 'ข้อมูลตำแหน่ง/หน่วยงาน (เดิม)', postitle: 'ข้อมูลตำแหน่ง/หน่วยงาน (เดิม)',
+    xw: [7.8, 10.2, 22.1, 9.4, 18.8, 9.6, 32.6, 8.4, 18, 18, 7.9, 9.2, 10.8, 14, 11.8],
+    fields: ['posno', 'pos', 'typeold', 'newpos', 'typenew', 'newunit', 'newdept', 'frame', 'actual', 'reason'],
+    required: ['pos', 'typeold', 'newpos', 'typenew', 'newunit', 'newdept'],
+    labels: { newpos: 'ตำแหน่งที่ขออนุมัติกำหนด', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' },
+    over: { newpos: { type: 'text', ph: 'เช่น พนักงานช่วยเหลือคนไข้' }, newunit: { type: 'text', ph: 'เช่น รพศ.นครพิงค์' } },
+    fsecs: [{ title: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', fields: ['newpos', 'typenew', 'newunit', 'newdept'], cols: 2 }],
+    xgroups: { newpos: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', typenew: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', newunit: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', newdept: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)' },
     defaults: { typeold: 'ลูกจ้างชั่วคราว', typenew: 'พนักงานกระทรวงสาธารณสุข' } },
   { key: 'temp', name: 'จ้าง/เปลี่ยนตำแหน่ง ลจช.', staff: 'ลูกจ้างชั่วคราว', icon: 'clock',
     desc: 'ขออนุมัติจ้างและเปลี่ยนตำแหน่งลูกจ้างชั่วคราว', sheet: 'จ้าง (ลจช)',
@@ -1015,7 +1018,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = 'da09daec';
+const PAGE_BUILD = 'c0fcbe74';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1344,7 +1347,7 @@ function formHtml() {
   const f = S.form, cat = catOf(f.catKey), d = f.data, B = S.boot;
   const req = ['org', 'unit'].concat(cat.required || []);
   const fld = (k, cls) => fieldHtml(cat, k, d[k], req.indexOf(k) >= 0, cls);
-  // postitle = ชื่อกรอบ "ข้อมูลตำแหน่ง" · fsecs: [{ title, fields, full? }] = กรอบเพิ่มเติม (เรียงตามลำดับ) ต่อจาก "ข้อมูลตำแหน่ง" · full = ช่องเต็มแถว
+  // postitle = ชื่อกรอบ "ข้อมูลตำแหน่ง" · fsecs: [{ title, fields, full?, cols? }] = กรอบเพิ่มเติม (เรียงตามลำดับ) ต่อจาก "ข้อมูลตำแหน่ง" · full = ช่องเต็มแถว · cols: 2 = 2 คอลัมน์
   const secKeys = [].concat.apply([], (cat.fsecs || []).map(s => s.fields));
   const posFields = cat.fields.filter(k => ['frame', 'actual', 'reason'].indexOf(k) < 0 && secKeys.indexOf(k) < 0);
   const hasFrame = cat.fields.indexOf('frame') >= 0;
@@ -1362,7 +1365,7 @@ function formHtml() {
       <select class="input" id="f_round" name="round">${roundOpts.map(r => `<option value="${esc(r.id)}" ${String(curRound) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''} · ${esc(roundSt(r))}</option>`).join('')}</select></div></div></div>` : ''}
     <div class="sec"><h4><span class="n">${++n}</span>หน่วยงาน</h4><div class="grid g3">${fld('org')}${fld('unit')}${fld('dept')}</div></div>
     <div class="sec"><h4><span class="n">${++n}</span>${esc(cat.postitle || 'ข้อมูลตำแหน่ง')}</h4><div class="grid g2">${posFields.map(k => fld(k, ['newpos', 'newunit', 'cutpos'].indexOf(k) >= 0 && !(cat.over && cat.over[k]) ? 'spanall' : '')).join('')}</div></div>
-    ${(cat.fsecs || []).map(s => `<div class="sec"><h4><span class="n">${++n}</span>${esc(s.title)}</h4><div class="grid ${s.full ? '' : s.fields.length > 2 ? 'g3' : 'g2'}">${s.fields.map(k => fld(k)).join('')}</div></div>`).join('')}
+    ${(cat.fsecs || []).map(s => `<div class="sec"><h4><span class="n">${++n}</span>${esc(s.title)}</h4><div class="grid ${s.full ? '' : s.fields.length > 2 && s.cols !== 2 ? 'g3' : 'g2'}">${s.fields.map(k => fld(k)).join('')}</div></div>`).join('')}
     ${hasFrame ? `<div class="sec"><h4><span class="n">${++n}</span>อัตรากำลัง</h4><div class="grid g3">${fld('frame')}${fld('actual')}
       <div class="field"><label>ขาด / เกิน (กรอบ-ปฏิบัติงานจริง)</label><div class="shortbox ${gapOf(sh).c}" id="shortBox"><b class="mono">${gapOf(sh).t}</b></div></div></div></div>` : ''}
     ${more.length ? `<div class="sec"><h4><span class="n">${++n}</span>รายละเอียดเพิ่มเติม</h4><div class="grid">${more.map(k => fld(k)).join('')}</div></div>` : ''}

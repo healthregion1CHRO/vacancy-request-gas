@@ -166,11 +166,14 @@ const CATS = [
     xgroups: { newunit: 'ข้อมูลหน่วยงานปลายทาง', newdept: 'ข้อมูลหน่วยงานปลายทาง' }, noNote: true },
   { key: 'changeType', name: 'เปลี่ยนประเภทการจ้าง', staff: 'ลจช. → พกส. หรือ พกส. → ลจช.', icon: 'repeat',
     desc: 'เปลี่ยนประเภทการจ้าง เช่น ลูกจ้างชั่วคราว → พกส. หรือ พกส. → ลูกจ้างชั่วคราว', sheet: 'เปลี่ยนประเภทการจ้าง',
-    title: 'ผลการพิจารณาการขอเปลี่ยนประเภทการจ้าง', grp: 'ข้อมูลตำแหน่ง',
-    xw: [7.8, 10.2, 22.1, 9.4, 18.8, 9.6, 32.6, 8.4, 7.9, 9.2, 10.8, 14, 11.8],
-    fields: ['posno', 'pos', 'typeold', 'newpos', 'typenew', 'frame', 'actual', 'reason'],
-    required: ['pos', 'typeold', 'newpos', 'typenew'],
-    labels: { newpos: 'ตำแหน่งที่ขออนุมัติกำหนด' },
+    title: 'ผลการพิจารณาการขอเปลี่ยนประเภทการจ้าง', grp: 'ข้อมูลตำแหน่ง/หน่วยงาน (เดิม)', postitle: 'ข้อมูลตำแหน่ง/หน่วยงาน (เดิม)',
+    xw: [7.8, 10.2, 22.1, 9.4, 18.8, 9.6, 32.6, 8.4, 18, 18, 7.9, 9.2, 10.8, 14, 11.8],
+    fields: ['posno', 'pos', 'typeold', 'newpos', 'typenew', 'newunit', 'newdept', 'frame', 'actual', 'reason'],
+    required: ['pos', 'typeold', 'newpos', 'typenew', 'newunit', 'newdept'],
+    labels: { newpos: 'ตำแหน่งที่ขออนุมัติกำหนด', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' },
+    over: { newpos: { type: 'text', ph: 'เช่น พนักงานช่วยเหลือคนไข้' }, newunit: { type: 'text', ph: 'เช่น รพศ.นครพิงค์' } },
+    fsecs: [{ title: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', fields: ['newpos', 'typenew', 'newunit', 'newdept'], cols: 2 }],
+    xgroups: { newpos: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', typenew: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', newunit: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', newdept: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)' },
     defaults: { typeold: 'ลูกจ้างชั่วคราว', typenew: 'พนักงานกระทรวงสาธารณสุข' } },
   { key: 'temp', name: 'จ้าง/เปลี่ยนตำแหน่ง ลจช.', staff: 'ลูกจ้างชั่วคราว', icon: 'clock',
     desc: 'ขออนุมัติจ้างและเปลี่ยนตำแหน่งลูกจ้างชั่วคราว', sheet: 'จ้าง (ลจช)',
@@ -206,7 +209,7 @@ const SEED_USERNAMES = {
 // ==CONFIG-END==
 
 /** รหัสรุ่นของโค้ด (install/build.ps1 ใส่ให้ตอนสร้างไฟล์) — หน้าเว็บบน GitHub Pages ใช้ตรวจว่า Deploy ตรงรุ่นกับหน้าเว็บ */
-const BUILD_ID = 'da09daec';
+const BUILD_ID = 'c0fcbe74';
 function apiVersion() { return BUILD_ID; }
 
 const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอบการประชุม', ORGS: 'หน่วยงาน', LOG: 'ประวัติ' };
