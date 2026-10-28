@@ -156,6 +156,7 @@ const CATS = [
     fsecs: [{ title: 'ขอเปลี่ยนเป็นตำแหน่ง / ผู้ที่จะมาดำรงตำแหน่ง', fields: ['newpos', 'person'] }, { title: 'ตำแหน่ง / ส่วนราชการ ใหม่', fields: ['newunit', 'newdept'] }],
     xgroups: { newunit: 'ตำแหน่ง / ส่วนราชการ ใหม่', newdept: 'ตำแหน่ง / ส่วนราชการ ใหม่' }, noMore: true },
   { key: 'phksMove', name: 'ย้าย พนักงานกระทรวงสาธารณสุข', oldNames: ['ย้าย พกส.'], staff: 'พกส.', staffLabel: 'พนักงานกระทรวงสาธารณสุข', icon: 'usermove',
+    postitle: 'ข้อมูลตำแหน่ง/หน่วยงาน (เดิม)',
     desc: 'ขอย้ายพนักงานกระทรวงสาธารณสุข ไปหน่วยงานอื่น', sheet: 'ย้าย (พกส)',
     title: 'ผลการพิจารณา การขอย้ายพนักงานกระทรวงสาธารณสุข', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
     xw: [6.9, 10.2, 26.8, 11.4, 21.4, 27, 27, 18, 8.6, 9.6, 9, 17.1, 13.6],
@@ -206,7 +207,7 @@ const SEED_USERNAMES = {
 // ==CONFIG-END==
 
 /** รหัสรุ่นของโค้ด (install/build.ps1 ใส่ให้ตอนสร้างไฟล์) — หน้าเว็บบน GitHub Pages ใช้ตรวจว่า Deploy ตรงรุ่นกับหน้าเว็บ */
-const BUILD_ID = 'ad3acaf8';
+const BUILD_ID = '3b30809c';
 function apiVersion() { return BUILD_ID; }
 
 const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอบการประชุม', ORGS: 'หน่วยงาน', LOG: 'ประวัติ' };
