@@ -134,7 +134,8 @@ const CATS = [
     xw: [5.4, 18.6, 23.8, 12.6, 20.4, 12.4, 18, 18, 28.6, 9.1, 10.1, 10.4, 14.8],
     fields: ['posno', 'pos', 'cond', 'newpos', 'cutpos', 'person', 'frame', 'actual'], required: ['posno', 'pos'],
     labels: { cond: 'เงื่อนไข', newpos: 'ตำแหน่งใหม่' }, lists: { cond: 'GOV_CONDS' },
-    xgroups: { newpos: 'ตำแหน่งใหม่/ตัดโอนตำแหน่ง', cutpos: 'ตำแหน่งใหม่/ตัดโอนตำแหน่ง' } },
+    xgroups: { newpos: 'ตำแหน่งใหม่/ตัดโอนตำแหน่ง', cutpos: 'ตำแหน่งใหม่/ตัดโอนตำแหน่ง' },
+    fsecs: [{ title: 'เงื่อนไขการขอใช้', fields: ['cond'] }] },
   { key: 'phks', name: 'จ้าง/เปลี่ยนตำแหน่ง พกส.', staff: 'พกส.', icon: 'users',
     desc: 'ขออนุมัติจ้างและเปลี่ยนตำแหน่ง พนักงานกระทรวงสาธารณสุข', sheet: ' จ้าง (พกส) ', alias: ['พกส.'],
     title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่ง พกส.', grp: 'ข้อมูลตำแหน่ง',
@@ -194,7 +195,7 @@ const SEED_USERNAMES = {
 // ==CONFIG-END==
 
 /** รหัสรุ่นของโค้ด (install/build.ps1 ใส่ให้ตอนสร้างไฟล์) — หน้าเว็บบน GitHub Pages ใช้ตรวจว่า Deploy ตรงรุ่นกับหน้าเว็บ */
-const BUILD_ID = '8fe97f5e';
+const BUILD_ID = 'b7512a67';
 function apiVersion() { return BUILD_ID; }
 
 const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอบการประชุม', ORGS: 'หน่วยงาน', LOG: 'ประวัติ' };

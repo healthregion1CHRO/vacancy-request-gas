@@ -497,7 +497,8 @@ const CATS = [
     xw: [5.4, 18.6, 23.8, 12.6, 20.4, 12.4, 18, 18, 28.6, 9.1, 10.1, 10.4, 14.8],
     fields: ['posno', 'pos', 'cond', 'newpos', 'cutpos', 'person', 'frame', 'actual'], required: ['posno', 'pos'],
     labels: { cond: 'เงื่อนไข', newpos: 'ตำแหน่งใหม่' }, lists: { cond: 'GOV_CONDS' },
-    xgroups: { newpos: 'ตำแหน่งใหม่/ตัดโอนตำแหน่ง', cutpos: 'ตำแหน่งใหม่/ตัดโอนตำแหน่ง' } },
+    xgroups: { newpos: 'ตำแหน่งใหม่/ตัดโอนตำแหน่ง', cutpos: 'ตำแหน่งใหม่/ตัดโอนตำแหน่ง' },
+    fsecs: [{ title: 'เงื่อนไขการขอใช้', fields: ['cond'] }] },
   { key: 'phks', name: 'จ้าง/เปลี่ยนตำแหน่ง พกส.', staff: 'พกส.', icon: 'users',
     desc: 'ขออนุมัติจ้างและเปลี่ยนตำแหน่ง พนักงานกระทรวงสาธารณสุข', sheet: ' จ้าง (พกส) ', alias: ['พกส.'],
     title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่ง พกส.', grp: 'ข้อมูลตำแหน่ง',
@@ -995,7 +996,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '8fe97f5e';
+const PAGE_BUILD = 'b7512a67';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
