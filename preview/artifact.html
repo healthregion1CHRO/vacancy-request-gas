@@ -401,6 +401,7 @@ const LISTS = {
     'บรรจุกลับ', 'รับย้ายเปลี่ยนสายงาน', 'ตัดโอนตำแหน่งและอัตราเงินเดือน', 'ยุบกำหนดตำแหน่งสูงขึ้น'],
   GOV_CONDS: ['สรรหาและเลือกสรร', 'จ้างจากบัญชีผู้ผ่านการเลือกสรร', 'ย้าย', 'เปลี่ยนตำแหน่ง / กลุ่มงาน',
     'ตัดโอนตำแหน่ง', 'ปรับปรุงตำแหน่ง'],
+  EXECS: ['สาธารณสุขอำเภอ', 'หัวหน้าพยาบาล', 'ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบล'],
   LEVELS: ['ปฏิบัติงาน/ชำนาญงาน', 'อาวุโส', 'ปฏิบัติการ/ชำนาญการ', 'ชำนาญการพิเศษ'],
   EMP_TYPES: ['ลูกจ้างชั่วคราว', 'พนักงานกระทรวงสาธารณสุข'],
   ASST_POS: ['ผู้ช่วยพยาบาล', 'ผู้ช่วยทันตแพทย์']
@@ -417,7 +418,7 @@ const FIELDS = {
   posno:   { label: 'ตำแหน่งเลขที่', type: 'text', ph: 'เช่น 183868', mono: true },
   pos:     { label: 'ชื่อสายงาน / ตำแหน่ง', type: 'text', ph: 'เช่น พยาบาลวิชาชีพ' },
   level:   { label: 'ระดับ', type: 'select', list: 'LEVELS' },
-  exec:    { label: 'ชื่อตำแหน่งทางการบริหาร', type: 'text', ph: 'ถ้ามี' },
+  exec:    { label: 'ชื่อตำแหน่งทางการบริหาร', type: 'combo', list: 'EXECS' },
   newpos:  { label: 'ตำแหน่งใหม่ / ตัดโอนตำแหน่ง', type: 'textarea' },
   newunit: { label: 'ส่วนราชการใหม่', type: 'textarea', ph: 'หน่วยงานปลายทางที่จะตัดโอนไป' },
   cutpos:  { label: 'ตัดโอนตำแหน่ง', type: 'textarea', ph: 'ตำแหน่ง/หน่วยงานที่จะตัดโอนไป (ถ้ามี)' },
@@ -993,7 +994,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = 'a96dfc82';
+const PAGE_BUILD = '2bb964ef';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
