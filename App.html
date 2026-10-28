@@ -555,7 +555,7 @@ function formHtml() {
   const secKeys = [].concat.apply([], (cat.fsecs || []).map(s => s.fields));
   const posFields = cat.fields.filter(k => ['frame', 'actual', 'reason'].indexOf(k) < 0 && secKeys.indexOf(k) < 0);
   const hasFrame = cat.fields.indexOf('frame') >= 0;
-  const more = cat.noMore ? [] : (cat.fields.indexOf('reason') >= 0 ? ['reason'] : []).concat(B.tailFields); // noMore: ไม่มีหัวข้อ "รายละเอียดเพิ่มเติม" (หมายเหตุเดิมยังอยู่ใน f.data)
+  const more = cat.noMore ? [] : (cat.fields.indexOf('reason') >= 0 ? ['reason'] : []).concat(cat.noNote ? [] : B.tailFields); // noMore: ไม่มีหัวข้อ "รายละเอียดเพิ่มเติม" · noNote: ไม่มีช่องหมายเหตุ (หมายเหตุเดิมยังอยู่ใน f.data)
   const sh = shortOf(d);
   const curRound = d.round || (defRound() || {}).id;
   const roundOpts = isAdmin() ? B.rounds.slice().reverse() : openRounds().slice().reverse();

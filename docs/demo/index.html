@@ -516,7 +516,7 @@ const CATS = [
     labels: { newpos: 'ชื่อสายงาน (ใหม่)', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' },
     over: { newpos: { type: 'text', ph: 'เช่น พยาบาลวิชาชีพ' }, newunit: { type: 'text', ph: 'เช่น รพศ.นครพิงค์' } },
     fsecs: [{ title: 'ตำแหน่ง / ส่วนราชการ ใหม่', fields: ['newpos', 'newunit', 'newdept'] }],
-    xgroups: { newpos: 'ตำแหน่ง / ส่วนราชการ ใหม่', newunit: 'ตำแหน่ง / ส่วนราชการ ใหม่', newdept: 'ตำแหน่ง / ส่วนราชการ ใหม่' } },
+    xgroups: { newpos: 'ตำแหน่ง / ส่วนราชการ ใหม่', newunit: 'ตำแหน่ง / ส่วนราชการ ใหม่', newdept: 'ตำแหน่ง / ส่วนราชการ ใหม่' }, noNote: true },
   { key: 'phksAsst', name: 'พกส. เข้าสู่สายงานผู้ช่วย', staff: 'พกส.', icon: 'userplus',
     desc: 'เปลี่ยนตำแหน่ง พกส. เข้าสู่สายงานผู้ช่วย', sheet: 'พกส(ผู้ช่วย)',
     title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่ง พกส. (สายงานผู้ช่วย)', grp: 'ข้อมูลตำแหน่ง',
@@ -1009,7 +1009,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = 'e8afe940';
+const PAGE_BUILD = 'd3b15782';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1342,7 +1342,7 @@ function formHtml() {
   const secKeys = [].concat.apply([], (cat.fsecs || []).map(s => s.fields));
   const posFields = cat.fields.filter(k => ['frame', 'actual', 'reason'].indexOf(k) < 0 && secKeys.indexOf(k) < 0);
   const hasFrame = cat.fields.indexOf('frame') >= 0;
-  const more = cat.noMore ? [] : (cat.fields.indexOf('reason') >= 0 ? ['reason'] : []).concat(B.tailFields); // noMore: ไม่มีหัวข้อ "รายละเอียดเพิ่มเติม" (หมายเหตุเดิมยังอยู่ใน f.data)
+  const more = cat.noMore ? [] : (cat.fields.indexOf('reason') >= 0 ? ['reason'] : []).concat(cat.noNote ? [] : B.tailFields); // noMore: ไม่มีหัวข้อ "รายละเอียดเพิ่มเติม" · noNote: ไม่มีช่องหมายเหตุ (หมายเหตุเดิมยังอยู่ใน f.data)
   const sh = shortOf(d);
   const curRound = d.round || (defRound() || {}).id;
   const roundOpts = isAdmin() ? B.rounds.slice().reverse() : openRounds().slice().reverse();
