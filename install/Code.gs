@@ -174,7 +174,7 @@ const CATS = [
     over: { newpos: { type: 'text', ph: 'เช่น พนักงานช่วยเหลือคนไข้' }, newunit: { type: 'text', ph: 'เช่น รพศ.นครพิงค์' } },
     fsecs: [{ title: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', fields: ['newpos', 'typenew', 'newunit', 'newdept'], cols: 2 }],
     xgroups: { newpos: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', typenew: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', newunit: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)', newdept: 'ข้อมูลตำแหน่ง/หน่วยงาน (ใหม่)' },
-    defaults: { typeold: 'ลูกจ้างชั่วคราว', typenew: 'พนักงานกระทรวงสาธารณสุข' } },
+    defaults: { typeold: 'ลูกจ้างชั่วคราว', typenew: 'พนักงานกระทรวงสาธารณสุข' }, noMore: true },
   { key: 'temp', name: 'จ้าง/เปลี่ยนตำแหน่ง ลจช.', staff: 'ลูกจ้างชั่วคราว', icon: 'clock',
     desc: 'ขออนุมัติจ้างและเปลี่ยนตำแหน่งลูกจ้างชั่วคราว', sheet: 'จ้าง (ลจช)',
     title: 'ผลการพิจารณา การขออนุมัติจ้างและเปลี่ยนตำแหน่งลูกจ้างชั่วคราว', grp: 'ข้อมูลตำแหน่ง',
@@ -209,7 +209,7 @@ const SEED_USERNAMES = {
 // ==CONFIG-END==
 
 /** รหัสรุ่นของโค้ด (install/build.ps1 ใส่ให้ตอนสร้างไฟล์) — หน้าเว็บบน GitHub Pages ใช้ตรวจว่า Deploy ตรงรุ่นกับหน้าเว็บ */
-const BUILD_ID = '39a171ab';
+const BUILD_ID = 'ae981273';
 function apiVersion() { return BUILD_ID; }
 
 const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอบการประชุม', ORGS: 'หน่วยงาน', LOG: 'ประวัติ' };
