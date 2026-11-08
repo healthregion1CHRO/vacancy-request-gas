@@ -425,6 +425,8 @@ const FIELDS = {
   newunit: { label: 'ส่วนราชการใหม่', type: 'textarea', ph: 'หน่วยงานปลายทางที่จะตัดโอนไป' },
   cutpos:  { label: 'ตัดโอนตำแหน่ง', type: 'textarea', ph: 'ตำแหน่ง/หน่วยงานที่จะตัดโอนไป (ถ้ามี)' },
   newdept: { label: 'กลุ่มงาน / งาน (ใหม่)', type: 'text', ph: 'เช่น กลุ่มงานบริการด้านปฐมภูมิ' },
+  mergeno: { label: 'ตำแหน่งเลขที่ (ยุบ)', type: 'text', ph: 'เช่น 183870', mono: true },
+  mergepos: { label: 'ชื่อสายงาน (ยุบ)', type: 'text', ph: 'เช่น เจ้าพนักงานสาธารณสุข' },
   cond:    { label: 'เงื่อนไขในการดำรงตำแหน่ง', type: 'combo', list: 'CONDS' },
   person:  { label: 'ผู้ที่จะมาดำรงตำแหน่ง', type: 'text', ph: 'ชื่อ-สกุล' },
   typeold: { label: 'ประเภทการจ้างเดิม', type: 'select', list: 'EMP_TYPES' },
@@ -450,12 +452,12 @@ const CATS = [
   { key: 'improve', name: 'ปรับปรุงตำแหน่ง ขรก.', staff: 'ข้าราชการ', icon: 'wrench',
     desc: 'ปรับปรุงตำแหน่งว่างไปเป็นสายงานอื่น', sheet: 'ปรับปรุง (ขรก)',
     title: 'ผลการพิจารณา การปรับปรุงตำแหน่งข้าราชการ', grp: 'ข้อมูลตำแหน่งเดิม', form: 'meeting',
-    xw: [6.4, 13, 26.8, 11.8, 23.1, 23.1, 22, 20, 17.4, 18.8, 7.1, 7.1, 9.2, 12.8],
-    fields: ['posno', 'pos', 'newpos', 'newunit', 'newdept', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos', 'newunit', 'newdept'],
+    xw: [6.4, 13, 26.8, 11.8, 23.1, 23.1, 22, 20, 11.8, 23.1, 17.4, 18.8, 7.1, 7.1, 9.2, 12.8],
+    fields: ['posno', 'pos', 'newpos', 'newunit', 'newdept', 'mergeno', 'mergepos', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos', 'newunit', 'newdept'],
     labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ชื่อสายงาน (ใหม่)', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' },
-    fsecs: [{ title: 'เงื่อนไข / ผู้ที่จะมาดำรงตำแหน่ง', fields: ['cond', 'person'] }, { title: 'ขอปรับปรุงตำแหน่งเป็น', fields: ['newpos', 'newunit', 'newdept'] }],
+    fsecs: [{ title: 'เงื่อนไข / ผู้ที่จะมาดำรงตำแหน่ง', fields: ['cond', 'person'] }, { title: 'ขอปรับปรุงตำแหน่งเป็น', fields: ['newpos', 'newunit', 'newdept'] }, { title: 'ตำแหน่งที่จะนำมายุบรวม', fields: ['mergeno', 'mergepos'] }],
     over: { newpos: { type: 'text', ph: 'เช่น นักวิชาการสาธารณสุข' }, newunit: { type: 'text', ph: 'เช่น รพ.สต.บ้านหัวฝาย สสอ.แม่แตง' } },
-    xgroups: { newpos: 'ขอปรับปรุงตำแหน่งเป็น', newunit: 'ขอปรับปรุงตำแหน่งเป็น', newdept: 'ขอปรับปรุงตำแหน่งเป็น' }, noMore: true },
+    xgroups: { newpos: 'ขอปรับปรุงตำแหน่งเป็น', newunit: 'ขอปรับปรุงตำแหน่งเป็น', newdept: 'ขอปรับปรุงตำแหน่งเป็น', mergeno: 'ตำแหน่งที่จะนำมายุบรวม', mergepos: 'ตำแหน่งที่จะนำมายุบรวม' }, noMore: true },
   { key: 'transfer', name: 'เกลี่ยอัตรา ขรก. (มีคนครอง)', staff: 'ข้าราชการ', icon: 'swap',
     desc: 'ตัดโอนตำแหน่งและอัตราเงินเดือน ตำแหน่งที่มีคนครอง', sheet: 'เกลี่ยอัตราตัดโอน (ขรก)',
     title: 'ผลการพิจารณา การเกลี่ยอัตราตำแหน่งข้าราชการ (ตัดโอนตำแหน่งและอัตราเงินเดือน)', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
@@ -597,7 +599,7 @@ const SEED_USERNAMES = {
   const REQS = [];
   /* คำขอตัวอย่างในรอบ ครั้งที่ 10/2569 ครบทุกหมวด (ชื่อบุคคลเป็นชื่อสมมติ) */
   [
-    ['improve', 'รพศ.นครพิงค์', { unit: 'รพศ.นครพิงค์', dept: 'กลุ่มงานเภสัชกรรม', posno: '183868', pos: 'เจ้าพนักงานเภสัชกรรม', newpos: 'เภสัชกร', newunit: 'รพศ.นครพิงค์', newdept: 'กลุ่มงานเภสัชกรรม', cond: 'บรรจุผู้ได้รับคัดเลือก', person: 'นางสาวกานดา ใจดี', frame: 12, actual: 9 }, 'เห็นชอบ'],
+    ['improve', 'รพศ.นครพิงค์', { unit: 'รพศ.นครพิงค์', dept: 'กลุ่มงานเภสัชกรรม', posno: '183868', pos: 'เจ้าพนักงานเภสัชกรรม', newpos: 'เภสัชกร', newunit: 'รพศ.นครพิงค์', newdept: 'กลุ่มงานเภสัชกรรม', mergeno: '183870', mergepos: 'เจ้าพนักงานเภสัชกรรม', cond: 'บรรจุผู้ได้รับคัดเลือก', person: 'นางสาวกานดา ใจดี', frame: 12, actual: 9 }, 'เห็นชอบ'],
     ['improve', 'รพศ.ลำปาง', { unit: 'รพศ.ลำปาง', dept: 'กลุ่มงานเทคนิคการแพทย์', posno: '201554', pos: 'นักวิทยาศาสตร์การแพทย์', newpos: 'นักเทคนิคการแพทย์', cond: 'บรรจุผู้สอบแข่งขัน', frame: 20, actual: 17 }],
     ['transfer', 'รพท.ฝาง', { unit: 'รพท.ฝาง', dept: 'กลุ่มงานการพยาบาล', posno: '45210', pos: 'พยาบาลวิชาชีพ', newpos: 'พยาบาลวิชาชีพ', newunit: 'รพศ.นครพิงค์', newdept: 'กลุ่มงานการพยาบาล', cond: 'ย้ายตามคู่สมรส', person: 'นางสมพร แสงทอง', frame: 110, actual: 104 }, 'เห็นชอบ'],
     ['resident', 'รพศ.เชียงรายประชานุเคราะห์', { unit: 'รพศ.เชียงรายประชานุเคราะห์', dept: 'กลุ่มงานอายุรกรรม', posno: '30877', pos: 'นายแพทย์', newpos: 'นายแพทย์', newunit: 'รพท.แม่สาย', newdept: 'กลุ่มงานอายุรกรรม', cond: 'แพทย์ประจำบ้านชั้นปีที่ 2', person: 'นายแพทย์ธนกร วงศ์ดี', frame: 45, actual: 41 }],
@@ -628,7 +630,7 @@ const SEED_USERNAMES = {
   /* บัญชีแนบท้าย: ข้อมูลแต่ละชีตสำหรับดูตัวอย่าง/ดาวน์โหลด .xlsx — ตรรกะเดียวกับ exportCols_/catSheet_/summarySheet_ ใน Code.gs */
   const exportCols = (cat, rs) => {
     const grpKeys = ['org', 'unit', 'posno', 'pos', 'level', 'typeold'], all = HEAD_FIELDS.concat(cat.fields);
-    const W = { org: 100, unit: 200, posno: 85, pos: 150, level: 90, typeold: 95, exec: 100, newpos: 220, newunit: 220, cutpos: 160, cond: 140, person: 170, typenew: 95 };
+    const W = { org: 100, unit: 200, posno: 85, pos: 150, level: 90, typeold: 95, exec: 100, newpos: 220, newunit: 220, cutpos: 160, mergeno: 85, mergepos: 150, cond: 140, person: 170, typenew: 95 };
     const lab = k => (cat.labels && cat.labels[k]) || FIELDS[k].label, val = k => r => r[k] == null ? '' : r[k];
     const cols = [{ key: '#', label: 'ลำดับ', w: 45, center: true }];
     grpKeys.filter(k => all.indexOf(k) >= 0).forEach(k => cols.push({ key: k, group: cat.grp, w: W[k], center: k === 'posno',
@@ -1016,7 +1018,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '357cb0c3';
+const PAGE_BUILD = '190feec5';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1444,7 +1446,7 @@ function filtered(ignoreStatus) {
   const F = S.filters, q = F.q.trim().toLowerCase();
   return scoped().filter(r => (!F.cat || r.catKey === F.cat) && (!F.prov || r.prov === F.prov) && (!F.org || r.org === F.org) &&
     (ignoreStatus || matchSt(r, F.status)) &&
-    (!q || [r.id, r.posno, r.pos, r.newpos, r.newunit, r.newdept, r.cutpos, r.org, r.unit, r.dept, r.person, r.cond, r.cat].join(' ').toLowerCase().indexOf(q) >= 0));
+    (!q || [r.id, r.posno, r.pos, r.newpos, r.newunit, r.newdept, r.mergeno, r.mergepos, r.cutpos, r.org, r.unit, r.dept, r.person, r.cond, r.cat].join(' ').toLowerCase().indexOf(q) >= 0));
 }
 
 function viewList() {
@@ -1665,7 +1667,7 @@ function loadXlsx() {
 
 /** หัวคอลัมน์ในบัญชีเดิม → ช่องข้อมูล (ตรวจตามลำดับ — กฎที่เจาะจงกว่าอยู่ก่อน) */
 const IMPORT_HEADS = [
-  ['#', /^ลำดับ/], ['org', /สังกัด/], ['newunit', /ส่วนราชการใหม่|หน่วยงานใหม่|ปลายทาง|ย้ายไป|^หน่วยงาน$/], ['unit', /ส่วนราชการ/], ['posno', /เลขที่/],
+  ['#', /^ลำดับ/], ['mergeno', /ยุบ.*เลขที่|เลขที่.*ยุบ/], ['mergepos', /ยุบ/], ['org', /สังกัด/], ['newunit', /ส่วนราชการใหม่|หน่วยงานใหม่|ปลายทาง|ย้ายไป|^หน่วยงาน$/], ['unit', /ส่วนราชการ/], ['posno', /เลขที่/],
   ['newdept', /^กลุ่มงาน/], ['cutpos', /^ตัดโอนตำแหน่ง$/], ['newpos', /ตำแหน่งใหม่|ขอปรับปรุง|ที่ขออนุมัติกำหนด|ชื่อสายงาน\s*\(?ใหม่/], ['pos', /ชื่อสายงาน|ชื่อตำแหน่ง/], ['level', /^ระดับ/],
   ['exec', /บริหาร/], ['cond', /เงื่อนไข/], ['person', /ผู้ที่จะมา|ผู้ขอย้าย|ชื่อ-?สกุล/], ['type', /ประเภทการจ้าง/], ['frame', /กรอบ/],
   ['actual', /ปฏิบัติ/], ['short', /^ขาด/], ['reason', /เหตุผล/], ['result', /ผลการพิจารณา/], ['note', /หมายเหตุ/]
@@ -1713,7 +1715,7 @@ function parseBook(XLSX, wb) {
       const d = { org: get('org'), posno: get('posno'), pos: get('pos') };
       if (!d.pos && !d.posno) continue;
       info.rows++;
-      ['unit', 'level', 'exec', 'newpos', 'newunit', 'cutpos', 'newdept', 'cond', 'person', 'typeold', 'typenew', 'reason', 'note', 'result']
+      ['unit', 'level', 'exec', 'newpos', 'newunit', 'cutpos', 'newdept', 'mergeno', 'mergepos', 'cond', 'person', 'typeold', 'typenew', 'reason', 'note', 'result']
         .forEach(k => { d[k] = get(k); });
       ['frame', 'actual'].forEach(k => { const v = String(row[col[k]] == null ? '' : row[col[k]]).replace(/[^\d.]/g, ''); d[k] = k in col && v !== '' ? Math.round(Number(v)) : ''; });
       d.org = d.org.replace(/\s+/g, ' ');

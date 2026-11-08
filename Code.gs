@@ -60,6 +60,8 @@ const FIELDS = {
   newunit: { label: 'ส่วนราชการใหม่', type: 'textarea', ph: 'หน่วยงานปลายทางที่จะตัดโอนไป' },
   cutpos:  { label: 'ตัดโอนตำแหน่ง', type: 'textarea', ph: 'ตำแหน่ง/หน่วยงานที่จะตัดโอนไป (ถ้ามี)' },
   newdept: { label: 'กลุ่มงาน / งาน (ใหม่)', type: 'text', ph: 'เช่น กลุ่มงานบริการด้านปฐมภูมิ' },
+  mergeno: { label: 'ตำแหน่งเลขที่ (ยุบ)', type: 'text', ph: 'เช่น 183870', mono: true },
+  mergepos: { label: 'ชื่อสายงาน (ยุบ)', type: 'text', ph: 'เช่น เจ้าพนักงานสาธารณสุข' },
   cond:    { label: 'เงื่อนไขในการดำรงตำแหน่ง', type: 'combo', list: 'CONDS' },
   person:  { label: 'ผู้ที่จะมาดำรงตำแหน่ง', type: 'text', ph: 'ชื่อ-สกุล' },
   typeold: { label: 'ประเภทการจ้างเดิม', type: 'select', list: 'EMP_TYPES' },
@@ -85,12 +87,12 @@ const CATS = [
   { key: 'improve', name: 'ปรับปรุงตำแหน่ง ขรก.', staff: 'ข้าราชการ', icon: 'wrench',
     desc: 'ปรับปรุงตำแหน่งว่างไปเป็นสายงานอื่น', sheet: 'ปรับปรุง (ขรก)',
     title: 'ผลการพิจารณา การปรับปรุงตำแหน่งข้าราชการ', grp: 'ข้อมูลตำแหน่งเดิม', form: 'meeting',
-    xw: [6.4, 13, 26.8, 11.8, 23.1, 23.1, 22, 20, 17.4, 18.8, 7.1, 7.1, 9.2, 12.8],
-    fields: ['posno', 'pos', 'newpos', 'newunit', 'newdept', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos', 'newunit', 'newdept'],
+    xw: [6.4, 13, 26.8, 11.8, 23.1, 23.1, 22, 20, 11.8, 23.1, 17.4, 18.8, 7.1, 7.1, 9.2, 12.8],
+    fields: ['posno', 'pos', 'newpos', 'newunit', 'newdept', 'mergeno', 'mergepos', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos', 'newunit', 'newdept'],
     labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ชื่อสายงาน (ใหม่)', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' },
-    fsecs: [{ title: 'เงื่อนไข / ผู้ที่จะมาดำรงตำแหน่ง', fields: ['cond', 'person'] }, { title: 'ขอปรับปรุงตำแหน่งเป็น', fields: ['newpos', 'newunit', 'newdept'] }],
+    fsecs: [{ title: 'เงื่อนไข / ผู้ที่จะมาดำรงตำแหน่ง', fields: ['cond', 'person'] }, { title: 'ขอปรับปรุงตำแหน่งเป็น', fields: ['newpos', 'newunit', 'newdept'] }, { title: 'ตำแหน่งที่จะนำมายุบรวม', fields: ['mergeno', 'mergepos'] }],
     over: { newpos: { type: 'text', ph: 'เช่น นักวิชาการสาธารณสุข' }, newunit: { type: 'text', ph: 'เช่น รพ.สต.บ้านหัวฝาย สสอ.แม่แตง' } },
-    xgroups: { newpos: 'ขอปรับปรุงตำแหน่งเป็น', newunit: 'ขอปรับปรุงตำแหน่งเป็น', newdept: 'ขอปรับปรุงตำแหน่งเป็น' }, noMore: true },
+    xgroups: { newpos: 'ขอปรับปรุงตำแหน่งเป็น', newunit: 'ขอปรับปรุงตำแหน่งเป็น', newdept: 'ขอปรับปรุงตำแหน่งเป็น', mergeno: 'ตำแหน่งที่จะนำมายุบรวม', mergepos: 'ตำแหน่งที่จะนำมายุบรวม' }, noMore: true },
   { key: 'transfer', name: 'เกลี่ยอัตรา ขรก. (มีคนครอง)', staff: 'ข้าราชการ', icon: 'swap',
     desc: 'ตัดโอนตำแหน่งและอัตราเงินเดือน ตำแหน่งที่มีคนครอง', sheet: 'เกลี่ยอัตราตัดโอน (ขรก)',
     title: 'ผลการพิจารณา การเกลี่ยอัตราตำแหน่งข้าราชการ (ตัดโอนตำแหน่งและอัตราเงินเดือน)', grp: 'ตำแหน่ง / ส่วนราชการ เดิม',
@@ -221,7 +223,7 @@ const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอ�
 const SCHEMA = {
   'คำขอ': [['id', 'รหัสคำขอ'], ['round', 'รอบ'], ['cat', 'ประเภทคำขอ'], ['staff', 'ประเภทบุคลากร'], ['prov', 'จังหวัด'],
     ['org', 'สังกัด'], ['unit', 'ส่วนราชการ'], ['dept', 'กลุ่มงาน'], ['posno', 'ตำแหน่งเลขที่'], ['pos', 'ชื่อสายงาน'],
-    ['level', 'ระดับ'], ['exec', 'ตำแหน่งทางการบริหาร'], ['newpos', 'ตำแหน่งใหม่'], ['newunit', 'ส่วนราชการใหม่'], ['cutpos', 'ตัดโอนตำแหน่ง'], ['newdept', 'กลุ่มงานใหม่'],
+    ['level', 'ระดับ'], ['exec', 'ตำแหน่งทางการบริหาร'], ['newpos', 'ตำแหน่งใหม่'], ['newunit', 'ส่วนราชการใหม่'], ['cutpos', 'ตัดโอนตำแหน่ง'], ['newdept', 'กลุ่มงานใหม่'], ['mergeno', 'ตำแหน่งเลขที่ (ยุบ)'], ['mergepos', 'ชื่อสายงาน (ยุบ)'],
     ['cond', 'เงื่อนไข'], ['person', 'ผู้ที่จะมาดำรงตำแหน่ง'], ['typeold', 'ประเภทการจ้างเดิม'], ['typenew', 'ประเภทการจ้างใหม่'],
     ['frame', 'กรอบ'], ['actual', 'ปฏิบัติงานจริง'], ['short', 'ขาด'], ['reason', 'เหตุผลประกอบ'], ['note', 'หมายเหตุ'],
     ['status', 'สถานะ'], ['result', 'ผลการพิจารณาเขต'], ['reviewNote', 'ข้อเสนอแนะจากเขต'],
@@ -1089,7 +1091,7 @@ function resetPassword_(username, by, pw) {
 function exportCols_(cat, rs) {
   const grpKeys = ['org', 'unit', 'posno', 'pos', 'level', 'typeold'];
   const all = HEAD_FIELDS.concat(cat.fields);
-  const W = { org: 100, unit: 200, posno: 85, pos: 150, level: 90, typeold: 95, exec: 100, newpos: 220, newunit: 220, cutpos: 160,
+  const W = { org: 100, unit: 200, posno: 85, pos: 150, level: 90, typeold: 95, exec: 100, newpos: 220, newunit: 220, cutpos: 160, mergeno: 85, mergepos: 150,
     cond: 140, person: 170, typenew: 95 };
   const cols = [{ key: '#', label: 'ลำดับ', w: 45, center: true }];
   const val = k => r => (r[k] === null || r[k] === undefined) ? '' : r[k];

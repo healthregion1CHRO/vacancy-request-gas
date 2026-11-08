@@ -606,7 +606,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '357cb0c3';
+const PAGE_BUILD = '190feec5';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1034,7 +1034,7 @@ function filtered(ignoreStatus) {
   const F = S.filters, q = F.q.trim().toLowerCase();
   return scoped().filter(r => (!F.cat || r.catKey === F.cat) && (!F.prov || r.prov === F.prov) && (!F.org || r.org === F.org) &&
     (ignoreStatus || matchSt(r, F.status)) &&
-    (!q || [r.id, r.posno, r.pos, r.newpos, r.newunit, r.newdept, r.cutpos, r.org, r.unit, r.dept, r.person, r.cond, r.cat].join(' ').toLowerCase().indexOf(q) >= 0));
+    (!q || [r.id, r.posno, r.pos, r.newpos, r.newunit, r.newdept, r.mergeno, r.mergepos, r.cutpos, r.org, r.unit, r.dept, r.person, r.cond, r.cat].join(' ').toLowerCase().indexOf(q) >= 0));
 }
 
 function viewList() {
@@ -1255,7 +1255,7 @@ function loadXlsx() {
 
 /** หัวคอลัมน์ในบัญชีเดิม → ช่องข้อมูล (ตรวจตามลำดับ — กฎที่เจาะจงกว่าอยู่ก่อน) */
 const IMPORT_HEADS = [
-  ['#', /^ลำดับ/], ['org', /สังกัด/], ['newunit', /ส่วนราชการใหม่|หน่วยงานใหม่|ปลายทาง|ย้ายไป|^หน่วยงาน$/], ['unit', /ส่วนราชการ/], ['posno', /เลขที่/],
+  ['#', /^ลำดับ/], ['mergeno', /ยุบ.*เลขที่|เลขที่.*ยุบ/], ['mergepos', /ยุบ/], ['org', /สังกัด/], ['newunit', /ส่วนราชการใหม่|หน่วยงานใหม่|ปลายทาง|ย้ายไป|^หน่วยงาน$/], ['unit', /ส่วนราชการ/], ['posno', /เลขที่/],
   ['newdept', /^กลุ่มงาน/], ['cutpos', /^ตัดโอนตำแหน่ง$/], ['newpos', /ตำแหน่งใหม่|ขอปรับปรุง|ที่ขออนุมัติกำหนด|ชื่อสายงาน\s*\(?ใหม่/], ['pos', /ชื่อสายงาน|ชื่อตำแหน่ง/], ['level', /^ระดับ/],
   ['exec', /บริหาร/], ['cond', /เงื่อนไข/], ['person', /ผู้ที่จะมา|ผู้ขอย้าย|ชื่อ-?สกุล/], ['type', /ประเภทการจ้าง/], ['frame', /กรอบ/],
   ['actual', /ปฏิบัติ/], ['short', /^ขาด/], ['reason', /เหตุผล/], ['result', /ผลการพิจารณา/], ['note', /หมายเหตุ/]
@@ -1303,7 +1303,7 @@ function parseBook(XLSX, wb) {
       const d = { org: get('org'), posno: get('posno'), pos: get('pos') };
       if (!d.pos && !d.posno) continue;
       info.rows++;
-      ['unit', 'level', 'exec', 'newpos', 'newunit', 'cutpos', 'newdept', 'cond', 'person', 'typeold', 'typenew', 'reason', 'note', 'result']
+      ['unit', 'level', 'exec', 'newpos', 'newunit', 'cutpos', 'newdept', 'mergeno', 'mergepos', 'cond', 'person', 'typeold', 'typenew', 'reason', 'note', 'result']
         .forEach(k => { d[k] = get(k); });
       ['frame', 'actual'].forEach(k => { const v = String(row[col[k]] == null ? '' : row[col[k]]).replace(/[^\d.]/g, ''); d[k] = k in col && v !== '' ? Math.round(Number(v)) : ''; });
       d.org = d.org.replace(/\s+/g, ' ');
