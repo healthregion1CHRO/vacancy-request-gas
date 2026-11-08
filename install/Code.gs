@@ -90,7 +90,7 @@ const CATS = [
     xw: [6.4, 13, 26.8, 11.8, 23.1, 23.1, 22, 20, 11.8, 23.1, 17.4, 18.8, 7.1, 7.1, 9.2, 12.8],
     fields: ['posno', 'pos', 'newpos', 'newunit', 'newdept', 'mergeno', 'mergepos', 'cond', 'person', 'frame', 'actual'], required: ['posno', 'pos', 'newpos', 'newunit', 'newdept'],
     labels: { pos: 'ชื่อสายงาน (เดิม)', newpos: 'ชื่อสายงาน (ใหม่)', newunit: 'หน่วยงาน (ใหม่)', newdept: 'กลุ่มงาน/งาน (ใหม่)' },
-    fsecs: [{ title: 'เงื่อนไข / ผู้ที่จะมาดำรงตำแหน่ง', fields: ['cond', 'person'] }, { title: 'ขอปรับปรุงตำแหน่งเป็น', fields: ['newpos', 'newunit', 'newdept'] }, { title: 'ตำแหน่งที่จะนำมายุบรวม', fields: ['mergeno', 'mergepos'] }],
+    fsecs: [{ title: 'เงื่อนไข / ผู้ที่จะมาดำรงตำแหน่ง', fields: ['cond', 'person'] }, { title: 'ขอปรับปรุงตำแหน่งเป็น', fields: ['newpos', 'newunit', 'newdept'] }, { title: 'ตำแหน่งที่จะนำมายุบรวม (ถ้ามี)', fields: ['mergeno', 'mergepos'] }],
     over: { newpos: { type: 'text', ph: 'เช่น นักวิชาการสาธารณสุข' }, newunit: { type: 'text', ph: 'เช่น รพ.สต.บ้านหัวฝาย สสอ.แม่แตง' } },
     xgroups: { newpos: 'ขอปรับปรุงตำแหน่งเป็น', newunit: 'ขอปรับปรุงตำแหน่งเป็น', newdept: 'ขอปรับปรุงตำแหน่งเป็น', mergeno: 'ตำแหน่งที่จะนำมายุบรวม', mergepos: 'ตำแหน่งที่จะนำมายุบรวม' }, noMore: true },
   { key: 'transfer', name: 'เกลี่ยอัตรา ขรก. (มีคนครอง)', staff: 'ข้าราชการ', icon: 'swap',
@@ -215,7 +215,7 @@ const SEED_USERNAMES = {
 // ==CONFIG-END==
 
 /** รหัสรุ่นของโค้ด (install/build.ps1 ใส่ให้ตอนสร้างไฟล์) — หน้าเว็บบน GitHub Pages ใช้ตรวจว่า Deploy ตรงรุ่นกับหน้าเว็บ */
-const BUILD_ID = '6747b03e';
+const BUILD_ID = 'cfa83c0b';
 function apiVersion() { return BUILD_ID; }
 
 const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอบการประชุม', ORGS: 'หน่วยงาน', LOG: 'ประวัติ' };
