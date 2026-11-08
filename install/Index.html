@@ -485,6 +485,15 @@ const catColor = key => CAT_COLORS[Math.max(0, S.boot.cats.findIndex(c => c.key 
 const toneOf = st => (S.boot.statuses.find(s => s.key === st) || {}).tone || 'mute';
 const chip = st => `<span class="chip t-${toneOf(st)}">${esc(st)}</span>`;
 const roundOf = id => S.boot.rounds.find(r => String(r.id) === String(id));
+/** เรียงรอบตาม "ครั้งที่ N/ปี" (เก่า → ใหม่) — รอบที่เพิ่มทีหลังแต่เป็นครั้งก่อนหน้าจะอยู่ถูกที่ · ชื่อที่ไม่ตรงรูปแบบคงลำดับเดิม */
+const roundKey = r => { const m = /(\d+)\s*\/\s*(\d{4})/.exec(r.name || ''); return m ? Number(m[2]) * 100 + Number(m[1]) : null; };
+function sortRounds(rs) {
+  return (rs || []).map((r, i) => ({ r, i, k: roundKey(r) })).sort((a, b) =>
+    a.k != null && b.k != null && a.k !== b.k ? a.k - b.k : a.i - b.i).map(x => x.r);
+}
+const TH_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+/** "ครั้งที่ 3/2570" → "มีนาคม 2570" (ครั้งที่ = เดือนของบัญชี) */
+const monthOfName = name => { const m = /(\d+)\s*\/\s*(\d{4})/.exec(name || ''); return m && +m[1] >= 1 && +m[1] <= 12 ? TH_MONTHS[m[1] - 1] + ' ' + m[2] : ''; };
 /** รอบที่รับคำขอได้จริง: สถานะ "เปิดรับ" และยังไม่เลยวันปิดรับ (รับได้ถึงสิ้นวันปิดรับ) */
 const isOpenR = r => !!r && r.status === 'เปิดรับ' && !(daysLeft(r.closeDate) < 0);
 /** สถานะที่แสดง: เปิดรับแต่เลยวันปิดรับแล้ว → ปิดรับ (เลยกำหนด) */
@@ -606,7 +615,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '190feec5';
+const PAGE_BUILD = '6747b03e';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -699,6 +708,7 @@ function endSession(msg) {
 
 /* ───────────── shell ───────────── */
 function startApp() {
+  S.boot.rounds = sortRounds(S.boot.rounds);
   if (S.round === null) S.round = String((openRound() || S.boot.rounds[S.boot.rounds.length - 1] || { id: '' }).id);
   renderShell();
   loadReqs();
@@ -1582,7 +1592,8 @@ function roundsHtml() {
         <button class="btn sm ghost icon" data-act="round-edit" data-id="${esc(r.id)}" aria-label="แก้ไขรอบ">${icon('edit')}</button>
         <button class="btn sm ghost icon" style="color:var(--bad)" data-act="round-del" data-id="${esc(r.id)}" title="ลบรอบ" aria-label="ลบรอบ ${esc(r.name)}">${icon('trash')}</button></div>
         <div class="big" style="font-size:18px">${esc(r.name)}</div>
-        <dl class="kv"><dt>บัญชีเดือน</dt><dd>${esc(r.month || '–')}</dd><dt>ปิดรับ</dt><dd>${fmtDate(r.closeDate, 1)}</dd><dt>ประชุม</dt><dd>${fmtDate(r.meetDate, 1)}</dd><dt>คำขอ</dt><dd>${n} รายการ</dd></dl></div>`;
+        <dl class="kv"><dt>บัญชีเดือน</dt><dd>${esc(r.month || '–')}</dd><dt>ปิดรับ</dt><dd>${fmtDate(r.closeDate, 1)}</dd><dt>ประชุม</dt><dd>${fmtDate(r.meetDate, 1)}</dd><dt>คำขอ</dt><dd>${n} รายการ</dd></dl>
+        ${isOpenR(r) && !r.closeDate ? `<span class="chip nodot t-warn" style="white-space:normal">ยังไม่กำหนดวันปิดรับ</span>` : ''}</div>`;
     }).join('')}</div>` : `<div class="card">${emptyHtml('calendar', 'ยังไม่มีรอบการประชุม', 'เพิ่มรอบแรกเพื่อเปิดรับคำขอ')}</div>`}</div>`;
 }
 
@@ -1596,12 +1607,25 @@ function roundModal(r) {
       <div class="field"><label for="rS">สถานะ</label><select class="input" id="rS">${S.boot.roundStatuses.map(s => `<option ${r.status === s ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></div>
       <div class="field"><label for="rC">ปิดรับคำขอ</label><input class="input" id="rC" type="date" value="${d10(r.closeDate)}"></div>
       <div class="field"><label for="rD">วันที่ประชุม</label><input class="input" id="rD" type="date" value="${d10(r.meetDate)}"></div>
+      <div class="alert warn spanall" id="rWarn" hidden>${icon('alert')}<span>สถานะ "เปิดรับ" แต่ยังไม่กำหนดวันปิดรับ — หน่วยงานส่งคำขอเข้ารอบนี้ได้ไม่มีกำหนด จนกว่าจะเปลี่ยนเป็น "ปิดรับ" เอง</span></div>
     </div>`,
     foot: `<button class="btn" data-act="modal-close">ยกเลิก</button><button class="btn primary" id="rOk">${icon('check')} บันทึก</button>`,
     onMount: w => {
+      // พิมพ์ชื่อรอบ "ครั้งที่ N/ปี" → เติมบัญชีประจำเดือนให้ (ถ้าช่องเดือนยังว่างหรือยังเป็นค่าที่เติมให้)
+      let autoM = !r.month || r.month === monthOfName(r.name);
+      $('#rM', w).addEventListener('input', () => { autoM = false; });
+      $('#rN', w).addEventListener('input', () => { if (autoM) $('#rM', w).value = monthOfName($('#rN', w).value); });
+      const warn = () => { $('#rWarn', w).hidden = !($('#rS', w).value === 'เปิดรับ' && !$('#rC', w).value); };
+      $('#rS', w).addEventListener('change', warn); $('#rC', w).addEventListener('input', warn); $('#rC', w).addEventListener('change', warn); warn();
       $('#rOk', w).onclick = e => withBtn(e.currentTarget, async () => {
+        const name = $('#rN', w).value.replace(/\s+/g, ' ').trim(), close = $('#rC', w).value, meet = $('#rD', w).value, st = $('#rS', w).value;
+        const bad = (sel, msg) => { toast(msg, 'err'); const el = $(sel, w); el.classList.add('err'); el.focus(); el.addEventListener('input', () => el.classList.remove('err'), { once: true }); };
+        if (!name) return bad('#rN', 'กรุณาระบุชื่อรอบ เช่น ครั้งที่ 1/2570');
+        const norm = s => String(s || '').replace(/\s/g, '');
+        if (S.boot.rounds.some(x => String(x.id) !== String(r.id || '') && norm(x.name) === norm(name))) return bad('#rN', 'มีรอบชื่อ "' + name + '" อยู่แล้ว');
+        if (close && meet && close > meet) return bad('#rC', 'วันปิดรับคำขอต้องไม่หลังวันที่ประชุม');
         try {
-          S.boot.rounds = await api('apiSaveRound', { id: r.id || '', name: $('#rN', w).value, month: $('#rM', w).value, status: $('#rS', w).value, closeDate: $('#rC', w).value, meetDate: $('#rD', w).value });
+          S.boot.rounds = sortRounds(await api('apiSaveRound', { id: r.id || '', name, month: $('#rM', w).value.trim(), status: st, closeDate: close, meetDate: meet }));
           closeModal(); refreshSettings(); renderRoundPick(); toast('บันทึกรอบการประชุมแล้ว');
         } catch (err) { fail(err); }
       });
@@ -1721,7 +1745,7 @@ const ACT = {
     if (n) { toast(`รอบ "${r.name}" มีคำขอ ${n} รายการ — ลบหรือย้ายคำขอออกก่อนจึงจะลบรอบได้`, 'err'); return; }
     if (!await confirmBox(`ลบรอบ <b>${esc(r.name)}</b> ออกจากระบบถาวร? (ย้อนกลับไม่ได้)`, { title: 'ลบรอบการประชุม', ok: 'ลบถาวร', danger: true })) return;
     try {
-      S.boot.rounds = await api('apiDeleteRound', r.id);
+      S.boot.rounds = sortRounds(await api('apiDeleteRound', r.id));
       if (String(S.round) === String(r.id)) S.round = String((openRound() || S.boot.rounds[S.boot.rounds.length - 1] || { id: '' }).id);
       refreshSettings(); renderRoundPick(); toast('ลบรอบ ' + r.name + ' แล้ว');
     } catch (err) { fail(err); }

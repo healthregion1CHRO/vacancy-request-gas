@@ -13,7 +13,11 @@
   let ROUNDS = [
     { id: 'R1', name: 'ครั้งที่ 9/2569', month: 'กันยายน 2569', meetDate: iso(day(-24)).slice(0, 10) + 'T00:00:00', closeDate: iso(day(-35)).slice(0, 10) + 'T00:00:00', status: 'ประชุมแล้ว' },
     { id: 'R2', name: 'ครั้งที่ 10/2569', month: 'ตุลาคม 2569', meetDate: iso(day(30)).slice(0, 10) + 'T00:00:00', closeDate: iso(day(12)).slice(0, 10) + 'T00:00:00', status: 'เปิดรับ' },
-    { id: 'R3', name: 'ครั้งที่ 11/2569', month: 'พฤศจิกายน 2569', meetDate: iso(day(60)).slice(0, 10) + 'T00:00:00', closeDate: iso(day(42)).slice(0, 10) + 'T00:00:00', status: 'เปิดรับ' }
+    { id: 'R3', name: 'ครั้งที่ 11/2569', month: 'พฤศจิกายน 2569', meetDate: iso(day(60)).slice(0, 10) + 'T00:00:00', closeDate: iso(day(42)).slice(0, 10) + 'T00:00:00', status: 'เปิดรับ' },
+    { id: 'R4', name: 'ครั้งที่ 12/2569', month: 'ธันวาคม 2569', meetDate: '', closeDate: '', status: 'เปิดรับ' },
+    // รอบปี 2570 (ครั้งที่ 1–12) — ยังไม่กำหนดวันปิดรับ/วันประชุม
+    ...['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']
+      .map((m, i) => ({ id: 'R' + (5 + i), name: 'ครั้งที่ ' + (i + 1) + '/2570', month: m + ' 2570', meetDate: '', closeDate: '', status: i === 0 ? 'เปิดรับ' : 'ปิดรับ' }))
   ];
   let seq = 0;
   const REQS = [];
@@ -189,9 +193,9 @@
       const sub = [r.name, md ? 'วันที่ ' + md : ''].filter(String).join(' '), meet = { name: r.name, date: md };
       const byCat = c => live.filter(x => x.cat === c.name), n = c => byCat(c).length;
       const f = (title, count, cat, sheets) => ({ title: title, url: '#', xlsx: '#', count: count, cat: cat || '', sheets: sheets });
-      const t0 = 'บัญชีการขอใช้ตำแหน่งว่าง ประจำเดือน ' + r.month;
+      const t0 = 'บัญชีการขอใช้ตำแหน่งว่าง ประจำเดือน ' + (r.month || r.name);
       const files = !catKey ? [f(t0, live.length, '', [summarySheet(t0, sub, live)].concat(CATS.map(c => catSheet(c, byCat(c), sub, meet))))]
-        : CATS.filter(c => catKey === '*' ? n(c) : c.key === catKey).map(c => f('บัญชีแนบท้าย ' + c.name + ' ประจำเดือน ' + r.month, n(c), c.name, [catSheet(c, byCat(c), sub, meet)]));
+        : CATS.filter(c => catKey === '*' ? n(c) : c.key === catKey).map(c => f('บัญชีแนบท้าย ' + c.name + ' ประจำเดือน ' + (r.month || r.name), n(c), c.name, [catSheet(c, byCat(c), sub, meet)]));
       if (!files.length) throw new Error('รอบนี้ยังไม่มีคำขอ');
       return Object.assign({}, files[0], { files: files, count: files.reduce((s, x) => s + x.count, 0) });
     },
