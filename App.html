@@ -559,7 +559,7 @@ function posnoHint(v) {
 
 function formHtml() {
   const f = S.form, cat = catOf(f.catKey), d = f.data, B = S.boot;
-  const req = ['org', 'unit'].concat(cat.required || []);
+  const req = ['org', 'unit', 'letterno'].concat(cat.required || []);
   const fld = (k, cls) => fieldHtml(cat, k, d[k], req.indexOf(k) >= 0, cls);
   // postitle = ชื่อกรอบ "ข้อมูลตำแหน่ง" · fsecs: [{ title, fields, full?, cols? }] = กรอบเพิ่มเติม (เรียงตามลำดับ) ต่อจาก "ข้อมูลตำแหน่ง" · full = ช่องเต็มแถว · cols: 2 = 2 คอลัมน์
   const secKeys = [].concat.apply([], (cat.fsecs || []).map(s => s.fields));
@@ -577,7 +577,7 @@ function formHtml() {
     ${f.id && d.status === 'ส่งกลับแก้ไข' && d.reviewNote ? `<div class="sec"><div class="alert warn">${icon('alert')}<span><b>ข้อเสนอแนะจากเขต:</b> ${esc(d.reviewNote)}</span></div></div>` : ''}
     ${isAdmin() || roundOpts.length > 1 ? `<div class="sec"><h4><span class="n">${++n}</span>รอบการประชุม</h4><div class="grid g2"><div class="field"><label for="f_round">รอบ</label>
       <select class="input" id="f_round" name="round">${roundOpts.map(r => `<option value="${esc(r.id)}" ${String(curRound) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''} · ${esc(roundSt(r))}</option>`).join('')}</select></div></div></div>` : ''}
-    <div class="sec"><h4><span class="n">${++n}</span>หน่วยงาน</h4><div class="grid g3">${fld('org')}${fld('unit')}${fld('dept')}</div></div>
+    <div class="sec"><h4><span class="n">${++n}</span>หน่วยงาน</h4><div class="grid g3">${fld('org')}${fld('unit')}${fld('dept')}</div><div class="grid g2" style="margin-top:12px">${fld('letterno')}</div></div>
     <div class="sec"><h4><span class="n">${++n}</span>${esc(cat.postitle || 'ข้อมูลตำแหน่ง')}</h4><div class="grid g2">${posFields.map(k => fld(k, ['newpos', 'newunit', 'cutpos'].indexOf(k) >= 0 && !(cat.over && cat.over[k]) ? 'spanall' : '')).join('')}</div></div>
     ${(cat.fsecs || []).map(s => `<div class="sec"><h4><span class="n">${++n}</span>${esc(s.title)}</h4><div class="grid ${s.full ? '' : s.fields.length > 2 && s.cols !== 2 ? 'g3' : 'g2'}">${s.fields.map(k => fld(k)).join('')}</div></div>`).join('')}
     ${hasFrame ? `<div class="sec"><h4><span class="n">${++n}</span>อัตรากำลัง</h4><div class="grid g3">${fld('frame')}${fld('actual')}
@@ -614,7 +614,7 @@ async function saveReq(btn, addMore) {
     const m = fe.querySelector('.msg'); m.textContent = msg; m.hidden = false;
     first = first || fe;
   };
-  ['org', 'unit'].concat(cat.required || []).forEach(k => { if (!String(f.data[k] == null ? '' : f.data[k]).trim()) mark(k, 'จำเป็นต้องกรอก'); });
+  ['org', 'unit', 'letterno'].concat(cat.required || []).forEach(k => { if (!String(f.data[k] == null ? '' : f.data[k]).trim()) mark(k, 'จำเป็นต้องกรอก'); });
   ['frame', 'actual'].forEach(k => { if (has(f.data[k]) && (isNaN(f.data[k]) || Number(f.data[k]) < 0)) mark(k, 'ต้องเป็นตัวเลข 0 ขึ้นไป'); });
   if (first) {
     first.scrollIntoView({ behavior: 'smooth', block: 'center' });

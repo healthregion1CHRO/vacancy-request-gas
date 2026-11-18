@@ -52,6 +52,7 @@ const FIELDS = {
   org:     { label: 'สังกัด', type: 'org' },
   unit:    { label: 'ส่วนราชการ / หน่วยบริการ', type: 'text', ph: 'เช่น รพ.สต.บ้านหัวฝาย สสอ.แม่แตง' },
   dept:    { label: 'กลุ่มงาน / งาน', type: 'text', ph: 'เช่น กลุ่มงานการพยาบาล (ถ้ามี)' },
+  letterno: { label: 'เลขที่หนังสือ', type: 'text', ph: 'เช่น ชม 0033.301/1234 ลงวันที่ 1 ธ.ค. 2569' },
   posno:   { label: 'ตำแหน่งเลขที่', type: 'text', ph: 'เช่น 183868', mono: true },
   pos:     { label: 'ชื่อสายงาน / ตำแหน่ง', type: 'text', ph: 'เช่น พยาบาลวิชาชีพ' },
   level:   { label: 'ระดับ', type: 'select', list: 'LEVELS' },
@@ -79,7 +80,7 @@ const FORM_MEET_VIA = 'โดยผ่านระบบประชุมทา
 const FORM_HEAD_LINE = '#ED7D31';
 const FORM_DATA_LINE = '#F79646';
 const FORM_FONT = 'TH Sarabun New';
-const HEAD_FIELDS = ['org', 'unit', 'dept'];
+const HEAD_FIELDS = ['org', 'unit', 'dept', 'letterno'];
 const TAIL_FIELDS = ['note'];
 
 /** 11 ประเภทคำขอ ตามชีตในบัญชีการขอใช้ตำแหน่งว่างประจำเดือน */
@@ -222,7 +223,7 @@ const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอ�
 
 const SCHEMA = {
   'คำขอ': [['id', 'รหัสคำขอ'], ['round', 'รอบ'], ['cat', 'ประเภทคำขอ'], ['staff', 'ประเภทบุคลากร'], ['prov', 'จังหวัด'],
-    ['org', 'สังกัด'], ['unit', 'ส่วนราชการ'], ['dept', 'กลุ่มงาน'], ['posno', 'ตำแหน่งเลขที่'], ['pos', 'ชื่อสายงาน'],
+    ['org', 'สังกัด'], ['unit', 'ส่วนราชการ'], ['dept', 'กลุ่มงาน'], ['letterno', 'เลขที่หนังสือ'], ['posno', 'ตำแหน่งเลขที่'], ['pos', 'ชื่อสายงาน'],
     ['level', 'ระดับ'], ['exec', 'ตำแหน่งทางการบริหาร'], ['newpos', 'ตำแหน่งใหม่'], ['newunit', 'ส่วนราชการใหม่'], ['cutpos', 'ตัดโอนตำแหน่ง'], ['newdept', 'กลุ่มงานใหม่'], ['mergeno', 'ตำแหน่งเลขที่ (ยุบ)'], ['mergepos', 'ชื่อสายงาน (ยุบ)'],
     ['cond', 'เงื่อนไข'], ['person', 'ผู้ที่จะมาดำรงตำแหน่ง'], ['typeold', 'ประเภทการจ้างเดิม'], ['typenew', 'ประเภทการจ้างใหม่'],
     ['frame', 'กรอบ'], ['actual', 'ปฏิบัติงานจริง'], ['short', 'ขาด'], ['reason', 'เหตุผลประกอบ'], ['note', 'หมายเหตุ'],
@@ -567,7 +568,7 @@ function apiSaveRequest(token, data, force) {
 
     // ตรวจช่องบังคับ
     const keys = HEAD_FIELDS.concat(cat.fields, TAIL_FIELDS);
-    const req = ['org', 'unit'].concat(cat.required || []);
+    const req = ['org', 'unit', 'letterno'].concat(cat.required || []);
     const v = {};
     keys.forEach(k => { v[k] = FIELDS[k].type === 'number' ? num_(data[k]) : clean_(data[k]); });
     v.org = org;
