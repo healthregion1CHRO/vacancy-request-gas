@@ -1,2 +1,4 @@
 *.gsheet
 desktop.ini
+.clasp.json
+deploy.config.json
