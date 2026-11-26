@@ -502,7 +502,8 @@ const isOpenR = r => !!r && r.status === 'เปิดรับ' && !(daysLeft(r
 /** สถานะที่แสดง: เปิดรับแต่เลยวันปิดรับแล้ว → ปิดรับ (เลยกำหนด) */
 const roundSt = r => r.status === 'เปิดรับ' && !isOpenR(r) ? 'ปิดรับ (เลยกำหนด)' : r.status;
 const roundOptCls = r => { const t = roundSt(r); return t.indexOf('เปิดรับ') === 0 ? 'opt-ok' : t.indexOf('ปิดรับ') === 0 ? 'opt-bad' : ''; };
-const roundSelCls = (rs, id) => 'input ' + roundOptCls(rs.find(r => String(r.id) === String(id)) || {});
+// fb = ไม่พบรอบที่ระบุ → เบราว์เซอร์แสดงตัวเลือกแรก จึงใช้สีของตัวเลือกแรกด้วย (ช่องรอบในฟอร์ม)
+const roundSelCls = (rs, id, fb) => 'input ' + roundOptCls(rs.find(r => String(r.id) === String(id)) || (fb ? rs[0] : null) || {});
 const ROUND_SEL_JS = "this.className='input '+this.options[this.selectedIndex].className";
 const roundTone = r => ({ 'เปิดรับ': 't-ok', 'ปิดรับ': 't-warn', 'ปิดรับ (เลยกำหนด)': 't-warn', 'ประชุมแล้ว': 't-mute' })[roundSt(r)] || '';
 const openRound = () => S.boot.rounds.find(isOpenR);
@@ -621,7 +622,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '20b72b69';
+const PAGE_BUILD = '8093289a';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -966,7 +967,7 @@ function formHtml() {
       ${f.id ? '' : `<button type="button" class="btn sm" data-act="change-cat">${icon('swap')} เปลี่ยนประเภท</button>`}</div>
     ${f.id && d.status === 'ส่งกลับแก้ไข' && d.reviewNote ? `<div class="sec"><div class="alert warn">${icon('alert')}<span><b>ข้อเสนอแนะจากเขต:</b> ${esc(d.reviewNote)}</span></div></div>` : ''}
     ${isAdmin() || roundOpts.length > 1 ? `<div class="sec"><h4><span class="n">${++n}</span>รอบการประชุม</h4><div class="grid g2"><div class="field"><label for="f_round">รอบ</label>
-      <select class="${roundSelCls(roundOpts, curRound)}" id="f_round" name="round" onchange="${ROUND_SEL_JS}">${roundOpts.map(r => `<option class="${roundOptCls(r)}" value="${esc(r.id)}" ${String(curRound) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''} · ${esc(roundSt(r))}</option>`).join('')}</select></div></div></div>` : ''}
+      <select class="${roundSelCls(roundOpts, curRound, true)}" id="f_round" name="round" onchange="${ROUND_SEL_JS}">${roundOpts.map(r => `<option class="${roundOptCls(r)}" value="${esc(r.id)}" ${String(curRound) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''} · ${esc(roundSt(r))}</option>`).join('')}</select></div></div></div>` : ''}
     <div class="sec"><h4><span class="n">${++n}</span>เลขที่หนังสือขอใช้ตำแหน่ง</h4><div class="grid g2">${fld('letterno')}</div></div>
     <div class="sec"><h4><span class="n">${++n}</span>หน่วยงาน</h4><div class="grid g2">${fld('org')}${fld('unit')}${fld('dept')}${fld('work')}</div></div>
     <div class="sec"><h4><span class="n">${++n}</span>${esc(cat.postitle || 'ข้อมูลตำแหน่ง')}</h4><div class="grid g2">${posFields.map(k => fld(k, ['newpos', 'newunit', 'cutpos'].indexOf(k) >= 0 && !(cat.over && cat.over[k]) ? 'spanall' : '')).join('')}</div></div>
