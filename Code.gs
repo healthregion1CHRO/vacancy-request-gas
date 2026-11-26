@@ -812,7 +812,7 @@ function apiSaveOrgs(token, list) {
   const rows = (list || []).map(o => ({ org: clean_(o.org), prov: clean_(o.prov), logo: clean_(o.logo) })).filter(o => o.org);
   rows.forEach(o => {
     if (PROVINCES.indexOf(o.prov) < 0) throw new Error('จังหวัดของ "' + o.org + '" ไม่ถูกต้อง');
-    if (o.logo && !/^https:///i.test(o.logo)) throw new Error('ลิงก์รูปตราของ "' + o.org + '" ต้องขึ้นต้นด้วย https://');
+    if (o.logo && !/^https:\/\//i.test(o.logo)) throw new Error('ลิงก์รูปตราของ "' + o.org + '" ต้องขึ้นต้นด้วย https://');
   });
   const seen = {};
   rows.forEach(o => { if (seen[o.org]) throw new Error('หน่วยงานซ้ำ: ' + o.org); seen[o.org] = 1; });
