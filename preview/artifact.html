@@ -1063,7 +1063,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '69f4b11b';
+const PAGE_BUILD = '20b72b69';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1215,7 +1215,7 @@ function renderNav() {
 }
 
 function renderRoundPick() {
-  const opts = S.boot.rounds.slice().reverse().map(r => `<option class="${roundOptCls(r)}" value="${esc(r.id)}" ${String(S.round) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''}${roundOptCls(r) ? ' · ' + esc(roundSt(r)) : ''}</option>`).join('');
+  const opts = S.boot.rounds.map(r => `<option class="${roundOptCls(r)}" value="${esc(r.id)}" ${String(S.round) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''}${roundOptCls(r) ? ' · ' + esc(roundSt(r)) : ''}</option>`).join('');
   $('#roundPick').innerHTML = `${icon('calendar', 'muted')}<select class="${roundSelCls(S.boot.rounds, S.round)}" data-change="round" onchange="${ROUND_SEL_JS}" aria-label="เลือกรอบการประชุม"><option value="">ทุกรอบการประชุม</option>${opts}</select>`;
 }
 
@@ -1400,7 +1400,7 @@ function formHtml() {
   const more = cat.noMore ? [] : (cat.fields.indexOf('reason') >= 0 ? ['reason'] : []).concat(cat.noNote ? [] : B.tailFields); // noMore: ไม่มีหัวข้อ "รายละเอียดเพิ่มเติม" · noNote: ไม่มีช่องหมายเหตุ (หมายเหตุเดิมยังอยู่ใน f.data)
   const sh = shortOf(d);
   const curRound = d.round || (defRound() || {}).id;
-  const roundOpts = isAdmin() ? B.rounds.slice().reverse() : openRounds().slice().reverse();
+  const roundOpts = isAdmin() ? B.rounds.slice() : openRounds().slice();
   let n = 0;
   return `<form class="card" id="reqForm" novalidate style="--c:${catColor(cat.key)}" onsubmit="return false">
     <div class="formhead"><div class="ic">${icon(cat.icon)}</div>
@@ -2126,7 +2126,7 @@ function secretModal(title, username, pw) {
 }
 
 function roundsHtml() {
-  const rs = S.boot.rounds.slice().reverse();
+  const rs = S.boot.rounds.slice();
   return `<div class="stack"><div class="row"><p class="muted" style="margin:0;flex:1">เปิดรับได้หลายรอบพร้อมกัน — หน่วยงานเลือกรอบได้ตอนส่งคำขอ และส่ง/แก้ไขได้เฉพาะรอบที่ "เปิดรับ" ถึงสิ้นวันปิดรับ (เลยวันปิดรับแล้วระบบปิดรับให้เอง)</p>
     <button class="btn primary" data-act="round-add">${icon('plus')} เพิ่มรอบ</button></div>
     ${rs.length ? `<div class="rounds">${rs.map(r => {
