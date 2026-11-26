@@ -29,6 +29,7 @@
     { type: '1', posno: '9012', prov: 'แพร่', org: 'สสจ.แพร่', grp: 'กลุ่มงานบริหารทรัพยากรบุคคล', work: 'งานสรรหาและบรรจุแต่งตั้ง', pos: 'นักทรัพยากรบุคคล', st: 'มีคนครอง' },
     { type: '1', posno: '120044', prov: 'ลำพูน', org: 'สสอ.บ้านโฮ่ง', grp: '', work: '', pos: 'นักวิชาการสาธารณสุข', st: 'มีคนครอง' }
   ];
+  const TH_M = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
   let seq = 0;
   const REQS = [];
   /* คำขอตัวอย่างในรอบ ครั้งที่ 10/2569 ครบทุกหมวด (ชื่อบุคคลเป็นชื่อสมมติ) */
@@ -200,11 +201,21 @@
       ROUNDS = ROUNDS.filter(x => x.id !== id);
       return ROUNDS.map(x => Object.assign({}, x));
     },
+    apiApplyRoundWindows(tok) {
+      who(tok);
+      ROUNDS.forEach(r => {
+        const m = /^(\S+)\s+(\d{4})$/.exec(String(r.month || '').trim()), mi = m ? TH_M.indexOf(m[1]) : -1;
+        if (r.status === 'ประชุมแล้ว' || mi < 0) return;
+        const y = Number(m[2]) - 543, p = n => String(n).padStart(2, '0');
+        r.openDate = y + '-' + p(mi + 1) + '-01T00:00:00'; r.closeDate = y + '-' + p(mi + 1) + '-' + p(new Date(y, mi + 1, 0).getDate()) + 'T00:00:00';
+      });
+      return ROUNDS.map(x => Object.assign({}, x));
+    },
     apiSaveRound(tok, d) {
       who(tok);
       let r = ROUNDS.find(x => x.id === d.id);
       if (!r) { r = { id: 'R' + (ROUNDS.reduce((m, x) => Math.max(m, Number(x.id.slice(1)) || 0), 0) + 1) }; ROUNDS.push(r); }
-      Object.assign(r, { name: d.name, month: d.month, status: d.status, closeDate: d.closeDate ? d.closeDate + 'T00:00:00' : '', meetDate: d.meetDate ? d.meetDate + 'T00:00:00' : '' });
+      Object.assign(r, { name: d.name, month: d.month, status: d.status, openDate: d.openDate ? d.openDate + 'T00:00:00' : '', closeDate: d.closeDate ? d.closeDate + 'T00:00:00' : '', meetDate: d.meetDate ? d.meetDate + 'T00:00:00' : '' });
       return ROUNDS.map(x => Object.assign({}, x));
     },
     apiSaveOrgs(tok, list) { who(tok); ORGS.length = 0; list.forEach(o => ORGS.push(o)); return ORGS.slice(); },

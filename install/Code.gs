@@ -217,7 +217,7 @@ const SEED_USERNAMES = {
 // ==CONFIG-END==
 
 /** รหัสรุ่นของโค้ด (install/build.ps1 ใส่ให้ตอนสร้างไฟล์) — หน้าเว็บบน GitHub Pages ใช้ตรวจว่า Deploy ตรงรุ่นกับหน้าเว็บ */
-const BUILD_ID = '8093289a';
+const BUILD_ID = '11887634';
 function apiVersion() { return BUILD_ID; }
 
 const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอบการประชุม', ORGS: 'หน่วยงาน', LOG: 'ประวัติ', POS: 'ตำแหน่ง จ.18' };
@@ -235,7 +235,7 @@ const SCHEMA = {
     ['email', 'อีเมล'], ['phone', 'โทรศัพท์'], ['active', 'ใช้งาน'], ['salt', 'salt'], ['hash', 'hash'],
     ['mustChange', 'ต้องเปลี่ยนรหัส'], ['lastLogin', 'เข้าใช้ล่าสุด']],
   'รอบการประชุม': [['id', 'รหัสรอบ'], ['name', 'ชื่อรอบ'], ['month', 'บัญชีประจำเดือน'], ['meetDate', 'วันที่ประชุม'],
-    ['closeDate', 'ปิดรับคำขอ'], ['status', 'สถานะ']],
+    ['openDate', 'เปิดรับคำขอ'], ['closeDate', 'ปิดรับคำขอ'], ['status', 'สถานะ']],
   'หน่วยงาน': [['org', 'หน่วยงาน'], ['prov', 'จังหวัด'], ['logo', 'ลิงก์รูปตรา']],
   // ฐานข้อมูลตำแหน่ง (สกัดจากไฟล์ข้อมูล จ.18 เฉพาะคอลัมน์ที่ใช้เติมฟอร์ม — ไม่เก็บข้อมูลบุคคล) · type: 1 ขรก. 2 พนง.ราชการ 3 พกส. 4 ลูกจ้างประจำ 5 ลูกจ้างชั่วคราว
   'ตำแหน่ง จ.18': [['type', 'ประเภท'], ['posno', 'เลขที่ตำแหน่ง'], ['prov', 'จังหวัด'], ['org', 'หน่วยงาน'], ['grp', 'กลุ่มงาน'],
@@ -243,7 +243,7 @@ const SCHEMA = {
   'ประวัติ': [['at', 'เวลา'], ['user', 'ผู้ใช้'], ['action', 'การกระทำ'], ['ref', 'อ้างอิง'], ['detail', 'รายละเอียด']]
 };
 const TEXT_KEYS = ['id', 'round', 'posno', 'username', 'phone', 'type'];
-const DATE_KEYS = ['createdAt', 'updatedAt', 'reviewedAt', 'lastLogin', 'meetDate', 'closeDate', 'at'];
+const DATE_KEYS = ['createdAt', 'updatedAt', 'reviewedAt', 'lastLogin', 'meetDate', 'openDate', 'closeDate', 'at'];
 const SESSION_SECONDS = 6 * 60 * 60;
 const TZ = 'Asia/Bangkok';
 
@@ -266,7 +266,7 @@ function doGet() {
  */
 const API_IMPL = { apiLogin, apiLogout, apiBootstrap, apiChangePassword, apiListRequests, apiSaveRequest,
   apiWithdraw, apiReview, apiDeleteRequest, apiDeleteRequests, apiLookupPosition, apiPositionInfo, apiImportPositions, apiListUsers, apiSaveUser, apiResetPassword, apiDeleteUser,
-  apiSaveRound, apiDeleteRound, apiSaveOrgs, apiExportRound, apiExportJson, apiImportRequests, apiVersion };
+  apiSaveRound, apiApplyRoundWindows, apiDeleteRound, apiSaveOrgs, apiExportRound, apiExportJson, apiImportRequests, apiVersion };
 
 function doPost(e) {
   let out;
@@ -559,7 +559,7 @@ function apiSaveRequest(token, data, force) {
     }
     const round = rounds.find(r => String(r.id) === String(roundId));
     if (!round) throw new Error('ไม่พบรอบการประชุม');
-    if (u.role !== 'admin' && !isOpen_(round)) throw new Error('รอบ "' + round.name + '" ปิดรับคำขอแล้ว' + (round.status === 'เปิดรับ' ? ' (เลยวันปิดรับ)' : ''));
+    if (u.role !== 'admin' && !isOpen_(round)) throw new Error(roundClosedMsg_(round));
 
     // สังกัด → จังหวัด และตรวจสิทธิ์
     // หน่วยงานเลือกสังกัดได้เฉพาะหน่วยงานในจังหวัดเดียวกัน (ไม่เลือก = หน่วยงานของตนเอง)
@@ -884,7 +884,8 @@ function apiSaveRound(token, data) {
       row = { id: 'R' + (max + 1) };
     }
     Object.assign(row, { name: clean_(data.name), month: clean_(data.month), meetDate: toDate_(data.meetDate),
-      closeDate: toDate_(data.closeDate), status: data.status });
+      openDate: toDate_(data.openDate), closeDate: toDate_(data.closeDate), status: data.status });
+    if (row.openDate && row.closeDate && row.openDate > row.closeDate) throw new Error('วันเปิดรับต้องไม่หลังวันปิดรับ');
     if (isNew) appendObj_(t, row); else writeObj_(t, row);
     log_(me.username, isNew ? 'เพิ่มรอบ' : 'แก้ไขรอบ', row.id, row.name + ' · ' + row.status);
     return table_(SH.ROUNDS).items.map(plain_);
@@ -1171,14 +1172,62 @@ function canEdit_(u, r, rounds) {
   return !!round && isOpen_(round);
 }
 
-/** รอบรับคำขอได้: สถานะ "เปิดรับ" และวันนี้ยังไม่เลยวันปิดรับ (รับได้ถึงสิ้นวันปิดรับ; ไม่ระบุวันปิดรับ = รับได้เรื่อยๆ) */
+/** รอบรับคำขอได้ — ถ้ากำหนด "วันเปิดรับ" ระบบเปิด/ปิดตามวันที่เอง: เปิดตั้งแต่วันเปิดรับ ถึงสิ้นวันปิดรับ (สถานะ "ประชุมแล้ว" = ปิดเสมอ)
+ *  ถ้าไม่กำหนดวันเปิดรับ (รอบเดิม): ต้องสถานะ "เปิดรับ" และวันนี้ยังไม่เลยวันปิดรับ */
+function dayOf_(v) {
+  const d = v instanceof Date ? v : toDate_(v);
+  if (!(d instanceof Date) || isNaN(d)) return null;
+  const x = new Date(d); x.setHours(0, 0, 0, 0);
+  return x;
+}
 function isOpen_(round) {
-  if (!round || round.status !== 'เปิดรับ') return false;
-  const c = round.closeDate instanceof Date ? round.closeDate : toDate_(round.closeDate);
-  if (!(c instanceof Date) || isNaN(c)) return true;
+  if (!round || round.status === 'ประชุมแล้ว') return false;
+  const o = dayOf_(round.openDate), c = dayOf_(round.closeDate);
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const end = new Date(c); end.setHours(0, 0, 0, 0);
-  return today <= end;
+  if (o) return today >= o && (!c || today <= c);
+  if (round.status !== 'เปิดรับ') return false;
+  return !c || today <= c;
+}
+/** ข้อความอธิบายเมื่อรอบรับคำขอไม่ได้ */
+function roundClosedMsg_(round) {
+  const o = dayOf_(round.openDate), today = new Date(); today.setHours(0, 0, 0, 0);
+  if (o && today < o) return 'รอบ "' + round.name + '" ยังไม่เปิดรับคำขอ (เปิดรับ ' + thaiDate_(o) + ')';
+  return 'รอบ "' + round.name + '" ปิดรับคำขอแล้ว' + (round.status === 'เปิดรับ' || (o && round.status !== 'ประชุมแล้ว') ? ' (เลยวันปิดรับ)' : '');
+}
+const TH_MONTHS_ = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+/** "พฤศจิกายน 2569" (หรือชื่อรอบ "ครั้งที่ 11/2569") → วันแรก/วันสุดท้ายของเดือน (ปีพุทธ → ค.ศ.) */
+function monthWindow_(month, name) {
+  let m = String(month || '').replace(/\s+/g, ' ').trim().match(/^(\S+)\s+(\d{4})$/), mi = -1, y = 0;
+  if (m) { mi = TH_MONTHS_.indexOf(m[1]); y = Number(m[2]); }
+  if (mi < 0) {
+    const n = String(name || '').match(/(\d+)\s*\/\s*(\d{4})/);
+    if (n && Number(n[1]) >= 1 && Number(n[1]) <= 12) { mi = Number(n[1]) - 1; y = Number(n[2]); }
+  }
+  if (mi < 0 || !y) return null;
+  const ce = y > 2400 ? y - 543 : y;
+  return { open: new Date(ce, mi, 1), close: new Date(ce, mi + 1, 0) };
+}
+
+/** ตั้งวันเปิดรับ = วันแรกของเดือน / วันปิดรับ = วันสุดท้ายของเดือน ให้ทุกรอบ (ยกเว้น "ประชุมแล้ว") ตามบัญชีประจำเดือนของรอบ */
+function apiApplyRoundWindows(token) {
+  const me = auth_(token, 'admin');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    const t = table_(SH.ROUNDS);
+    let n = 0;
+    t.items.forEach(r => {
+      if (r.status === 'ประชุมแล้ว') return;
+      const w = monthWindow_(r.month, r.name);
+      if (!w) return;
+      r.openDate = w.open; r.closeDate = w.close;
+      writeObj_(t, r); n++;
+    });
+    log_(me.username, 'ตั้งวันเปิด/ปิดรับทุกรอบตามเดือน', '', n + ' รอบ');
+    return table_(SH.ROUNDS).items.map(plain_);
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function withRequest_(id, fn) {

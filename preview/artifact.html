@@ -614,6 +614,7 @@ const SEED_USERNAMES = {
     { type: '1', posno: '9012', prov: 'แพร่', org: 'สสจ.แพร่', grp: 'กลุ่มงานบริหารทรัพยากรบุคคล', work: 'งานสรรหาและบรรจุแต่งตั้ง', pos: 'นักทรัพยากรบุคคล', st: 'มีคนครอง' },
     { type: '1', posno: '120044', prov: 'ลำพูน', org: 'สสอ.บ้านโฮ่ง', grp: '', work: '', pos: 'นักวิชาการสาธารณสุข', st: 'มีคนครอง' }
   ];
+  const TH_M = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
   let seq = 0;
   const REQS = [];
   /* คำขอตัวอย่างในรอบ ครั้งที่ 10/2569 ครบทุกหมวด (ชื่อบุคคลเป็นชื่อสมมติ) */
@@ -785,11 +786,21 @@ const SEED_USERNAMES = {
       ROUNDS = ROUNDS.filter(x => x.id !== id);
       return ROUNDS.map(x => Object.assign({}, x));
     },
+    apiApplyRoundWindows(tok) {
+      who(tok);
+      ROUNDS.forEach(r => {
+        const m = /^(\S+)\s+(\d{4})$/.exec(String(r.month || '').trim()), mi = m ? TH_M.indexOf(m[1]) : -1;
+        if (r.status === 'ประชุมแล้ว' || mi < 0) return;
+        const y = Number(m[2]) - 543, p = n => String(n).padStart(2, '0');
+        r.openDate = y + '-' + p(mi + 1) + '-01T00:00:00'; r.closeDate = y + '-' + p(mi + 1) + '-' + p(new Date(y, mi + 1, 0).getDate()) + 'T00:00:00';
+      });
+      return ROUNDS.map(x => Object.assign({}, x));
+    },
     apiSaveRound(tok, d) {
       who(tok);
       let r = ROUNDS.find(x => x.id === d.id);
       if (!r) { r = { id: 'R' + (ROUNDS.reduce((m, x) => Math.max(m, Number(x.id.slice(1)) || 0), 0) + 1) }; ROUNDS.push(r); }
-      Object.assign(r, { name: d.name, month: d.month, status: d.status, closeDate: d.closeDate ? d.closeDate + 'T00:00:00' : '', meetDate: d.meetDate ? d.meetDate + 'T00:00:00' : '' });
+      Object.assign(r, { name: d.name, month: d.month, status: d.status, openDate: d.openDate ? d.openDate + 'T00:00:00' : '', closeDate: d.closeDate ? d.closeDate + 'T00:00:00' : '', meetDate: d.meetDate ? d.meetDate + 'T00:00:00' : '' });
       return ROUNDS.map(x => Object.assign({}, x));
     },
     apiSaveOrgs(tok, list) { who(tok); ORGS.length = 0; list.forEach(o => ORGS.push(o)); return ORGS.slice(); },
@@ -939,15 +950,30 @@ function sortRounds(rs) {
 const TH_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 /** "ครั้งที่ 3/2570" → "มีนาคม 2570" (ครั้งที่ = เดือนของบัญชี) */
 const monthOfName = name => { const m = /(\d+)\s*\/\s*(\d{4})/.exec(name || ''); return m && +m[1] >= 1 && +m[1] <= 12 ? TH_MONTHS[m[1] - 1] + ' ' + m[2] : ''; };
-/** รอบที่รับคำขอได้จริง: สถานะ "เปิดรับ" และยังไม่เลยวันปิดรับ (รับได้ถึงสิ้นวันปิดรับ) */
-const isOpenR = r => !!r && r.status === 'เปิดรับ' && !(daysLeft(r.closeDate) < 0);
-/** สถานะที่แสดง: เปิดรับแต่เลยวันปิดรับแล้ว → ปิดรับ (เลยกำหนด) */
-const roundSt = r => r.status === 'เปิดรับ' && !isOpenR(r) ? 'ปิดรับ (เลยกำหนด)' : r.status;
+/** "พฤศจิกายน 2569" → วันแรก/วันสุดท้ายของเดือน (yyyy-mm-dd) */
+function monthRange(txt) {
+  const m = /^(\S+)\s+(\d{4})$/.exec(String(txt || '').replace(/\s+/g, ' ').trim()), mi = m ? TH_MONTHS.indexOf(m[1]) : -1;
+  if (mi < 0) return null;
+  const y = Number(m[2]) > 2400 ? Number(m[2]) - 543 : Number(m[2]), p = n => String(n).padStart(2, '0');
+  return { open: y + '-' + p(mi + 1) + '-01', close: y + '-' + p(mi + 1) + '-' + p(new Date(y, mi + 1, 0).getDate()) };
+}
+/** รอบที่รับคำขอได้จริง — กำหนดวันเปิดรับ: เปิด/ปิดตามวันที่เอง (ประชุมแล้ว = ปิด) · ไม่กำหนด (รอบเดิม): สถานะ "เปิดรับ" และยังไม่เลยวันปิดรับ */
+const isOpenR = r => {
+  if (!r || r.status === 'ประชุมแล้ว') return false;
+  if (r.openDate) return !(daysLeft(r.openDate) > 0) && !(daysLeft(r.closeDate) < 0);
+  return r.status === 'เปิดรับ' && !(daysLeft(r.closeDate) < 0);
+};
+/** สถานะที่แสดง: เปิดรับ / ยังไม่เปิดรับ / ปิดรับ (รอบที่กำหนดวันเปิดรับ) · เปิดรับแต่เลยวันปิดรับ → ปิดรับ (เลยกำหนด) (รอบเดิม) */
+const roundSt = r => {
+  if (r.status === 'ประชุมแล้ว') return r.status;
+  if (r.openDate) return isOpenR(r) ? 'เปิดรับ' : daysLeft(r.openDate) > 0 ? 'ยังไม่เปิดรับ' : 'ปิดรับ';
+  return r.status === 'เปิดรับ' && !isOpenR(r) ? 'ปิดรับ (เลยกำหนด)' : r.status;
+};
 const roundOptCls = r => { const t = roundSt(r); return t.indexOf('เปิดรับ') === 0 ? 'opt-ok' : t.indexOf('ปิดรับ') === 0 ? 'opt-bad' : ''; };
 // fb = ไม่พบรอบที่ระบุ → เบราว์เซอร์แสดงตัวเลือกแรก จึงใช้สีของตัวเลือกแรกด้วย (ช่องรอบในฟอร์ม)
 const roundSelCls = (rs, id, fb) => 'input ' + roundOptCls(rs.find(r => String(r.id) === String(id)) || (fb ? rs[0] : null) || {});
 const ROUND_SEL_JS = "this.className='input '+this.options[this.selectedIndex].className";
-const roundTone = r => ({ 'เปิดรับ': 't-ok', 'ปิดรับ': 't-warn', 'ปิดรับ (เลยกำหนด)': 't-warn', 'ประชุมแล้ว': 't-mute' })[roundSt(r)] || '';
+const roundTone = r => ({ 'เปิดรับ': 't-ok', 'ปิดรับ': 't-warn', 'ปิดรับ (เลยกำหนด)': 't-warn', 'ยังไม่เปิดรับ': 't-mute', 'ประชุมแล้ว': 't-mute' })[roundSt(r)] || '';
 const openRound = () => S.boot.rounds.find(isOpenR);
 const openRounds = () => S.boot.rounds.filter(isOpenR);
 /** รอบตั้งต้นของคำขอใหม่: รอบที่เลือกอยู่ด้านบนถ้าเปิดรับ ไม่งั้นรอบแรกที่เปิดรับ */
@@ -1064,7 +1090,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '8093289a';
+const PAGE_BUILD = '11887634';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1274,7 +1300,7 @@ function viewHome() {
       <div class="big">${esc(rd.name)}</div>
       ${dl !== null && dl >= 0 ? `<div class="countdown"><b>${dl}</b><span>${dl === 0 ? 'ปิดรับคำขอวันนี้' : 'วัน ก่อนปิดรับคำขอ'}</span></div>` : ''}
       ${dl !== null && dl < 0 ? `<div class="alert warn">${icon('alert')}<span>เลยกำหนดปิดรับมาแล้ว ${-dl} วัน</span></div>` : ''}
-      <dl class="kv"><dt>บัญชีประจำเดือน</dt><dd>${esc(rd.month || '–')}</dd><dt>ปิดรับคำขอ</dt><dd>${fmtDate(rd.closeDate, 1)}</dd><dt>วันที่ประชุม</dt><dd>${fmtDate(rd.meetDate, 1)}</dd></dl>
+      <dl class="kv"><dt>บัญชีประจำเดือน</dt><dd>${esc(rd.month || '–')}</dd>${rd.openDate ? `<dt>เปิดรับคำขอ</dt><dd>${fmtDate(rd.openDate, 1)}</dd>` : ''}<dt>ปิดรับคำขอ</dt><dd>${fmtDate(rd.closeDate, 1)}</dd><dt>วันที่ประชุม</dt><dd>${fmtDate(rd.meetDate, 1)}</dd></dl>
       ${others.length ? `<p class="muted" style="margin:8px 0 0;font-size:13px">${icon('calendar')} เปิดรับพร้อมกันอีก: ${others.map(r => esc(r.name) + (r.month ? ' (' + esc(r.month) + ')' : '')).join(', ')} — เลือกดูได้ที่รอบด้านบน</p>` : ''}
     </div>`;
   } else {
@@ -2129,6 +2155,7 @@ function secretModal(title, username, pw) {
 function roundsHtml() {
   const rs = S.boot.rounds.slice();
   return `<div class="stack"><div class="row"><p class="muted" style="margin:0;flex:1">เปิดรับได้หลายรอบพร้อมกัน — หน่วยงานเลือกรอบได้ตอนส่งคำขอ และส่ง/แก้ไขได้เฉพาะรอบที่ "เปิดรับ" ถึงสิ้นวันปิดรับ (เลยวันปิดรับแล้วระบบปิดรับให้เอง)</p>
+    <button class="btn" data-act="round-windows" title="ตั้งวันเปิดรับ = วันแรกของเดือน และวันปิดรับ = วันสุดท้ายของเดือน ให้ทุกรอบ">${icon('calendar')} ตั้งวันเปิด/ปิดรับตามเดือน</button>
     <button class="btn primary" data-act="round-add">${icon('plus')} เพิ่มรอบ</button></div>
     ${rs.length ? `<div class="rounds">${rs.map(r => {
       const n = S.reqs.filter(x => String(x.round) === String(r.id) && x.status !== 'ถอนเรื่อง').length;
@@ -2136,7 +2163,7 @@ function roundsHtml() {
         <button class="btn sm ghost icon" data-act="round-edit" data-id="${esc(r.id)}" aria-label="แก้ไขรอบ">${icon('edit')}</button>
         <button class="btn sm ghost icon" style="color:var(--bad)" data-act="round-del" data-id="${esc(r.id)}" title="ลบรอบ" aria-label="ลบรอบ ${esc(r.name)}">${icon('trash')}</button></div>
         <div class="big" style="font-size:18px">${esc(r.name)}</div>
-        <dl class="kv"><dt>บัญชีเดือน</dt><dd>${esc(r.month || '–')}</dd><dt>ปิดรับ</dt><dd>${fmtDate(r.closeDate, 1)}</dd><dt>ประชุม</dt><dd>${fmtDate(r.meetDate, 1)}</dd><dt>คำขอ</dt><dd>${n} รายการ</dd></dl>
+        <dl class="kv"><dt>บัญชีเดือน</dt><dd>${esc(r.month || '–')}</dd>${r.openDate ? `<dt>เปิดรับ</dt><dd>${fmtDate(r.openDate, 1)}</dd>` : ''}<dt>ปิดรับ</dt><dd>${fmtDate(r.closeDate, 1)}</dd><dt>ประชุม</dt><dd>${fmtDate(r.meetDate, 1)}</dd><dt>คำขอ</dt><dd>${n} รายการ</dd></dl>
         ${isOpenR(r) && !r.closeDate ? `<span class="chip nodot t-warn" style="white-space:normal">ยังไม่กำหนดวันปิดรับ</span>` : ''}</div>`;
     }).join('')}</div>` : `<div class="card">${emptyHtml('calendar', 'ยังไม่มีรอบการประชุม', 'เพิ่มรอบแรกเพื่อเปิดรับคำขอ')}</div>`}</div>`;
 }
@@ -2149,6 +2176,7 @@ function roundModal(r) {
       <div class="field spanall"><label for="rN">ชื่อรอบ <span class="req">*</span></label><input class="input" id="rN" value="${esc(r.name || '')}" placeholder="เช่น ครั้งที่ 10/2569"></div>
       <div class="field"><label for="rM">บัญชีประจำเดือน</label><input class="input" id="rM" value="${esc(r.month || '')}" placeholder="เช่น พฤศจิกายน 2569"></div>
       <div class="field"><label for="rS">สถานะ</label><select class="input" id="rS">${S.boot.roundStatuses.map(s => `<option ${r.status === s ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></div>
+      <div class="field"><label for="rO">เปิดรับคำขอ</label><input class="input" id="rO" type="date" value="${d10(r.openDate)}"></div>
       <div class="field"><label for="rC">ปิดรับคำขอ</label><input class="input" id="rC" type="date" value="${d10(r.closeDate)}"></div>
       <div class="field"><label for="rD">วันที่ประชุม</label><input class="input" id="rD" type="date" value="${d10(r.meetDate)}"></div>
       <div class="alert warn spanall" id="rWarn" hidden>${icon('alert')}<span>สถานะ "เปิดรับ" แต่ยังไม่กำหนดวันปิดรับ — หน่วยงานส่งคำขอเข้ารอบนี้ได้ไม่มีกำหนด จนกว่าจะเปลี่ยนเป็น "ปิดรับ" เอง</span></div>
@@ -2157,19 +2185,25 @@ function roundModal(r) {
     onMount: w => {
       // พิมพ์ชื่อรอบ "ครั้งที่ N/ปี" → เติมบัญชีประจำเดือนให้ (ถ้าช่องเดือนยังว่างหรือยังเป็นค่าที่เติมให้)
       let autoM = !r.month || r.month === monthOfName(r.name);
-      $('#rM', w).addEventListener('input', () => { autoM = false; });
-      $('#rN', w).addEventListener('input', () => { if (autoM) $('#rM', w).value = monthOfName($('#rN', w).value); });
-      const warn = () => { $('#rWarn', w).hidden = !($('#rS', w).value === 'เปิดรับ' && !$('#rC', w).value); };
+      // เติมวันเปิดรับ = วันแรกของเดือน / วันปิดรับ = วันสุดท้ายของเดือน ตามบัญชีประจำเดือน (ถ้าวันที่ยังว่างหรือยังเป็นค่าที่ระบบเติมไว้) · แก้เองได้
+      const mr0 = monthRange(r.month);
+      let autoD = !r.openDate || !r.closeDate || (!!mr0 && d10(r.openDate) === mr0.open && d10(r.closeDate) === mr0.close);
+      const fillD = () => { const mr = monthRange($('#rM', w).value); if (autoD && mr) { $('#rO', w).value = mr.open; $('#rC', w).value = mr.close; warn(); } };
+      $('#rM', w).addEventListener('input', () => { autoM = false; fillD(); });
+      $('#rN', w).addEventListener('input', () => { if (autoM) { $('#rM', w).value = monthOfName($('#rN', w).value); fillD(); } });
+      $('#rO', w).addEventListener('input', () => { autoD = false; }); $('#rC', w).addEventListener('input', () => { autoD = false; });
+      function warn() { $('#rWarn', w).hidden = !($('#rS', w).value === 'เปิดรับ' && !$('#rO', w).value && !$('#rC', w).value); }
       $('#rS', w).addEventListener('change', warn); $('#rC', w).addEventListener('input', warn); $('#rC', w).addEventListener('change', warn); warn();
       $('#rOk', w).onclick = e => withBtn(e.currentTarget, async () => {
-        const name = $('#rN', w).value.replace(/\s+/g, ' ').trim(), close = $('#rC', w).value, meet = $('#rD', w).value, st = $('#rS', w).value;
+        const name = $('#rN', w).value.replace(/\s+/g, ' ').trim(), open = $('#rO', w).value, close = $('#rC', w).value, meet = $('#rD', w).value, st = $('#rS', w).value;
         const bad = (sel, msg) => { toast(msg, 'err'); const el = $(sel, w); el.classList.add('err'); el.focus(); el.addEventListener('input', () => el.classList.remove('err'), { once: true }); };
         if (!name) return bad('#rN', 'กรุณาระบุชื่อรอบ เช่น ครั้งที่ 1/2570');
         const norm = s => String(s || '').replace(/\s/g, '');
         if (S.boot.rounds.some(x => String(x.id) !== String(r.id || '') && norm(x.name) === norm(name))) return bad('#rN', 'มีรอบชื่อ "' + name + '" อยู่แล้ว');
+        if (open && close && open > close) return bad('#rO', 'วันเปิดรับต้องไม่หลังวันปิดรับ');
         if (close && meet && close > meet) return bad('#rC', 'วันปิดรับคำขอต้องไม่หลังวันที่ประชุม');
         try {
-          S.boot.rounds = sortRounds(await api('apiSaveRound', { id: r.id || '', name, month: $('#rM', w).value.trim(), status: st, closeDate: close, meetDate: meet }));
+          S.boot.rounds = sortRounds(await api('apiSaveRound', { id: r.id || '', name, month: $('#rM', w).value.trim(), status: st, openDate: open, closeDate: close, meetDate: meet }));
           closeModal(); refreshSettings(); renderRoundPick(); toast('บันทึกรอบการประชุมแล้ว');
         } catch (err) { fail(err); }
       });
@@ -2288,6 +2322,10 @@ const ACT = {
     setPwModal(el.dataset.u);
   },
   'round-add': () => roundModal(null),
+  'round-windows': async () => {
+    if (!await confirmBox('ตั้ง <b>วันเปิดรับ = วันแรกของเดือน</b> และ <b>วันปิดรับ = วันสุดท้ายของเดือน</b> ตาม "บัญชีประจำเดือน" ให้ทุกรอบ (ยกเว้นรอบที่เป็น "ประชุมแล้ว")? วันเปิด/ปิดรับที่เคยกำหนดไว้จะถูกแทนที่ และรอบจะเปิด/ปิดอัตโนมัติตามวันที่', { title: 'ตั้งวันเปิด/ปิดรับตามเดือน', ok: 'ตั้งค่า' })) return;
+    try { S.boot.rounds = sortRounds(await api('apiApplyRoundWindows')); refreshSettings(); renderRoundPick(); toast('ตั้งวันเปิด/ปิดรับตามเดือนแล้ว'); } catch (e) { fail(e); }
+  },
   'user-del': async (el, e) => {
     e.stopPropagation();
     const un = el.dataset.u;
