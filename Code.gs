@@ -51,7 +51,8 @@ const LISTS = {
 const FIELDS = {
   org:     { label: 'สังกัด', type: 'org' },
   unit:    { label: 'ส่วนราชการ / หน่วยบริการ', type: 'text', ph: 'เช่น รพ.สต.บ้านหัวฝาย สสอ.แม่แตง' },
-  dept:    { label: 'กลุ่มงาน / งาน', type: 'text', ph: 'เช่น กลุ่มงานการพยาบาล (ถ้ามี)' },
+  dept:    { label: 'กลุ่มงาน', type: 'text', ph: 'เช่น กลุ่มงานการพยาบาล (ถ้ามี)' },
+  work:    { label: 'งาน', type: 'text', ph: 'เช่น งานการพยาบาลผู้ป่วยนอก (ถ้ามี)' },
   letterno: { label: 'เลขที่หนังสือขอใช้ตำแหน่ง', type: 'text', ph: 'เช่น ชม 0033.301/1234 ลงวันที่ 1 ธ.ค. 2569' },
   posno:   { label: 'ตำแหน่งเลขที่', type: 'text', ph: 'เช่น 183868', mono: true },
   pos:     { label: 'ชื่อสายงาน / ตำแหน่ง', type: 'text', ph: 'เช่น พยาบาลวิชาชีพ' },
@@ -80,7 +81,7 @@ const FORM_MEET_VIA = 'โดยผ่านระบบประชุมทา
 const FORM_HEAD_LINE = '#ED7D31';
 const FORM_DATA_LINE = '#F79646';
 const FORM_FONT = 'TH Sarabun New';
-const HEAD_FIELDS = ['org', 'unit', 'dept', 'letterno'];
+const HEAD_FIELDS = ['org', 'unit', 'dept', 'work', 'letterno'];
 const TAIL_FIELDS = ['note'];
 
 /** 11 ประเภทคำขอ ตามชีตในบัญชีการขอใช้ตำแหน่งว่างประจำเดือน */
@@ -219,11 +220,11 @@ const SEED_USERNAMES = {
 const BUILD_ID = '__BUILD__';
 function apiVersion() { return BUILD_ID; }
 
-const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอบการประชุม', ORGS: 'หน่วยงาน', LOG: 'ประวัติ' };
+const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอบการประชุม', ORGS: 'หน่วยงาน', LOG: 'ประวัติ', POS: 'ตำแหน่ง จ.18' };
 
 const SCHEMA = {
   'คำขอ': [['id', 'รหัสคำขอ'], ['round', 'รอบ'], ['cat', 'ประเภทคำขอ'], ['staff', 'ประเภทบุคลากร'], ['prov', 'จังหวัด'],
-    ['org', 'สังกัด'], ['unit', 'ส่วนราชการ'], ['dept', 'กลุ่มงาน'], ['letterno', 'เลขที่หนังสือ'], ['posno', 'ตำแหน่งเลขที่'], ['pos', 'ชื่อสายงาน'],
+    ['org', 'สังกัด'], ['unit', 'ส่วนราชการ'], ['dept', 'กลุ่มงาน'], ['work', 'งาน'], ['letterno', 'เลขที่หนังสือ'], ['posno', 'ตำแหน่งเลขที่'], ['pos', 'ชื่อสายงาน'],
     ['level', 'ระดับ'], ['exec', 'ตำแหน่งทางการบริหาร'], ['newpos', 'ตำแหน่งใหม่'], ['newunit', 'ส่วนราชการใหม่'], ['cutpos', 'ตัดโอนตำแหน่ง'], ['newdept', 'กลุ่มงานใหม่'], ['mergeno', 'ตำแหน่งเลขที่ (ยุบ)'], ['mergepos', 'ชื่อสายงาน (ยุบ)'],
     ['cond', 'เงื่อนไข'], ['person', 'ผู้ที่จะมาดำรงตำแหน่ง'], ['typeold', 'ประเภทการจ้างเดิม'], ['typenew', 'ประเภทการจ้างใหม่'],
     ['frame', 'กรอบ'], ['actual', 'ปฏิบัติงานจริง'], ['short', 'ขาด'], ['reason', 'เหตุผลประกอบ'], ['note', 'หมายเหตุ'],
@@ -236,9 +237,12 @@ const SCHEMA = {
   'รอบการประชุม': [['id', 'รหัสรอบ'], ['name', 'ชื่อรอบ'], ['month', 'บัญชีประจำเดือน'], ['meetDate', 'วันที่ประชุม'],
     ['closeDate', 'ปิดรับคำขอ'], ['status', 'สถานะ']],
   'หน่วยงาน': [['org', 'หน่วยงาน'], ['prov', 'จังหวัด'], ['logo', 'ลิงก์รูปตรา']],
+  // ฐานข้อมูลตำแหน่ง (สกัดจากไฟล์ข้อมูล จ.18 เฉพาะคอลัมน์ที่ใช้เติมฟอร์ม — ไม่เก็บข้อมูลบุคคล) · type: 1 ขรก. 2 พนง.ราชการ 3 พกส. 4 ลูกจ้างประจำ 5 ลูกจ้างชั่วคราว
+  'ตำแหน่ง จ.18': [['type', 'ประเภท'], ['posno', 'เลขที่ตำแหน่ง'], ['prov', 'จังหวัด'], ['org', 'หน่วยงาน'], ['grp', 'กลุ่มงาน'],
+    ['work', 'งาน'], ['pos', 'ตำแหน่งสายงาน'], ['st', 'สถานะ']],
   'ประวัติ': [['at', 'เวลา'], ['user', 'ผู้ใช้'], ['action', 'การกระทำ'], ['ref', 'อ้างอิง'], ['detail', 'รายละเอียด']]
 };
-const TEXT_KEYS = ['id', 'round', 'posno', 'username', 'phone'];
+const TEXT_KEYS = ['id', 'round', 'posno', 'username', 'phone', 'type'];
 const DATE_KEYS = ['createdAt', 'updatedAt', 'reviewedAt', 'lastLogin', 'meetDate', 'closeDate', 'at'];
 const SESSION_SECONDS = 6 * 60 * 60;
 const TZ = 'Asia/Bangkok';
@@ -261,7 +265,7 @@ function doGet() {
  * เรียกได้เฉพาะฟังก์ชันในรายการ API_IMPL (ฟังก์ชันตั้งค่า/เมนูในชีตเรียกจากภายนอกไม่ได้)
  */
 const API_IMPL = { apiLogin, apiLogout, apiBootstrap, apiChangePassword, apiListRequests, apiSaveRequest,
-  apiWithdraw, apiReview, apiDeleteRequest, apiDeleteRequests, apiListUsers, apiSaveUser, apiResetPassword, apiDeleteUser,
+  apiWithdraw, apiReview, apiDeleteRequest, apiDeleteRequests, apiLookupPosition, apiPositionInfo, apiImportPositions, apiListUsers, apiSaveUser, apiResetPassword, apiDeleteUser,
   apiSaveRound, apiDeleteRound, apiSaveOrgs, apiExportRound, apiExportJson, apiImportRequests, apiVersion };
 
 function doPost(e) {
@@ -681,6 +685,108 @@ function apiDeleteRequests(token, ids) {
   }
 }
 
+/* ── ฐานข้อมูลตำแหน่ง (จ.18) — ค้นเลขที่ตำแหน่งเพื่อเติมฟอร์ม ── */
+
+const POS_TYPES = { '1': 'ข้าราชการ', '2': 'พนักงานราชการ', '3': 'พนักงานกระทรวงสาธารณสุข', '4': 'ลูกจ้างประจำ', '5': 'ลูกจ้างชั่วคราว' };
+const POS_COLS = 8;
+
+/** ประเภทบุคลากรของคำขอ → รหัสในฐานข้อมูล (ว่าง = ไม่ทราบ/หลายประเภท → ไม่กรองประเภท) */
+function posStaffCode_(s) {
+  s = String(s || '');
+  if (s.indexOf('→') >= 0) return '';
+  if (s.indexOf('พนักงานราชการ') >= 0) return '2';
+  if (s.indexOf('ข้าราชการ') >= 0) return '1';
+  if (s.indexOf('พกส') >= 0 || s.indexOf('พนักงานกระทรวง') >= 0) return '3';
+  if (s.indexOf('ลูกจ้างชั่วคราว') >= 0) return '5';
+  return '';
+}
+
+/**
+ * ค้นเลขที่ตำแหน่ง — เห็นเฉพาะตำแหน่งในสังกัดตัวเอง
+ *  หน่วยงาน: เฉพาะ org ของตน · ผู้ประสานจังหวัด: หน่วยงานที่เลือก (ต้องอยู่ในจังหวัดตน) หรือทั้งจังหวัด · ผู้ดูแลเขต: ตามหน่วยงานที่เลือก/ทั้งเขต
+ *  สสจ. ครอบคลุม รพ.สต./สสอ./สอ. ในจังหวัดเดียวกันด้วย
+ *  ไม่บอกว่าเลขนี้อยู่หน่วยงานอื่น (status 'none' ทั้งกรณีไม่มีเลข และกรณีเป็นของหน่วยงานอื่น)
+ */
+function apiLookupPosition(token, posno, staff, org) {
+  const u = auth_(token);
+  const no = clean_(posno);
+  if (!/^[0-9]{1,12}$/.test(no)) return { status: 'invalid' };
+  const sh = ss_().getSheetByName(SH.POS);
+  const last = sh ? sh.getLastRow() : 1;
+  if (last < 2) return { status: 'nodb' };
+  const orgs = table_(SH.ORGS).items;
+  const key = s => String(s === null || s === undefined ? '' : s).replace(/\s+/g, '');
+  let target = u.role === 'unit' ? u.org : normName_(org);
+  let orgRow = target ? orgs.find(o => o.org === target) : null;
+  if (u.role === 'prov' && orgRow && orgRow.prov !== u.prov) { target = ''; orgRow = null; }
+  const tkey = key(target);
+  const head = sh.getRange(2, 1, last - 1, 4).getValues(); // ประเภท, เลขที่, จังหวัด, หน่วยงาน
+  const code = posStaffCode_(staff);
+  const inScope = i => {
+    const p = String(head[i][2]), o = key(head[i][3]);
+    if (target) {
+      if (o === tkey) return true;
+      return /^สสจ\./.test(target) && !!orgRow && p === orgRow.prov && /^(รพ\.สต\.|สสอ\.|สอ\.)/.test(o);
+    }
+    if (u.role === 'prov') return p === u.prov;
+    return u.role === 'admin';
+  };
+  let rows = [];
+  for (let i = 0; i < head.length; i++) if (String(head[i][1]) === no && inScope(i)) rows.push(i);
+  if (!rows.length) return { status: 'none' };
+  let otherType = false;
+  if (code) {
+    const same = rows.filter(i => String(head[i][0]) === code);
+    if (same.length) rows = same; else otherType = true;
+  }
+  const items = rows.slice(0, 10).map(i => {
+    const r = sh.getRange(i + 2, 1, 1, POS_COLS).getValues()[0].map(x => String(x === null || x === undefined ? '' : x));
+    return { type: r[0], typeName: POS_TYPES[r[0]] || '', posno: r[1], prov: r[2], org: r[3], grp: r[4], work: r[5], pos: r[6], st: r[7] };
+  });
+  return { status: otherType ? 'othertype' : 'ok', items: items };
+}
+
+/** ข้อมูลฐานข้อมูลตำแหน่ง (ผู้ดูแลเขต) */
+function apiPositionInfo(token) {
+  auth_(token, 'admin');
+  const sh = ss_().getSheetByName(SH.POS);
+  return { count: sh ? Math.max(sh.getLastRow() - 1, 0) : 0, updated: PropertiesService.getScriptProperties().getProperty('POS_UPDATED') || '' };
+}
+
+/**
+ * นำเข้าฐานข้อมูลตำแหน่งจากไฟล์ CSV ที่หน้าเว็บอ่านแล้วส่งมาเป็นชุด (เฉพาะผู้ดูแลเขต)
+ * rows = [[ประเภท, เลขที่, จังหวัด, หน่วยงาน, กลุ่มงาน, งาน, ตำแหน่ง, สถานะ], ...] · first = ล้างข้อมูลเดิมก่อน · last = บันทึกเวลาอัปเดต
+ */
+function apiImportPositions(token, rows, first, last) {
+  const u = auth_(token, 'admin');
+  if (!Array.isArray(rows)) throw new Error('ข้อมูลไม่ถูกต้อง');
+  if (rows.length > 6000) throw new Error('ส่งข้อมูลครั้งละไม่เกิน 6,000 แถว');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const sh = ensureSheet_(ss_(), SH.POS);
+    if (first && sh.getMaxRows() > 1) sh.getRange(2, 1, sh.getMaxRows() - 1, POS_COLS).clearContent();
+    const data = rows.map(r => { const o = []; for (let c = 0; c < POS_COLS; c++) o.push(clean_(r && r[c])); return o; })
+      .filter(r => /^[0-9]+$/.test(r[1]));
+    let total = Math.max(sh.getLastRow() - 1, 0);
+    if (data.length) {
+      const start = sh.getLastRow() + 1;
+      const need = start + data.length - 1 - sh.getMaxRows();
+      if (need > 0) sh.insertRowsAfter(sh.getMaxRows(), need);
+      sh.getRange(start, 1, data.length, 2).setNumberFormat('@');
+      sh.getRange(start, 1, data.length, POS_COLS).setValues(data);
+      total += data.length;
+    }
+    if (last) {
+      PropertiesService.getScriptProperties().setProperty('POS_UPDATED', Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd'T'HH:mm:ss"));
+      log_(u.username, 'นำเข้าฐานข้อมูลตำแหน่ง จ.18', '', total + ' ตำแหน่ง');
+    }
+    return { added: data.length, total: total };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 /* ── ผู้ใช้ ── */
 
 function apiListUsers(token) {
@@ -940,7 +1046,7 @@ function apiExportJson(token, roundId) {
   return table_(SH.REQ).items
     .filter(r => (!roundId || String(r.round) === String(roundId)) && r.status !== 'ถอนเรื่อง')
     .map(r => ({
-      cat: catName_(r.cat), staff: r.staff, prov: r.prov, org: r.org, unit: r.unit, dept: r.dept, posno: String(r.posno),
+      cat: catName_(r.cat), staff: r.staff, prov: r.prov, org: r.org, unit: r.unit, dept: r.dept, work: r.work, posno: String(r.posno),
       pos: r.pos, level: r.level, exec: r.exec, newpos: (['เกลี่ยอัตรา ขรก. (มีคนครอง)', 'เกลี่ยอัตรา แพทย์ประจำบ้าน', 'เกลี่ยอัตรา ขรก. (ตำแหน่งว่าง)', 'ย้าย พนักงานกระทรวงสาธารณสุข'].indexOf(catName_(r.cat)) >= 0 && r.newunit) || r.newpos || r.cutpos || r.newunit, typeold: r.typeold, typenew: r.typenew,
       cond: r.cond, frame: r.frame, actual: r.actual, short: r.short, reason: r.reason,
       result: r.result || (r.status === 'รอพิจารณา' ? '' : r.status),
@@ -1115,7 +1221,7 @@ function exportCols_(cat, rs) {
   const val = k => r => (r[k] === null || r[k] === undefined) ? '' : r[k];
   grpKeys.filter(k => all.indexOf(k) >= 0).forEach(k => {
     const label = k === 'org' ? 'สังกัด' : k === 'unit' ? 'ส่วนราชการ' : k === 'pos' ? (cat.key === 'civil' ? 'ชื่อตำแหน่ง' : 'ชื่อสายงาน') : labelOf_(cat, k);
-    const get = k === 'unit' ? (r => [r.unit, r.dept].filter(String).join('\n')) : val(k);
+    const get = k === 'unit' ? (r => [r.unit, r.dept, r.work].filter(String).join('\n')) : val(k);
     cols.push({ key: k, group: cat.grp, label: label, get: get, w: W[k], center: k === 'posno' });
   });
   cat.fields.filter(k => grpKeys.indexOf(k) < 0 && k !== 'frame' && k !== 'actual' && k !== 'reason').forEach(k => {

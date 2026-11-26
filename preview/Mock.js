@@ -19,6 +19,16 @@
     ...['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']
       .map((m, i) => ({ id: 'R' + (5 + i), name: 'ครั้งที่ ' + (i + 1) + '/2570', month: m + ' 2570', meetDate: '', closeDate: '', status: i === 0 ? 'เปิดรับ' : 'ปิดรับ' }))
   ];
+  /* ฐานข้อมูลตำแหน่ง จ.18 (ตัวอย่างสมมติ) */
+  const POSDB = [
+    { type: '1', posno: '183868', prov: 'เชียงใหม่', org: 'รพศ.นครพิงค์', grp: 'กลุ่มงานเภสัชกรรม', work: 'งานเภสัชกรรมผู้ป่วยนอก', pos: 'เภสัชกร', st: 'มีคนครอง' },
+    { type: '1', posno: '183901', prov: 'เชียงใหม่', org: 'รพศ.นครพิงค์', grp: 'กลุ่มงานการพยาบาล', work: '', pos: 'พยาบาลวิชาชีพ', st: 'ตำแหน่งว่าง' },
+    { type: '2', posno: '183901', prov: 'เชียงใหม่', org: 'รพศ.นครพิงค์', grp: 'กลุ่มงานการเงินและบัญชี', work: '', pos: 'นักวิชาการเงินและบัญชี', st: 'มีคนครอง' },
+    { type: '1', posno: '45210', prov: 'เชียงใหม่', org: 'รพท.ฝาง', grp: 'กลุ่มงานการพยาบาล', work: 'งานการพยาบาลผู้ป่วยนอก', pos: 'พยาบาลวิชาชีพ', st: 'มีคนครอง' },
+    { type: '1', posno: '77120', prov: 'น่าน', org: 'รพท.น่าน', grp: 'กลุ่มงานรังสีวิทยา', work: '', pos: 'นักรังสีการแพทย์', st: 'ตำแหน่งว่าง' },
+    { type: '1', posno: '9012', prov: 'แพร่', org: 'สสจ.แพร่', grp: 'กลุ่มงานบริหารทรัพยากรบุคคล', work: 'งานสรรหาและบรรจุแต่งตั้ง', pos: 'นักทรัพยากรบุคคล', st: 'มีคนครอง' },
+    { type: '1', posno: '120044', prov: 'ลำพูน', org: 'สสอ.บ้านโฮ่ง', grp: '', work: '', pos: 'นักวิชาการสาธารณสุข', st: 'มีคนครอง' }
+  ];
   let seq = 0;
   const REQS = [];
   /* คำขอตัวอย่างในรอบ ครั้งที่ 10/2569 ครบทุกหมวด (ชื่อบุคคลเป็นชื่อสมมติ) */
@@ -151,6 +161,19 @@
       return ids.map(id => { const r = REQS.find(x => x.id === id); r.status = status; if (result != null) r.result = result; if (note != null) r.reviewNote = note;
         r.reviewedBy = u.username; r.reviewedAt = iso(new Date()); return Object.assign({}, r); });
     },
+    apiLookupPosition(tok, posno, staff, org) {
+      const u = who(tok), no = String(posno || '').trim();
+      if (!POSDB.length) return { status: 'nodb' };
+      const code = String(staff).indexOf('→') >= 0 ? '' : String(staff).indexOf('พนักงานราชการ') >= 0 ? '2' : String(staff).indexOf('ข้าราชการ') >= 0 ? '1' : String(staff).indexOf('พกส') >= 0 ? '3' : String(staff).indexOf('ลูกจ้างชั่วคราว') >= 0 ? '5' : '';
+      const target = u.role === 'unit' ? u.org : org;
+      let rows = POSDB.filter(r => r.posno === no && (target ? r.org === target : u.role === 'prov' ? r.prov === u.prov : u.role === 'admin'));
+      if (!rows.length) return { status: 'none' };
+      let other = false;
+      if (code) { const same = rows.filter(r => r.type === code); if (same.length) rows = same; else other = true; }
+      return { status: other ? 'othertype' : 'ok', items: rows.map(r => Object.assign({ typeName: { 1: 'ข้าราชการ', 2: 'พนักงานราชการ', 3: 'พนักงานกระทรวงสาธารณสุข', 5: 'ลูกจ้างชั่วคราว' }[r.type] || '' }, r)) };
+    },
+    apiPositionInfo(tok) { who(tok); return { count: POSDB.length, updated: iso(day(0)) }; },
+    apiImportPositions(tok, rows, first) { who(tok); if (first) POSDB.length = 0; rows.forEach(r => POSDB.push({ type: r[0], posno: r[1], prov: r[2], org: r[3], grp: r[4], work: r[5], pos: r[6], st: r[7] })); return { added: rows.length, total: POSDB.length }; },
     apiDeleteRequests(tok, ids) { who(tok); ids.forEach(id => { const i = REQS.findIndex(r => r.id === id); if (i >= 0) REQS.splice(i, 1); }); return ids; },
     apiDeleteRequest(tok, id) { who(tok); REQS.splice(REQS.findIndex(r => r.id === id), 1); return true; },
     apiListUsers(tok) { who(tok); return USERS.map(roleName); },

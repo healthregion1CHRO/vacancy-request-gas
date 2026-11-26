@@ -621,7 +621,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '3608081c';
+const PAGE_BUILD = '69f4b11b';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -933,7 +933,7 @@ function fieldHtml(cat, k, val, required, cls) {
   } else {
     ctl = `<input class="input ${F.mono ? 'mono' : ''}" id="${id}" name="${k}" type="${F.type === 'url' ? 'url' : 'text'}" value="${esc(v)}" placeholder="${esc(F.ph || '')}" ${k === 'posno' ? 'inputmode="numeric" autocomplete="off"' : ''}>`;
   }
-  const hint = k === 'posno' ? `<span class="hint" id="posnoHint">${posnoHint(v)}</span>` : '';
+  const hint = k === 'posno' ? `<span class="hint" id="posnoHint">${posnoHint(v)}</span><span class="hint" id="posLookup"></span>` : '';
   return `<div class="field ${cls || ''}" data-f="${k}"><label for="${id}">${esc(lbl)}${required ? '<span class="req">*</span>' : ''}</label>${ctl}${hint}<span class="msg" hidden></span></div>`;
 }
 
@@ -968,7 +968,7 @@ function formHtml() {
     ${isAdmin() || roundOpts.length > 1 ? `<div class="sec"><h4><span class="n">${++n}</span>รอบการประชุม</h4><div class="grid g2"><div class="field"><label for="f_round">รอบ</label>
       <select class="${roundSelCls(roundOpts, curRound)}" id="f_round" name="round" onchange="${ROUND_SEL_JS}">${roundOpts.map(r => `<option class="${roundOptCls(r)}" value="${esc(r.id)}" ${String(curRound) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''} · ${esc(roundSt(r))}</option>`).join('')}</select></div></div></div>` : ''}
     <div class="sec"><h4><span class="n">${++n}</span>เลขที่หนังสือขอใช้ตำแหน่ง</h4><div class="grid g2">${fld('letterno')}</div></div>
-    <div class="sec"><h4><span class="n">${++n}</span>หน่วยงาน</h4><div class="grid g3">${fld('org')}${fld('unit')}${fld('dept')}</div></div>
+    <div class="sec"><h4><span class="n">${++n}</span>หน่วยงาน</h4><div class="grid g2">${fld('org')}${fld('unit')}${fld('dept')}${fld('work')}</div></div>
     <div class="sec"><h4><span class="n">${++n}</span>${esc(cat.postitle || 'ข้อมูลตำแหน่ง')}</h4><div class="grid g2">${posFields.map(k => fld(k, ['newpos', 'newunit', 'cutpos'].indexOf(k) >= 0 && !(cat.over && cat.over[k]) ? 'spanall' : '')).join('')}</div></div>
     ${(cat.fsecs || []).map(s => `<div class="sec"><h4><span class="n">${++n}</span>${esc(s.title)}</h4><div class="grid ${s.full ? '' : s.fields.length > 2 && s.cols !== 2 ? 'g3' : 'g2'}">${s.fields.map(k => fld(k)).join('')}</div></div>`).join('')}
     ${hasFrame ? `<div class="sec"><h4><span class="n">${++n}</span>อัตรากำลัง</h4><div class="grid g3">${fld('frame')}${fld('actual')}
@@ -982,6 +982,52 @@ function formHtml() {
   </form>`;
 }
 
+/* ───────────── ค้นเลขที่ตำแหน่งจากฐานข้อมูล จ.18 (เฉพาะสังกัดตัวเอง) ───────────── */
+let posTimer = null, posSeq = 0, posHits = [];
+function posLookupSoon() { clearTimeout(posTimer); posTimer = setTimeout(posLookup, 450); }
+
+async function posLookup() {
+  const f = S.form, box = $('#posLookup');
+  if (!f || !box) return;
+  const no = String(f.data.posno || '').trim();
+  if (!no) { box.innerHTML = ''; return; }
+  if (!/^\d{1,12}$/.test(no)) { box.innerHTML = ''; return; } // เลขตำแหน่งแบบมีตัวอักษร (เช่น พร.1205) ไม่อยู่ในฐานข้อมูล จ.18
+  const cat = catOf(f.catKey), seq = ++posSeq;
+  box.innerHTML = '<span class="muted">กำลังค้นหาในฐานข้อมูล จ.18 …</span>';
+  let r;
+  try { r = await api('apiLookupPosition', no, cat.staff, f.data.org || ''); } catch (e) { if (seq === posSeq && $('#posLookup')) $('#posLookup').innerHTML = ''; return; }
+  if (seq !== posSeq || !S.form || !$('#posLookup')) return;
+  posHits = r.items || [];
+  const where = f.data.org ? ' ' + esc(f.data.org) : 'ของคุณ';
+  if (r.status === 'nodb' || r.status === 'invalid') { box.innerHTML = ''; return; }
+  if (r.status === 'none') { box.innerHTML = '<span style="color:var(--warn)">' + icon('alert') + ' ไม่พบตำแหน่งเลขที่นี้ในสังกัด' + where + ' ตามฐานข้อมูล จ.18 — ตรวจสอบเลขอีกครั้ง หรือกรอกข้อมูลเอง</span>'; return; }
+  if (r.status === 'othertype') {
+    box.innerHTML = '<span style="color:var(--warn)">' + icon('alert') + ' พบเลขนี้ในสังกัด แต่เป็นตำแหน่งของ <b>' + esc(posHits.map(h => h.typeName).filter((v, i, a) => a.indexOf(v) === i).join(' / ')) + '</b> ไม่ใช่ประเภทของคำขอนี้ — เลือกใช้ได้ถ้าถูกต้อง</span>' + posPick();
+    return;
+  }
+  if (posHits.length === 1) { applyPos(posHits[0]); return; }
+  box.innerHTML = '<span style="color:var(--ink)">พบ ' + posHits.length + ' รายการ — เลือกรายการที่ตรงกับตำแหน่งของคุณ</span>' + posPick();
+}
+function posLine(h) { return [h.org, h.grp, h.work, h.pos].filter(Boolean).map(esc).join(' · '); }
+function posPick() {
+  return '<div class="stack" style="gap:6px;margin-top:6px">' + posHits.map((h, i) => '<button type="button" class="btn sm" style="text-align:left;white-space:normal;height:auto;padding:6px 10px" data-act="pos-pick" data-i="' + i + '">' + posLine(h) + (h.typeName ? ' <span class="muted">(' + esc(h.typeName) + ')</span>' : '') + '</button>').join('') + '</div>';
+}
+/** เติมช่อง ส่วนราชการ / กลุ่มงาน / งาน / ตำแหน่ง(เดิม) — ผู้ใช้แก้ไขต่อได้ */
+function applyPos(h) {
+  const f = S.form, box = $('#posLookup');
+  if (!f) return;
+  const vals = { unit: h.org, dept: h.grp, work: h.work, pos: h.pos };
+  Object.keys(vals).forEach(k => {
+    const el = $('#f_' + k);
+    if (!el) return;
+    el.value = vals[k] || '';
+    f.data[k] = el.value;
+    el.classList.remove('err');
+    const m = el.closest('.field') && el.closest('.field').querySelector('.msg'); if (m) m.hidden = true;
+  });
+  if (box) box.innerHTML = '<span style="color:var(--ok)">' + icon('check') + ' พบในฐานข้อมูล จ.18: ' + posLine(h) + (h.st ? ' <span class="muted">(' + esc(h.st) + ')</span>' : '') + ' — เติมข้อมูลให้แล้ว แก้ไขได้</span>';
+}
+
 function formInput(el) {
   if (!S.form || !el.name) return;
   S.form.data[el.name] = el.value;
@@ -991,7 +1037,8 @@ function formInput(el) {
     const sh = shortOf(S.form.data), box = $('#shortBox');
     if (box) { const g = gapOf(sh); box.className = 'shortbox ' + g.c; box.querySelector('b').textContent = g.t; }
   }
-  if (el.name === 'posno') { const h = $('#posnoHint'); if (h) h.innerHTML = posnoHint(el.value); }
+  if (el.name === 'posno') { const h = $('#posnoHint'); if (h) h.innerHTML = posnoHint(el.value); posLookupSoon(); }
+  if (el.name === 'org' && String(S.form.data.posno || '').trim()) posLookupSoon();
 }
 
 async function saveReq(btn, addMore) {
@@ -1028,7 +1075,7 @@ async function saveReq(btn, addMore) {
       upsert(res.item); renderNav();
       toast(f.id ? 'บันทึกการแก้ไข ' + res.item.id + ' แล้ว' : 'ส่งคำขอ ' + res.item.id + ' เรียบร้อย');
       if (addMore) {
-        const keep = { org: f.data.org, unit: f.data.unit, dept: f.data.dept, round: f.data.round };
+        const keep = { org: f.data.org, unit: f.data.unit, dept: f.data.dept, work: f.data.work, round: f.data.round };
         S.form = { catKey: f.catKey, data: Object.assign({}, cat.defaults || {}, keep) };
         renderView(); window.scrollTo({ top: 0, behavior: 'smooth' });
         const p = $('#f_posno') || $('#f_pos'); if (p) p.focus({ preventScroll: true });
@@ -1051,7 +1098,7 @@ function filtered(ignoreStatus) {
   const F = S.filters, q = F.q.trim().toLowerCase();
   return scoped().filter(r => (!F.cat || r.catKey === F.cat) && (!F.prov || r.prov === F.prov) && (!F.org || r.org === F.org) &&
     (ignoreStatus || matchSt(r, F.status)) &&
-    (!q || [r.id, r.posno, r.pos, r.newpos, r.newunit, r.newdept, r.mergeno, r.mergepos, r.cutpos, r.org, r.unit, r.dept, r.person, r.cond, r.cat].join(' ').toLowerCase().indexOf(q) >= 0));
+    (!q || [r.id, r.posno, r.pos, r.newpos, r.newunit, r.newdept, r.mergeno, r.mergepos, r.cutpos, r.org, r.unit, r.dept, r.work, r.person, r.cond, r.cat].join(' ').toLowerCase().indexOf(q) >= 0));
 }
 
 function viewList() {
@@ -1457,13 +1504,59 @@ function reviewPanel(r) {
 }
 
 /* ───────────── settings ───────────── */
+/* ฐานข้อมูลตำแหน่ง (จ.18) — ผู้ดูแลเขตอัปโหลดไฟล์ CSV */
+function posHtml() {
+  const i = S.posInfo;
+  return '<div class="stack"><div class="card stack"><div class="big" style="font-size:18px">ฐานข้อมูลตำแหน่ง (จ.18)</div>' +
+    '<p class="muted" style="margin:0">ใช้เติมส่วนราชการ กลุ่มงาน งาน และตำแหน่ง (เดิม) ให้อัตโนมัติเมื่อหน่วยงานพิมพ์เลขที่ตำแหน่ง — ค้นได้เฉพาะตำแหน่งในสังกัดของผู้ใช้ และไม่เก็บข้อมูลบุคคล</p>' +
+    '<dl class="kv"><dt>จำนวนตำแหน่งในระบบ</dt><dd>' + (i ? Number(i.count).toLocaleString('th-TH') : '…') + '</dd><dt>อัปเดตล่าสุด</dt><dd>' + (i && i.updated ? fmtDT(i.updated) : '–') + '</dd></dl>' +
+    '<div class="row"><label class="btn primary" style="cursor:pointer">' + icon('upload') + ' เลือกไฟล์ CSV เพื่อนำเข้า<input type="file" accept=".csv,text/csv" data-change="pos-file" hidden></label><span class="muted" id="posProg"></span></div>' +
+    '<p class="muted" style="margin:0;font-size:13px">หัวคอลัมน์ของไฟล์: ประเภท, เลขที่ตำแหน่ง, จังหวัด, หน่วยงาน, กลุ่มงาน, งาน, ตำแหน่ง, สถานะ (ประเภท 1 = ข้าราชการ, 2 = พนักงานราชการ, 3 = พกส., 4 = ลูกจ้างประจำ, 5 = ลูกจ้างชั่วคราว) · การนำเข้าจะแทนที่ข้อมูลเดิมทั้งหมด</p></div></div>';
+}
+async function loadPosInfo() {
+  try { S.posInfo = await api('apiPositionInfo'); if (S.view === 'settings' && S.settingsTab === 'positions') refreshSettings(); } catch (e) { fail(e); }
+}
+function parseCSV(t) {
+  if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1);
+  const rows = []; let row = [], f = '', q = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (q) { if (c === '"') { if (t[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === ',') { row.push(f); f = ''; }
+    else if (c === '\n') { row.push(f); rows.push(row); row = []; f = ''; }
+    else if (c !== '\r') f += c;
+  }
+  if (f !== '' || row.length) { row.push(f); rows.push(row); }
+  return rows;
+}
+async function importPositions(file) {
+  if (!file) return;
+  const prog = () => $('#posProg');
+  try {
+    const rows = parseCSV(await file.text());
+    const hd = rows.shift() || [];
+    if (hd.length < 8 || String(hd[1]).trim() !== 'เลขที่ตำแหน่ง') throw new Error('ไฟล์ไม่ใช่ไฟล์ฐานข้อมูลตำแหน่ง — หัวคอลัมน์ต้องเป็น ประเภท, เลขที่ตำแหน่ง, จังหวัด, หน่วยงาน, กลุ่มงาน, งาน, ตำแหน่ง, สถานะ');
+    const data = rows.filter(r => /^\d+$/.test(String(r[1]).trim()));
+    if (!data.length) throw new Error('ไม่พบข้อมูลตำแหน่งในไฟล์');
+    if (!await confirmBox('นำเข้า <b>' + data.length.toLocaleString('th-TH') + '</b> ตำแหน่ง? ข้อมูลฐานข้อมูลตำแหน่งเดิมจะถูกแทนที่ทั้งหมด', { title: 'นำเข้าฐานข้อมูลตำแหน่ง', ok: 'นำเข้า' })) return;
+    const N = 2500;
+    for (let i = 0; i < data.length; i += N) {
+      if (prog()) prog().textContent = 'กำลังนำเข้า ' + Math.min(i + N, data.length).toLocaleString('th-TH') + ' / ' + data.length.toLocaleString('th-TH') + ' …';
+      await api('apiImportPositions', data.slice(i, i + N), i === 0, i + N >= data.length);
+    }
+    toast('นำเข้าฐานข้อมูลตำแหน่ง ' + data.length.toLocaleString('th-TH') + ' รายการแล้ว');
+    await loadPosInfo();
+  } catch (e) { fail(e); } finally { if (prog()) prog().textContent = ''; }
+}
+
 function viewSettings() {
   const t = S.settingsTab;
-  const tabs = [['users', 'ผู้ใช้งาน', 'users'], ['rounds', 'รอบการประชุม', 'calendar']];
+  const tabs = [['users', 'ผู้ใช้งาน', 'users'], ['rounds', 'รอบการประชุม', 'calendar'], ['positions', 'ฐานข้อมูลตำแหน่ง จ.18', 'upload']];
   return `<div class="stack"><div class="subtabs" role="tablist">${tabs.map(x => `<button role="tab" aria-selected="${t === x[0]}" class="${t === x[0] ? 'on' : ''}" data-act="stab" data-k="${x[0]}">${icon(x[2])} ${x[1]}</button>`).join('')}</div>
-    <div id="setArea">${t === 'rounds' ? roundsHtml() : usersHtml()}</div></div>`;
+    <div id="setArea">${t === 'rounds' ? roundsHtml() : t === 'positions' ? posHtml() : usersHtml()}</div></div>`;
 }
-function refreshSettings() { const a = $('#setArea'); if (a) a.innerHTML = S.settingsTab === 'rounds' ? roundsHtml() : usersHtml(); }
+function refreshSettings() { const a = $('#setArea'); if (a) a.innerHTML = S.settingsTab === 'rounds' ? roundsHtml() : S.settingsTab === 'positions' ? posHtml() : usersHtml(); }
 
 async function loadUsers() {
   try { S.users = await api('apiListUsers'); if (S.view === 'settings') refreshSettings(); } catch (e) { fail(e); }
@@ -1743,7 +1836,8 @@ const ACT = {
   chpw: () => changePwModal(false),
   logout: logout,
   'pw-toggle': el => { const i = $('#' + el.dataset.for); i.type = i.type === 'password' ? 'text' : 'password'; },
-  stab: el => { S.settingsTab = el.dataset.k; renderView(); },
+  stab: el => { S.settingsTab = el.dataset.k; renderView(); if (S.settingsTab === 'positions') loadPosInfo(); },
+  'pos-pick': el => { const h = posHits[Number(el.dataset.i)]; if (h) applyPos(h); },
   'user-add': () => userModal(null),
   'user-edit': el => userModal(S.users.find(u => u.username === el.dataset.u)),
   'user-reset': (el, e) => {
@@ -1771,6 +1865,7 @@ const ACT = {
 };
 
 const CHG = {
+  'pos-file': el => { const f = el.files && el.files[0]; el.value = ''; importPositions(f); },
   round: el => { S.round = el.value; S.sel.clear(); renderNav(); renderView(); },
   'f-cat': el => { S.filters.cat = el.value; S.sel.clear(); refreshList(); },
   'f-prov': el => { S.filters.prov = el.value; S.filters.org = ''; S.sel.clear(); renderView(); },

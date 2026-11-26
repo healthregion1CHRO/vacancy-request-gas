@@ -2,3 +2,6 @@
 desktop.ini
 .clasp.json
 deploy.config.json
+*.xlsx
+*.xls
+*.csv
