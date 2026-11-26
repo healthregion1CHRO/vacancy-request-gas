@@ -1099,7 +1099,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '3001ef91';
+const PAGE_BUILD = '4c1de757';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1982,14 +1982,151 @@ function reviewPanel(r) {
 }
 
 /* ───────────── settings ───────────── */
-/* ฐานข้อมูลตำแหน่ง (จ.18) — ผู้ดูแลเขตอัปโหลดไฟล์ CSV */
+/* ───────── อ่านไฟล์ Excel (.xlsx) ในเบราว์เซอร์แบบทยอยอ่าน (ไม่โหลดทั้งไฟล์เข้าหน่วยความจำ · ไม่ใช้ไลบรารีภายนอก) ───────── */
+async function zipEntries(file) {
+  const tailLen = Math.min(file.size, 66000);
+  const tail = new DataView(await file.slice(file.size - tailLen).arrayBuffer());
+  let p = -1;
+  for (let i = tail.byteLength - 22; i >= 0; i--) if (tail.getUint32(i, true) === 0x06054b50) { p = i; break; }
+  if (p < 0) throw new Error('ไฟล์นี้ไม่ใช่ไฟล์ Excel (.xlsx) ที่อ่านได้');
+  const count = tail.getUint16(p + 10, true), cdSize = tail.getUint32(p + 12, true), cdOff = tail.getUint32(p + 16, true);
+  if (cdOff === 0xFFFFFFFF) throw new Error('ไฟล์ใหญ่เกินที่รองรับ');
+  const cd = new DataView(await file.slice(cdOff, cdOff + cdSize).arrayBuffer());
+  const dec = new TextDecoder(), out = {};
+  let o = 0;
+  for (let i = 0; i < count && o + 46 <= cd.byteLength; i++) {
+    if (cd.getUint32(o, true) !== 0x02014b50) break;
+    const nl = cd.getUint16(o + 28, true), el = cd.getUint16(o + 30, true), cl = cd.getUint16(o + 32, true);
+    out[dec.decode(new Uint8Array(cd.buffer, cd.byteOffset + o + 46, nl))] = { method: cd.getUint16(o + 10, true), csize: cd.getUint32(o + 20, true), usize: cd.getUint32(o + 24, true), off: cd.getUint32(o + 42, true) };
+    o += 46 + nl + el + cl;
+  }
+  return out;
+}
+/** อ่านไฟล์ในซิปทีละชิ้นเป็นข้อความ — fn(ข้อความ, จำนวนไบต์) คืนค่า true = หยุดอ่าน */
+async function zipEachChunk(file, e, fn) {
+  const lh = new DataView(await file.slice(e.off, e.off + 30).arrayBuffer());
+  const start = e.off + 30 + lh.getUint16(26, true) + lh.getUint16(28, true);
+  let st = file.slice(start, start + e.csize).stream();
+  if (e.method === 8) st = st.pipeThrough(new DecompressionStream('deflate-raw'));
+  else if (e.method !== 0) throw new Error('รูปแบบการบีบอัดของไฟล์ไม่รองรับ');
+  const rd = st.getReader(), td = new TextDecoder('utf-8');
+  for (;;) {
+    const { value, done } = await rd.read();
+    if (done) break;
+    if (await fn(td.decode(value, { stream: true }), value.length)) { await rd.cancel(); break; }
+  }
+}
+const xmlDec = t => t.indexOf('&') < 0 ? t : t.replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos);/gi, (m, g) => {
+  g = g.toLowerCase();
+  return g === 'amp' ? '&' : g === 'lt' ? '<' : g === 'gt' ? '>' : g === 'quot' ? '"' : g === 'apos' ? "'" : String.fromCodePoint(g[1] === 'x' ? parseInt(g.slice(2), 16) : parseInt(g.slice(1), 10));
+});
+const xmlTexts = t => { let o = ''; t.replace(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/g, (m, x) => { o += x; return m; }); return xmlDec(o); };
+const cellNorm = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+
+async function xlsxSharedStrings(file, e) {
+  const sst = [], re = /<si(?:\s[^>]*)?(?:\/>|>([\s\S]*?)<\/si>)/g;
+  let buf = '';
+  await zipEachChunk(file, e, txt => {
+    buf += txt;
+    let m, last = 0; re.lastIndex = 0;
+    while ((m = re.exec(buf))) { sst.push(m[1] === undefined ? '' : xmlTexts(m[1])); last = re.lastIndex; }
+    buf = buf.slice(last);
+  });
+  return sst;
+}
+function xlsxRowCells(row, sst) {
+  const out = {}, re = /<c\s([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
+  let m;
+  while ((m = re.exec(row))) {
+    if (m[2] === undefined) continue;
+    const r = /(?:^|\s)r="([A-Z]+)\d+"/.exec(m[1]);
+    if (!r) continue;
+    const t = /(?:^|\s)t="([^"]*)"/.exec(m[1]), typ = t ? t[1] : 'n';
+    if (typ === 'inlineStr') { out[r[1]] = xmlTexts(m[2]); continue; }
+    const v = /<v>([\s\S]*?)<\/v>/.exec(m[2]);
+    if (v) out[r[1]] = typ === 's' ? (sst[Number(v[1])] || '') : xmlDec(v[1]);
+  }
+  return out;
+}
+/** ชื่อคอลัมน์ในไฟล์ จ.18 (ชีต "เขต 1") และในไฟล์สรุปแบบ 8 คอลัมน์ */
+const J18_HEAD = { type: 'ประเภทบุคลากร', fold: 'สถานะ การยุบเลข', no: 'เลขที่ตำแหน่ง', prov: 'ตามจ.18 - จังหวัด', pre: 'ตามจ.18 - คำนำหน้าหน่วยงาน',
+  unit: 'ตามจ.18 - ชื่อหน่วยงาน', grp: 'ตามจ.18 - กลุ่ม/กลุ่มงาน', work: 'ตามจ.18 - กลุ่มงาน/งาน', pos: 'ตาม จ.18 - ตำแหน่งสายงาน', st: 'สถานะตำแหน่ง' };
+const SIMPLE_HEAD = ['ประเภท', 'เลขที่ตำแหน่ง', 'จังหวัด', 'หน่วยงาน', 'กลุ่มงาน', 'งาน', 'ตำแหน่ง', 'สถานะ'];
+
+/** จ.18: ระดับล่างขึ้นต้นด้วย "งาน" → กลุ่มงาน = ระดับบน, งาน = ระดับล่าง · ไม่เช่นนั้นระดับล่างคือกลุ่มงาน (ไม่มีงาน) · ไม่เอา ภารกิจ/กลุ่ม ที่อยู่เหนือกลุ่มงาน */
+function j18Record(g) {
+  const no = g('no');
+  if (!/^\d+$/.test(no) || g('fold') !== 'ไม่ได้ยุบ') return null;
+  const upper = g('grp'), lower = g('work'), isWork = /^งาน/.test(lower);
+  return [g('type').charAt(0), no, g('prov'), g('pre') + g('unit'), isWork ? upper : (lower || upper), isWork ? lower : '', g('pos'), g('st').replace(/^\d+\./, '')];
+}
+async function xlsxReadSheet(file, e, sst, onProgress) {
+  let buf = '', hdr = null, mode = '', seen = 0, bytes = 0;
+  const rows = [];
+  await zipEachChunk(file, e, (txt, nb) => {
+    bytes += nb;
+    if (onProgress) onProgress(Math.min(bytes / (e.usize || bytes), 0.99));
+    buf += txt;
+    for (;;) {
+      const k = buf.indexOf('</row>');
+      if (k < 0) break;
+      const s = buf.lastIndexOf('<row', k), row = s >= 0 ? buf.slice(s, k) : '';
+      buf = buf.slice(k + 6);
+      if (!row) continue;
+      const c = xlsxRowCells(row, sst);
+      if (!hdr) {
+        if (++seen > 40) return true; // ไม่พบหัวตารางใน 40 แถวแรก → ไม่ใช่ชีตนี้
+        const byName = {};
+        Object.keys(c).forEach(col => { byName[cellNorm(c[col])] = col; });
+        if (byName[J18_HEAD.fold] !== undefined && Object.keys(J18_HEAD).every(k => byName[J18_HEAD[k]] !== undefined)) {
+          hdr = {}; Object.keys(J18_HEAD).forEach(k => { hdr[k] = byName[J18_HEAD[k]]; }); mode = 'j18';
+        } else if (SIMPLE_HEAD.every(h => byName[h] !== undefined)) {
+          hdr = SIMPLE_HEAD.map(h => byName[h]); mode = 'simple';
+        }
+        continue;
+      }
+      if (mode === 'j18') { const r = j18Record(k2 => cellNorm(c[hdr[k2]])); if (r) rows.push(r); }
+      else { const r = hdr.map(col => cellNorm(c[col])); if (/^\d+$/.test(r[1])) { r[0] = r[0].charAt(0); rows.push(r); } }
+    }
+  });
+  return hdr ? rows : null;
+}
+async function parseXlsxPositions(file, onProgress) {
+  if (typeof DecompressionStream === 'undefined') throw new Error('เบราว์เซอร์นี้ไม่รองรับการอ่านไฟล์ Excel โดยตรง — ใช้ Chrome หรือ Edge รุ่นใหม่ หรือนำเข้าเป็นไฟล์ CSV');
+  const ent = await zipEntries(file);
+  const text = async name => { let t = ''; if (ent[name]) await zipEachChunk(file, ent[name], x => { t += x; }); return t; };
+  const wb = await text('xl/workbook.xml'), rels = await text('xl/_rels/workbook.xml.rels');
+  if (!wb) throw new Error('ไฟล์นี้ไม่ใช่ไฟล์ Excel (.xlsx) ที่อ่านได้');
+  const sheets = [];
+  wb.replace(/<sheet\s[^>]*?>/g, tag => {
+    const n = /(?:^|\s)name="([^"]*)"/.exec(tag), r = /(?:^|\s)r:id="([^"]*)"/.exec(tag);
+    if (n && r) {
+      const rel = (rels.match(/<Relationship\s[^>]*?>/g) || []).find(x => x.indexOf('Id="' + r[1] + '"') >= 0), tg = rel && /Target="([^"]*)"/.exec(rel);
+      if (tg) sheets.push({ name: xmlDec(n[1]), path: tg[1].charAt(0) === '/' ? tg[1].slice(1) : 'xl/' + tg[1] });
+    }
+    return tag;
+  });
+  if (!sheets.length) throw new Error('ไม่พบชีตในไฟล์ Excel');
+  const key = n => n.replace(/\s+/g, '');
+  const order = sheets.filter(x => key(x.name) === 'เขต1').concat(sheets.filter(x => key(x.name) !== 'เขต1' && x.name.indexOf('เขต') >= 0), sheets.filter(x => x.name.indexOf('เขต') < 0));
+  const sstEntry = ent['xl/sharedStrings.xml'], sst = sstEntry ? await xlsxSharedStrings(file, sstEntry) : [];
+  for (const sh of order) {
+    const e = ent[sh.path];
+    if (!e) continue;
+    const rows = await xlsxReadSheet(file, e, sst, onProgress);
+    if (rows) { if (onProgress) onProgress(1); return { rows: rows, sheet: sh.name }; }
+  }
+  throw new Error('ไม่พบข้อมูลตำแหน่งในไฟล์ — ต้องเป็นไฟล์ข้อมูล จ.18 (ชีต "เขต 1") หรือไฟล์ที่มีหัวคอลัมน์ ' + SIMPLE_HEAD.join(', '));
+}
+
+/* ฐานข้อมูลตำแหน่ง (จ.18) — ผู้ดูแลเขตอัปโหลดไฟล์ Excel จ.18 หรือ CSV */
 function posHtml() {
   const i = S.posInfo;
   return '<div class="stack"><div class="card stack"><div class="big" style="font-size:18px">ฐานข้อมูลตำแหน่ง (จ.18)</div>' +
     '<p class="muted" style="margin:0">ใช้เติมส่วนราชการ กลุ่มงาน งาน และตำแหน่ง (เดิม) ให้อัตโนมัติเมื่อหน่วยงานพิมพ์เลขที่ตำแหน่ง — ค้นได้เฉพาะตำแหน่งในสังกัดของผู้ใช้ และไม่เก็บข้อมูลบุคคล</p>' +
     '<dl class="kv"><dt>จำนวนตำแหน่งในระบบ</dt><dd>' + (i ? Number(i.count).toLocaleString('th-TH') : '…') + '</dd><dt>อัปเดตล่าสุด</dt><dd>' + (i && i.updated ? fmtDT(i.updated) : '–') + '</dd></dl>' +
-    '<div class="row"><label class="btn primary" style="cursor:pointer">' + icon('upload') + ' เลือกไฟล์ CSV เพื่อนำเข้า<input type="file" accept=".csv,text/csv" data-change="pos-file" hidden></label><span class="muted" id="posProg"></span></div>' +
-    '<p class="muted" style="margin:0;font-size:13px">หัวคอลัมน์ของไฟล์: ประเภท, เลขที่ตำแหน่ง, จังหวัด, หน่วยงาน, กลุ่มงาน, งาน, ตำแหน่ง, สถานะ (ประเภท 1 = ข้าราชการ, 2 = พนักงานราชการ, 3 = พกส., 4 = ลูกจ้างประจำ, 5 = ลูกจ้างชั่วคราว) · การนำเข้าจะแทนที่ข้อมูลเดิมทั้งหมด</p></div></div>';
+    '<div class="row"><label class="btn primary" style="cursor:pointer">' + icon('upload') + ' เลือกไฟล์ Excel จ.18 เพื่อนำเข้า<input type="file" accept=".xlsx,.csv,text/csv" data-change="pos-file" hidden></label><span class="muted" id="posProg"></span></div>' +
+    '<p class="muted" style="margin:0;font-size:13px">เลือก <b>ไฟล์ข้อมูล จ.18 (.xlsx)</b> ได้โดยตรง — ระบบอ่านชีต "เขต 1" เฉพาะคอลัมน์ที่ใช้ (ไฟล์ใหญ่ใช้เวลาประมาณ 1–3 นาที ควรใช้ Chrome หรือ Edge รุ่นใหม่ และอย่าปิดหน้านี้) ข้อมูลบุคคลในไฟล์จะไม่ถูกส่งขึ้นเซิร์ฟเวอร์ · รองรับไฟล์สรุป .xlsx/.csv ที่มีหัวคอลัมน์ ' + SIMPLE_HEAD.join(', ') + ' · การนำเข้าจะแทนที่ข้อมูลเดิมทั้งหมด</p></div></div>';
 }
 async function loadPosInfo() {
   try { S.posInfo = await api('apiPositionInfo'); if (S.view === 'settings' && S.settingsTab === 'positions') refreshSettings(); } catch (e) { fail(e); }
@@ -2012,12 +2149,24 @@ async function importPositions(file) {
   if (!file) return;
   const prog = () => $('#posProg');
   try {
-    const rows = parseCSV(await file.text());
-    const hd = rows.shift() || [];
-    if (hd.length < 8 || String(hd[1]).trim() !== 'เลขที่ตำแหน่ง') throw new Error('ไฟล์ไม่ใช่ไฟล์ฐานข้อมูลตำแหน่ง — หัวคอลัมน์ต้องเป็น ประเภท, เลขที่ตำแหน่ง, จังหวัด, หน่วยงาน, กลุ่มงาน, งาน, ตำแหน่ง, สถานะ');
-    const data = rows.filter(r => /^\d+$/.test(String(r[1]).trim()));
+    let data, from = '';
+    if (/\.xlsx$/i.test(file.name)) {
+      let last = -1;
+      const show = n => { if (n !== last && prog()) { last = n; prog().textContent = 'กำลังอ่านไฟล์ Excel … ' + n + '%'; } };
+      show(0);
+      const r = await parseXlsxPositions(file, p => show(Math.floor(p * 100)));
+      data = r.rows; from = ' จากชีต "' + r.sheet + '"';
+    } else if (/\.xls$/i.test(file.name)) {
+      throw new Error('ไฟล์ .xls (รุ่นเก่า) ไม่รองรับ — เปิดแล้วบันทึกเป็น .xlsx ก่อน');
+    } else {
+      const rows = parseCSV(await file.text());
+      const hd = rows.shift() || [];
+      if (hd.length < 8 || String(hd[1]).trim() !== 'เลขที่ตำแหน่ง') throw new Error('ไฟล์ CSV ไม่ใช่ไฟล์ฐานข้อมูลตำแหน่ง — หัวคอลัมน์ต้องเป็น ' + SIMPLE_HEAD.join(', '));
+      data = rows.filter(r => /^\d+$/.test(String(r[1]).trim()));
+    }
     if (!data.length) throw new Error('ไม่พบข้อมูลตำแหน่งในไฟล์');
-    if (!await confirmBox('นำเข้า <b>' + data.length.toLocaleString('th-TH') + '</b> ตำแหน่ง? ข้อมูลฐานข้อมูลตำแหน่งเดิมจะถูกแทนที่ทั้งหมด', { title: 'นำเข้าฐานข้อมูลตำแหน่ง', ok: 'นำเข้า' })) return;
+    if (prog()) prog().textContent = '';
+    if (!await confirmBox('นำเข้า <b>' + data.length.toLocaleString('th-TH') + '</b> ตำแหน่ง' + esc(from) + '? ข้อมูลฐานข้อมูลตำแหน่งเดิมจะถูกแทนที่ทั้งหมด', { title: 'นำเข้าฐานข้อมูลตำแหน่ง', ok: 'นำเข้า' })) return;
     const N = 2500;
     for (let i = 0; i < data.length; i += N) {
       if (prog()) prog().textContent = 'กำลังนำเข้า ' + Math.min(i + N, data.length).toLocaleString('th-TH') + ' / ' + data.length.toLocaleString('th-TH') + ' …';
