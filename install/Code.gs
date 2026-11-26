@@ -216,7 +216,7 @@ const SEED_USERNAMES = {
 // ==CONFIG-END==
 
 /** รหัสรุ่นของโค้ด (install/build.ps1 ใส่ให้ตอนสร้างไฟล์) — หน้าเว็บบน GitHub Pages ใช้ตรวจว่า Deploy ตรงรุ่นกับหน้าเว็บ */
-const BUILD_ID = '9f0eb801';
+const BUILD_ID = 'de0478f5';
 function apiVersion() { return BUILD_ID; }
 
 const SH = { REQ: 'คำขอ', USERS: 'ผู้ใช้', ROUNDS: 'รอบการประชุม', ORGS: 'หน่วยงาน', LOG: 'ประวัติ' };
@@ -261,7 +261,7 @@ function doGet() {
  * เรียกได้เฉพาะฟังก์ชันในรายการ API_IMPL (ฟังก์ชันตั้งค่า/เมนูในชีตเรียกจากภายนอกไม่ได้)
  */
 const API_IMPL = { apiLogin, apiLogout, apiBootstrap, apiChangePassword, apiListRequests, apiSaveRequest,
-  apiWithdraw, apiReview, apiDeleteRequest, apiListUsers, apiSaveUser, apiResetPassword, apiDeleteUser,
+  apiWithdraw, apiReview, apiDeleteRequest, apiDeleteRequests, apiListUsers, apiSaveUser, apiResetPassword, apiDeleteUser,
   apiSaveRound, apiDeleteRound, apiSaveOrgs, apiExportRound, apiExportJson, apiImportRequests, apiVersion };
 
 function doPost(e) {
@@ -659,6 +659,23 @@ function apiDeleteRequest(token, id) {
     t.sh.deleteRow(rec._row);
     log_(u.username, 'ลบคำขอ', id, rec.cat + ' · ' + rec.posno + ' ' + rec.pos);
     return true;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** ลบถาวรหลายรายการ (เฉพาะผู้ดูแลเขต) */
+function apiDeleteRequests(token, ids) {
+  const u = auth_(token, 'admin');
+  if (!Array.isArray(ids) || !ids.length) throw new Error('ยังไม่ได้เลือกคำขอ');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    const t = table_(SH.REQ);
+    const recs = t.items.filter(r => ids.indexOf(r.id) >= 0).sort((a, b) => b._row - a._row);
+    recs.forEach(rec => t.sh.deleteRow(rec._row));
+    log_(u.username, 'ลบคำขอ (หลายรายการ)', recs.map(r => r.id).join(', '), recs.length + ' รายการ');
+    return recs.map(r => r.id);
   } finally {
     lock.releaseLock();
   }

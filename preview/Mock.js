@@ -151,6 +151,7 @@
       return ids.map(id => { const r = REQS.find(x => x.id === id); r.status = status; if (result != null) r.result = result; if (note != null) r.reviewNote = note;
         r.reviewedBy = u.username; r.reviewedAt = iso(new Date()); return Object.assign({}, r); });
     },
+    apiDeleteRequests(tok, ids) { who(tok); ids.forEach(id => { const i = REQS.findIndex(r => r.id === id); if (i >= 0) REQS.splice(i, 1); }); return ids; },
     apiDeleteRequest(tok, id) { who(tok); REQS.splice(REQS.findIndex(r => r.id === id), 1); return true; },
     apiListUsers(tok) { who(tok); return USERS.map(roleName); },
     apiSaveUser(tok, d, isNew) {
