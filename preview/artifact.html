@@ -417,7 +417,7 @@ const FIELDS = {
   org:     { label: 'สังกัด', type: 'org' },
   unit:    { label: 'ส่วนราชการ / หน่วยบริการ', type: 'text', ph: 'เช่น รพ.สต.บ้านหัวฝาย สสอ.แม่แตง' },
   dept:    { label: 'กลุ่มงาน / งาน', type: 'text', ph: 'เช่น กลุ่มงานการพยาบาล (ถ้ามี)' },
-  letterno: { label: 'เลขที่หนังสือ', type: 'text', ph: 'เช่น ชม 0033.301/1234 ลงวันที่ 1 ธ.ค. 2569' },
+  letterno: { label: 'เลขที่หนังสือขอใช้ตำแหน่ง', type: 'text', ph: 'เช่น ชม 0033.301/1234 ลงวันที่ 1 ธ.ค. 2569' },
   posno:   { label: 'ตำแหน่งเลขที่', type: 'text', ph: 'เช่น 183868', mono: true },
   pos:     { label: 'ชื่อสายงาน / ตำแหน่ง', type: 'text', ph: 'เช่น พยาบาลวิชาชีพ' },
   level:   { label: 'ระดับ', type: 'select', list: 'LEVELS' },
@@ -1033,7 +1033,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = 'de0478f5';
+const PAGE_BUILD = 'ee80c3f1';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })
@@ -1379,7 +1379,8 @@ function formHtml() {
     ${f.id && d.status === 'ส่งกลับแก้ไข' && d.reviewNote ? `<div class="sec"><div class="alert warn">${icon('alert')}<span><b>ข้อเสนอแนะจากเขต:</b> ${esc(d.reviewNote)}</span></div></div>` : ''}
     ${isAdmin() || roundOpts.length > 1 ? `<div class="sec"><h4><span class="n">${++n}</span>รอบการประชุม</h4><div class="grid g2"><div class="field"><label for="f_round">รอบ</label>
       <select class="input" id="f_round" name="round">${roundOpts.map(r => `<option value="${esc(r.id)}" ${String(curRound) === String(r.id) ? 'selected' : ''}>${esc(r.name)}${r.month ? ' · ' + esc(r.month) : ''} · ${esc(roundSt(r))}</option>`).join('')}</select></div></div></div>` : ''}
-    <div class="sec"><h4><span class="n">${++n}</span>หน่วยงาน</h4><div class="grid g3">${fld('org')}${fld('unit')}${fld('dept')}</div><div class="grid g2" style="margin-top:12px">${fld('letterno')}</div></div>
+    <div class="sec"><h4><span class="n">${++n}</span>เลขที่หนังสือขอใช้ตำแหน่ง</h4><div class="grid g2">${fld('letterno')}</div></div>
+    <div class="sec"><h4><span class="n">${++n}</span>หน่วยงาน</h4><div class="grid g3">${fld('org')}${fld('unit')}${fld('dept')}</div></div>
     <div class="sec"><h4><span class="n">${++n}</span>${esc(cat.postitle || 'ข้อมูลตำแหน่ง')}</h4><div class="grid g2">${posFields.map(k => fld(k, ['newpos', 'newunit', 'cutpos'].indexOf(k) >= 0 && !(cat.over && cat.over[k]) ? 'spanall' : '')).join('')}</div></div>
     ${(cat.fsecs || []).map(s => `<div class="sec"><h4><span class="n">${++n}</span>${esc(s.title)}</h4><div class="grid ${s.full ? '' : s.fields.length > 2 && s.cols !== 2 ? 'g3' : 'g2'}">${s.fields.map(k => fld(k)).join('')}</div></div>`).join('')}
     ${hasFrame ? `<div class="sec"><h4><span class="n">${++n}</span>อัตรากำลัง</h4><div class="grid g3">${fld('frame')}${fld('actual')}

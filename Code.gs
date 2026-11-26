@@ -52,7 +52,7 @@ const FIELDS = {
   org:     { label: 'สังกัด', type: 'org' },
   unit:    { label: 'ส่วนราชการ / หน่วยบริการ', type: 'text', ph: 'เช่น รพ.สต.บ้านหัวฝาย สสอ.แม่แตง' },
   dept:    { label: 'กลุ่มงาน / งาน', type: 'text', ph: 'เช่น กลุ่มงานการพยาบาล (ถ้ามี)' },
-  letterno: { label: 'เลขที่หนังสือ', type: 'text', ph: 'เช่น ชม 0033.301/1234 ลงวันที่ 1 ธ.ค. 2569' },
+  letterno: { label: 'เลขที่หนังสือขอใช้ตำแหน่ง', type: 'text', ph: 'เช่น ชม 0033.301/1234 ลงวันที่ 1 ธ.ค. 2569' },
   posno:   { label: 'ตำแหน่งเลขที่', type: 'text', ph: 'เช่น 183868', mono: true },
   pos:     { label: 'ชื่อสายงาน / ตำแหน่ง', type: 'text', ph: 'เช่น พยาบาลวิชาชีพ' },
   level:   { label: 'ระดับ', type: 'select', list: 'LEVELS' },
