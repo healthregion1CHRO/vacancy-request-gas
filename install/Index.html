@@ -377,6 +377,7 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 select.opt-ok,option.opt-ok{color:var(--ok)}
 select.opt-bad,option.opt-bad{color:var(--bad)}
+select.opt-mute,option.opt-mute{color:var(--muted)}
 #f_round,#f_round option,#roundPick select,#roundPick select option{font-weight:700}
 </style>
 
@@ -516,7 +517,7 @@ const roundSt = r => {
   if (r.openDate) return isOpenR(r) ? 'เปิดรับ' : daysLeft(r.openDate) > 0 ? 'ยังไม่เปิดรับ' : 'ปิดรับ';
   return r.status === 'เปิดรับ' && !isOpenR(r) ? 'ปิดรับ (เลยกำหนด)' : r.status;
 };
-const roundOptCls = r => { const t = roundSt(r); return t.indexOf('เปิดรับ') === 0 ? 'opt-ok' : t.indexOf('ปิดรับ') === 0 ? 'opt-bad' : ''; };
+const roundOptCls = r => { const t = roundSt(r); return t.indexOf('เปิดรับ') === 0 ? 'opt-ok' : t.indexOf('ปิดรับ') === 0 ? 'opt-bad' : t.indexOf('ยังไม่เปิด') === 0 ? 'opt-mute' : ''; };
 // fb = ไม่พบรอบที่ระบุ → เบราว์เซอร์แสดงตัวเลือกแรก จึงใช้สีของตัวเลือกแรกด้วย (ช่องรอบในฟอร์ม)
 const roundSelCls = (rs, id, fb) => 'input ' + roundOptCls(rs.find(r => String(r.id) === String(id)) || (fb ? rs[0] : null) || {});
 const ROUND_SEL_JS = "this.className='input '+this.options[this.selectedIndex].className";
@@ -637,7 +638,7 @@ function toggleTheme() { store.set('vr_theme', isDark() ? 'light' : 'dark', loca
 
 /* ───────────── login ───────────── */
 /** รหัสรุ่นของหน้าเว็บ (สคริปต์ build ใส่ให้) — บน GitHub Pages เทียบกับ apiVersion ของเว็บแอป เพื่อเตือนเมื่อ Deploy ยังเป็นรุ่นเก่า */
-const PAGE_BUILD = '11887634';
+const PAGE_BUILD = '3001ef91';
 function checkServerBuild() {
   if (!window.REMOTE_URL || /^_/.test(PAGE_BUILD)) return;
   fetch(window.REMOTE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'apiVersion', args: [] }) })

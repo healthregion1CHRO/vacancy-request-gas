@@ -129,7 +129,7 @@ const roundSt = r => {
   if (r.openDate) return isOpenR(r) ? 'เปิดรับ' : daysLeft(r.openDate) > 0 ? 'ยังไม่เปิดรับ' : 'ปิดรับ';
   return r.status === 'เปิดรับ' && !isOpenR(r) ? 'ปิดรับ (เลยกำหนด)' : r.status;
 };
-const roundOptCls = r => { const t = roundSt(r); return t.indexOf('เปิดรับ') === 0 ? 'opt-ok' : t.indexOf('ปิดรับ') === 0 ? 'opt-bad' : ''; };
+const roundOptCls = r => { const t = roundSt(r); return t.indexOf('เปิดรับ') === 0 ? 'opt-ok' : t.indexOf('ปิดรับ') === 0 ? 'opt-bad' : t.indexOf('ยังไม่เปิด') === 0 ? 'opt-mute' : ''; };
 // fb = ไม่พบรอบที่ระบุ → เบราว์เซอร์แสดงตัวเลือกแรก จึงใช้สีของตัวเลือกแรกด้วย (ช่องรอบในฟอร์ม)
 const roundSelCls = (rs, id, fb) => 'input ' + roundOptCls(rs.find(r => String(r.id) === String(id)) || (fb ? rs[0] : null) || {});
 const ROUND_SEL_JS = "this.className='input '+this.options[this.selectedIndex].className";
